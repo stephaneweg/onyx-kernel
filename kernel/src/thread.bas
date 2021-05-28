@@ -124,7 +124,7 @@ function Thread.CreateSys(entryPoint as sub(p as any ptr),prio as unsigned integ
     th->NextThreadProc = 0
     
     th->KernelStackBase = cuint(PageAlloc(1))
-    th->KernelStackLimit = th->KernelStackBase + (1 shl 12)
+    th->KernelStackLimit = th->KernelStackBase + (1 shl 12)-4
     th->SavedESP = th->KernelStackLimit - sizeof(irq_stack)
     
     th->BasePriority = prio
@@ -172,8 +172,8 @@ function Thread.Create(proc as Process ptr,entryPoint as sub(p as any ptr),prio 
     th->NextThreadProc = 0
     
     th->KernelStackBase = cuint(PageAlloc(1))
-    th->KernelStackLimit = th->KernelStackBase + (1 shl 12)
-    th->SavedESP = th->KernelStackLimit - sizeof(irq_stack)
+    th->KernelStackLimit = th->KernelStackBase + (1 shl 12)-4
+    th->SavedESP = th->KernelStackLimit - sizeof(irq_stack) 
     
     th->BasePriority = prio
     th->HasModalVisible = 0
@@ -193,7 +193,7 @@ function Thread.Create(proc as Process ptr,entryPoint as sub(p as any ptr),prio 
     st->ss = &h20 or &h03
     st->fs = &h20 or &h03
     st->gs = &h20 or &h03
-    st->ESP = ((proc->SBRK(1)+1) shl 12) + ProcessAddress
+    st->ESP = ((proc->SBRK(1)+1) shl 12) + ProcessAddress - 8
     st->eflags = &h3202
     
     

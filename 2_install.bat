@@ -50,4 +50,6 @@ copy bin\sys\*.* %Drive%\sys
 
 echo Install config
 copy etc\*.* %Drive%\etc
+
+copy test.asm %Drive%\test.asm
 pause

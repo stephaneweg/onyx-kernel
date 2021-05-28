@@ -18,10 +18,14 @@ if not exist bin\sys mkdir bin\sys
 
 %ASSEMBLER% userland/userland_header.asm obj/userland_header.o
 for /d %%j in (userland\src\*.*) do (
-	echo %COMPILER% %CFLAGS%  userland/src/%%~nj/main.bas -o obj/%%~nj.o
-	%COMPILER% %CFLAGS%  userland/src/%%~nj/main.bas -o obj/%%~nj.o
-	echo %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/userland/%%~nj.bin
-	%LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/userland/%%~nj.bin
+	if exist userland/src/%%~nj/main.bas echo %COMPILER% %CFLAGS%  userland/src/%%~nj/main.bas -o obj/%%~nj.o
+	if exist userland/src/%%~nj/main.bas %COMPILER% %CFLAGS%  userland/src/%%~nj/main.bas -o obj/%%~nj.o
+	if exist userland/src/%%~nj/main.bas echo %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/userland/%%~nj.bin
+	if exist userland/src/%%~nj/main.bas %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/userland/%%~nj.bin
+	
+	if exist userland/src/%%~nj/main.asm echo %ASSEMBLER% userland/src/%%~nj/main.asm bin/userland/%%~nj.bin
+	if exist userland/src/%%~nj/main.asm %ASSEMBLER% userland/src/%%~nj/main.asm bin/userland/%%~nj.bin
+	
 )
 
 
@@ -32,5 +36,7 @@ for /r %%j in (sys\*.bas) do (
 	echo %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/sys/%%~nj.bin
 	%LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/sys/%%~nj.bin
 )
+
+%ASSEMBLER% test.asm test.bin
 
 pause

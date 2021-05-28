@@ -123,7 +123,9 @@ sub GDIBase.Invalidate()
     this.IsValid = 0
     if (this.Parent<>0) then this.Parent->Invalidate()
     if (this._isScreen) then
-        
+        EnterCritical()
+        GDI_UPDATED = 1
+        ExitCritical()
         'ThreadWakeUp(GUIThread,0,0)
         'if (GuiThread->State = ThreadState.waiting) then Scheduler.SetThreadReady(GuiThread,0)
     end if

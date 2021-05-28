@@ -5,11 +5,26 @@ sub INIT_MOUSE()
     MouseMaxY = YRes
     MouseX = XRes shr 1
     MouseY = YRes shr 1
-	MouseUpdated = 0
+    MOUSE_UPDATED = 0
     MOUSE_INSTALL()
+    
+    MOUSE_Thread= CreateThread(@MOUSE_Thread_Loop,0)
 end sub
 
 
+
+sub MOUSE_Thread_Loop(p as any ptr)
+    IRQ_ENABLE(&hC)
+    IRQ_ENABLE(&h2C)
+    DefineIRQHandler(&h2C,@MOUSE_IRQ_Handler,0)
+    WaitForEvent()
+	do:loop
+end sub
+
+sub MOUSE_IRQ_Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
+    MOUSE_DATA_ARIVED(Mouse_READ())
+    EndIRQHandler()
+end sub
 
 sub MOUSE_INSTALL()
 	dim Mouse_STATUS as byte
@@ -126,8 +141,9 @@ sub MOUSE_SET_DATA()
 		if (mousey<0) then MouseY=0
 		if (mousey>=MouseMaxY) then MouseY=MouseMaxY
 	end if
-    MouseUpdated = 1
-    'ThreadWakeUp(GUIThread,0,0)
+    EnterCritical()
+    MOUSE_UPDATED = 1
+    ExitCritical()
     'if (GuiThread<>0) then
     '    if (GuiThread->State = ThreadState.waiting) then Scheduler.SetThreadReady(GuiThread,0)
     'end if

@@ -19,7 +19,6 @@
 #include once "vfs.bi"
 #include once "hd.bi"
 #include once "fatfs.bi"
-#include once "keyboard.bi"
 #include once "vesa.bi"
 
 #include once "process.bi"
@@ -51,9 +50,6 @@ SUB MAIN (mb_info as multiboot_info ptr)
     IRQ_DISABLE(0)
     
     
-    
-    INIT_KBD()
-	KBD_Flush()
     
     
     IRQ_ATTACH_HANDLER(&h30,@Syscall30Handler)
@@ -125,7 +121,6 @@ end sub
 #include once "devmgr.bas"
 #include once "vfs.bas"
 #include once "drivers/hd.bas"
-#include once "drivers/keyboard.bas"
 #include once "drivers/vesa.bas"
 #include once "fs/fatfs.bas"
 #include once "process.bas"

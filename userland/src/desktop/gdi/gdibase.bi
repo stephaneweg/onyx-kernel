@@ -112,3 +112,4 @@ dim shared GDI_FocusedElement as GDIBase ptr
 declare function GDIBase_HandleMouse(elem as GDIBase ptr,_mx as integer,_my as integer,_mb as integer) as integer
 declare function GDIBase_MouseExit(elem as GDIBase ptr) as integer
 dim shared GDIBaseTypeName as unsigned byte ptr=@"GDIBase"
+dim shared GDI_UPDATED as unsigned integer

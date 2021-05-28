@@ -79,11 +79,13 @@ sub MAIN(p as any ptr)
 end sub
 
 sub btnClick(btn as unsigned integer,parm as unsigned integer)
+    dim r as unsigned integer = NextRandomNumber(0,10)
     if (MessageConfirmShow(@"Do you want to continue",@"Question")) then
         MessageBoxShow(@"You clicked on yes",@"Info")
     else
         MessageBoxShow(@"You clicked on no",@"info")
     end if
+    MessageBoxShow(intToStr(r,10),@"Random")
 	EndCallBack()
     do:loop
 end sub

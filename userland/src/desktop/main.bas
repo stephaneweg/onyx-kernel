@@ -1,3 +1,5 @@
+
+#include once "in_out.bi"
 #include once "stdlib.bi"
 #include once "system.bi"
 #include once "file.bi"
@@ -6,7 +8,9 @@
 #include once "tobject.bi"
 #include once "tstring.bi"
 #include once "gdi/gdi.bi"
-#include once "mouse.bi"
+#include once "drivers/mouse.bi"
+#include once "drivers/keyboard.bi"
+
 dim shared ThreadToTerminate as unsigned integer
 
 dim shared LFB as unsigned integer
@@ -42,7 +46,6 @@ end sub
 
 dim shared WinColor as unsigned integer
 dim shared GUIThread as unsigned integer
-dim shared MouseThread as unsigned integer
 
 #include once "stdlib.bas"
 #include once "system.bas"
@@ -53,12 +56,11 @@ dim shared MouseThread as unsigned integer
 #include once "tstring.bas"
 #include once "gdi/gdi.bas"
 #include once "syscall.bas"
-#include once "in_out.bi"
-#include once "mouse.bas"
+#include once "drivers/mouse.bas"
+#include once "drivers/keyboard.bas"
 
 declare sub GuiLoop(p as any ptr)
-declare sub MouseIRQHandler(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
-declare sub MouseThreadLoop(p as any ptr)
+
 
 sub MAIN(p as unsigned integer)
     lockCritical = 0
@@ -69,7 +71,7 @@ sub MAIN(p as unsigned integer)
     TMPString2 = MAlloc(256)
 	GetScreenInfo(@XRes,@Yres,@Bpp,@LFB,@LFBSize)
 	BytesPerPixel = Bpp shr 3
-	INIT_MOUSE()
+	
     
     WinColor = &h303d45'&h224488'
     WindowSkin = Skin.Create(@"SYS:/RES/WINGS.BMP",1,7,7,32,7)
@@ -84,7 +86,9 @@ sub MAIN(p as unsigned integer)
 	DefineIRQHandler(&h35,@int35Handler,1)
     
     GUIThread = CreateThread(@GuiLoop,0)
-    MouseThread= CreateThread(@MouseThreadLoop,0)
+    
+    INIT_KBD()
+    INIT_MOUSE()
     ThreadToTerminate = 0
 	ExecApp(@"SYS:/SYS/PIN.BIN")
     WaitForEvent()
@@ -96,8 +100,14 @@ end sub
 sub GuiLoop(p as any ptr)
     do
         'GetMouseInfo(@MouseX,@MouseY,@MouseB)
-        ScreenLoop()
-        
+        if (MOUSE_UPDATED = 1 or KBD_UPDATED = 1 or GDI_UPDATED=1) then
+            EnterCritical()
+            if (MOUSE_UPDATED = 1) then MOUSE_UPDATED = 0
+            if (KBD_UPDATED = 1) then KBD_UPDATED = 0
+            if (GDI_UPDATED = 1) then GDI_UPDATED=0 
+            ExitCritical()
+            ScreenLoop()
+        end if
         if (ThreadToTerminate<>0) then
             EnterCritical()
             KillProcess(ThreadToTerminate)
@@ -115,7 +125,6 @@ sub GuiLoop(p as any ptr)
             ExitCritical()
         end if
         ThreadYield()
-        'WaitForEvent()
     loop
 end sub
 
@@ -139,19 +148,4 @@ sub XAppKeyPress(elem as GDIBase ptr,k as unsigned byte)
 end sub
 
 
-sub MouseInstall()
-end sub
-
-sub MouseThreadLoop(p as any ptr)
-    IRQ_ENABLE(&hC)
-    IRQ_ENABLE(&h2C)
-    DefineIRQHandler(&h2C,@MouseIRQHandler,0)
-    WaitForEvent()
-	do:loop
-end sub
-
-sub MouseIRQHandler(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
-    MOUSE_DATA_ARIVED(Mouse_READ())
-    EndIRQHandler()
-end sub
 

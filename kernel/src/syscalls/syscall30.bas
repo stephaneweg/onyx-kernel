@@ -179,8 +179,6 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
 			stack->EBX = BPP
 			stack->ECX = LFBSize
 			stack->EDI = LFB
-        case &hF5
-            stack->EAX = KBD_GetChar()
         case &hFFFF
             currentThread->BasePriority = stack->EBX
     end select

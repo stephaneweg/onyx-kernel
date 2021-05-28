@@ -27,7 +27,7 @@ declare function GetTimer() as unsigned long
 declare function NextRandomNumber(_min as unsigned integer,_max as unsigned integer) as unsigned integer
 declare function GetTimeBCD() as unsigned integer
 declare sub GetScreenInfo(_xres as unsigned integer ptr,_yres as unsigned integer ptr,_bpp as unsigned integer ptr,_lfb as unsigned integer ptr, _lfbsize as unsigned integer ptr)
-declare function KBD_GetChar() as unsigned byte
+
 
 declare sub SetPriority(p as unsigned integer)
 #macro EndCallBack()

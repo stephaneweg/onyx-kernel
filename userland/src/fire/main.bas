@@ -39,6 +39,8 @@ declare sub btnClick(btn as unsigned integer,parm as unsigned integer)
 declare sub FireThread()
 declare sub FPSCounter()
 declare function BCDToSeconds(b as unsigned integer) as unsigned integer
+
+dim shared fpm as unsigned integer
 sub btnClick(btn as unsigned integer,parm as unsigned integer)
     fcolor = (fcolor+1) mod 3  
     EndCallBack()
@@ -46,6 +48,7 @@ end sub
 
 sub MAIN(p as any ptr) 
     SlabINIT()
+    FPM = 900/60
     FontManager.Init()
     FrameCount = 0
     FPS=0
@@ -95,8 +98,12 @@ sub FireThread()
    
     dim firescreenLimit as unsigned integer=cast(unsigned integer,fireScreen)+&h2000
     
-
+    dim tbegin as unsigned long
+    dim tend as unsigned long
+    dim tdiff as unsigned long
+    
     do
+        tbegin = GetTimer()
         asm
         
         
@@ -248,7 +255,12 @@ sub FireThread()
     drawable->DrawText(IntToStr(fps,10),60,5,&hFFFFFF,FontManager.ML,1)
     drawable->Flush()
     'ThreadYield()
-    'WaitN(30)
+    
+    tend = GetTimer()
+    tdiff = tend-tbegin
+    if (tdiff<fpm) then
+        WaitN(fpm-tdiff)
+    end if
     asm
       nodrw:
         popa

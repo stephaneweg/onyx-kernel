@@ -89,6 +89,10 @@ sub MAIN(p as any ptr)
     
     gdiClear(drawable,&hFFFFFFFF)
     gdiDrawRectangle(drawable,0,0,489,scrollViewHeight-1,&hFFAAAAAA)
+    
+    GDIInvalidate(buttonContainer)
+    GDIInvalidate(scrollViewOuter)
+    GDIInvalidate(drawable)
 	WaitForEvent()
 end sub
 

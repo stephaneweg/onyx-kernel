@@ -200,7 +200,7 @@ end sub
 function GetTimer() as unsigned long
      dim u1 as unsigned long = 1
      asm
-         mov eax,&hE1
+         mov eax,&hE6
          int 0x30
          mov [u1],eax
          mov [u1+4],ebx
@@ -247,13 +247,6 @@ sub GetScreenInfo(_xres as unsigned integer ptr,_yres as unsigned integer ptr,_b
 end sub
 
 
-function KBD_GetChar() as unsigned byte
-	asm
-        mov eax,&hF5
-        int 0x30
-        mov [function],eax
-    end asm
-end function
 
 sub SetPriority(p as unsigned integer)
     asm

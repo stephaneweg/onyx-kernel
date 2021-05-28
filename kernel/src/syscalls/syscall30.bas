@@ -17,7 +17,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             var prio = stack->ECX
             if (prio<currentThread->BasePriority) then prio = CurrentThread->BasePriority
             var th = Thread.Create(currentThread->Owner,cptr(sub(p as any ptr),stack->EBX),prio)
-            stack->EAX = th->ID 
+            stack->EAX = cuint(th)
         
         case &h03 'yield
             return Scheduler.Switch(stack, Scheduler.Schedule())
@@ -179,10 +179,6 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
 			stack->EBX = BPP
 			stack->ECX = LFBSize
 			stack->EDI = LFB
-		case &hF4
-			stack->EAX = MouseX
-			stack->EBX = MouseY
-			stack->ECX = MouseB
         case &hF5
             stack->EAX = KBD_GetChar()
         case &hFFFF

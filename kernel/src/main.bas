@@ -20,7 +20,6 @@
 #include once "hd.bi"
 #include once "fatfs.bi"
 #include once "keyboard.bi"
-#include once "mouse.bi"
 #include once "vesa.bi"
 
 #include once "process.bi"
@@ -55,7 +54,6 @@ SUB MAIN (mb_info as multiboot_info ptr)
     
     INIT_KBD()
 	KBD_Flush()
-    INIT_MOUSE()
     
     
     IRQ_ATTACH_HANDLER(&h30,@Syscall30Handler)
@@ -128,7 +126,6 @@ end sub
 #include once "vfs.bas"
 #include once "drivers/hd.bas"
 #include once "drivers/keyboard.bas"
-#include once "drivers/mouse.bas"
 #include once "drivers/vesa.bas"
 #include once "fs/fatfs.bas"
 #include once "process.bas"

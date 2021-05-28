@@ -123,6 +123,8 @@ sub GDIBase.Invalidate()
     this.IsValid = 0
     if (this.Parent<>0) then this.Parent->Invalidate()
     if (this._isScreen) then
+        
+        'ThreadWakeUp(GUIThread,0,0)
         'if (GuiThread->State = ThreadState.waiting) then Scheduler.SetThreadReady(GuiThread,0)
     end if
 end sub

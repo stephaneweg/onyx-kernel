@@ -246,22 +246,6 @@ sub GetScreenInfo(_xres as unsigned integer ptr,_yres as unsigned integer ptr,_b
 	*_yres = (resolution) and &hFFFF
 end sub
 
-sub GetMouseInfo(_mx as integer ptr,_my as integer ptr,_mb as integer ptr)
-    dim mx as unsigned integer
-    dim my as unsigned integer
-    dim mb as unsigned integer
-    asm
-        mov eax,&hF4
-        int 0x30
-        mov [mx],eax
-        mov [my],ebx
-        mov [mb],ecx
-    end asm
-    *_mx = mx
-    *_my = my
-    *_mb = mb
-end sub
-
 
 function KBD_GetChar() as unsigned byte
 	asm

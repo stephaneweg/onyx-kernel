@@ -22,7 +22,6 @@
 #include once "fontmanager.bas"
 #include once "gimage.bas"
 
-
 dim shared mainWin as unsigned integer
 dim shared drawableImage as GImage ptr
 declare sub TestThread()

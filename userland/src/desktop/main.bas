@@ -1,8 +1,3 @@
-
-
-
-
-
 #include once "stdlib.bi"
 #include once "system.bi"
 #include once "file.bi"
@@ -11,11 +6,9 @@
 #include once "tobject.bi"
 #include once "tstring.bi"
 #include once "gdi/gdi.bi"
+#include once "mouse.bi"
 dim shared ThreadToTerminate as unsigned integer
 
-dim shared MouseX as integer
-dim shared MouseY as integer
-dim shared MouseB as integer
 dim shared LFB as unsigned integer
 dim shared LFBSize as unsigned integer
 dim shared XRes as unsigned integer
@@ -48,6 +41,9 @@ sub SpinUnLock()
 end sub
 
 dim shared WinColor as unsigned integer
+dim shared GUIThread as unsigned integer
+dim shared MouseThread as unsigned integer
+
 #include once "stdlib.bas"
 #include once "system.bas"
 #include once "slab.bas"
@@ -57,21 +53,28 @@ dim shared WinColor as unsigned integer
 #include once "tstring.bas"
 #include once "gdi/gdi.bas"
 #include once "syscall.bas"
+#include once "in_out.bi"
+#include once "mouse.bas"
 
-dim shared GUIThreadPtr as unsigned integer
 declare sub GuiLoop(p as any ptr)
+declare sub MouseIRQHandler(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
+declare sub MouseThreadLoop(p as any ptr)
+
 sub MAIN(p as unsigned integer)
     lockCritical = 0
 	SlabInit()
+    
+    
     TMPString = MAlloc(256)
     TMPString2 = MAlloc(256)
 	GetScreenInfo(@XRes,@Yres,@Bpp,@LFB,@LFBSize)
 	BytesPerPixel = Bpp shr 3
-	
-    WinColor = &h303d45'&hffe400'&h224488'
+	INIT_MOUSE()
+    
+    WinColor = &h303d45'&h224488'
     WindowSkin = Skin.Create(@"SYS:/RES/WINGS.BMP",1,7,7,32,7)
 	ButtonSkin = Skin.Create(@"SYS:/RES/BUTTON.BMP",3,12,12,12,12)
-	WindowCloseBtn = GImage.LoadFromBitmap(@"SYS:/RES/CLOSE3.BMP")
+	WindowCloseBtn = GImage.LoadFromBitmap(@"SYS:/RES/CLOSEBGS.BMP")
     
     WindowSkin->ApplyColor(wincolor,0)
     WindowCloseBtn->FillRectangleAlphaHalf(0,0,WindowCloseBtn->_width-1,WindowCloseBtn->_height-1,wincolor)
@@ -80,8 +83,8 @@ sub MAIN(p as unsigned integer)
 	ScreenInit()
 	DefineIRQHandler(&h35,@int35Handler,1)
     
-    GUIThreadPtr = CreateThread(@GuiLoop,0)
-    
+    GUIThread = CreateThread(@GuiLoop,0)
+    MouseThread= CreateThread(@MouseThreadLoop,0)
     ThreadToTerminate = 0
 	ExecApp(@"SYS:/SYS/PIN.BIN")
     WaitForEvent()
@@ -92,7 +95,7 @@ end sub
 
 sub GuiLoop(p as any ptr)
     do
-        GetMouseInfo(@MouseX,@MouseY,@MouseB)
+        'GetMouseInfo(@MouseX,@MouseY,@MouseB)
         ScreenLoop()
         
         if (ThreadToTerminate<>0) then
@@ -111,6 +114,8 @@ sub GuiLoop(p as any ptr)
             ThreadToTerminate = 0
             ExitCritical()
         end if
+        ThreadYield()
+        'WaitForEvent()
     loop
 end sub
 
@@ -131,5 +136,22 @@ sub XAppKeyPress(elem as GDIBase ptr,k as unsigned byte)
     if (elem->OwnerThread<>0 and elem->_onUserKeyDown<>0) then
         XappSignal2Parameters(elem->OwnerThread,elem->_onUserKeyDown,cuint(elem),k)
     end if
+end sub
+
+
+sub MouseInstall()
+end sub
+
+sub MouseThreadLoop(p as any ptr)
+    IRQ_ENABLE(&hC)
+    IRQ_ENABLE(&h2C)
+    DefineIRQHandler(&h2C,@MouseIRQHandler,0)
+    WaitForEvent()
+	do:loop
+end sub
+
+sub MouseIRQHandler(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
+    MOUSE_DATA_ARIVED(Mouse_READ())
+    EndIRQHandler()
 end sub
 

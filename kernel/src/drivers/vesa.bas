@@ -84,11 +84,6 @@ sub VesaSetMode(mode as unsigned integer)
     kernel_context.map_range(cptr(any ptr,LFB),cptr(any ptr, LFB),cptr(any ptr, lfbEND), VMM_FLAGS_USER_DATA)
 	DoRealModeActionReg(&h4F02,mode,0,0,0,0,0,&h10)
     
-  
-	MouseX = XRes shr 1
-	MouseY = YRes shr 1
-	MouseMaxX = XRes
-	MouseMaxY = YRes
 end sub
 
 

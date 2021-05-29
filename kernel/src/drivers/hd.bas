@@ -59,7 +59,6 @@ sub HD_DETECT(pbase as unsigned short)
     end if
 	if (rv1 = &h88) then
 		outb([pbase6],&hA0)
-		'TIMER_DELAY(1)
         inb([pbase7],[inpbase7])
 		if (inpbase7 AND &h40)>0 then
                 entry=DEVMGR_CREATE_BLOCK_DEVICE(DiskNames(cpt))
@@ -74,7 +73,6 @@ sub HD_DETECT(pbase as unsigned short)
 				
 		end if
 		outb([pbase6],&hB0)
-		'TIMER_DELAY(1)
         inb([pbase7],[inpbase7])
 		if (inpbase7 AND &h40)>0 then
                 entry=DEVMGR_CREATE_BLOCK_DEVICE(DiskNames(cpt+1))
@@ -209,11 +207,6 @@ function HD_READ_SECTOR(drivenum as unsigned byte,alba as unsigned integer,secto
                     rep insw
                 end asm
                 buff+=512
-                
-				'for x=0 to 255
-                '    inw([abase],[inwres])
-				'	buffer[x+(256*cpt)]=inwres
-				'next
 		next
 		return -1
 	end if

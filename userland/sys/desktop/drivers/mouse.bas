@@ -141,9 +141,9 @@ sub MOUSE_SET_DATA()
 		if (mousey<0) then MouseY=0
 		if (mousey>=MouseMaxY) then MouseY=MouseMaxY
 	end if
-    EnterCritical()
+    SpinLock()
     MOUSE_UPDATED = 1
-    ExitCritical()
+    SpinUnLock()
     'if (GuiThread<>0) then
     '    if (GuiThread->State = ThreadState.waiting) then Scheduler.SetThreadReady(GuiThread,0)
     'end if

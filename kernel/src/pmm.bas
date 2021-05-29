@@ -19,6 +19,14 @@ sub PMM_INIT(mb_info as multiboot_info ptr)
     PMM_STRIPE(0,cuint(KEND))
     PMM_STRIPE(mb_info->mem_upper shl 10,&hFFFFFFFF)
     
+    ConsoleNewLine()
+    for i as unsigned integer = 0 to mb_info->mods_count-1
+        var mod_start   = mb_info->mods_addr[i].mod_start
+        var mod_end     = mb_info->mods_addr[i].mod_end
+        PMM_STRIPE(mod_start,mod_end)
+    next i
+    ConsoleNewLIne()
+    
     TotalPagesCount = 0
     for i as unsigned integer = 0 to &hFFFFF
         if (PageBitmap(i)=0) then TotalPagesCount+=1

@@ -30,30 +30,38 @@ sub Process.DoLoad()
 	
 	var targetImg = cptr(EXECUTABLE_HEADER ptr,ProcessAddress)
 	memcpy(targetImg,image,ImageSize)
-	KFree(image)
-	Image =  targetImg
+    if ShouldFreeMem then
+        KFree(image)
+	end if
+    Image =  targetImg
 	Thread.Create(@this,Image->Init,5)
     IRQ_ENABLE(0)
 end sub
 
-function Process.RequestLoad(path as unsigned byte ptr,args as any ptr) as Process ptr
-	dim result as Process ptr = 0
-    dim fsize as unsigned integer
-    dim image as EXECUTABLE_Header ptr = cptr(EXECUTABLE_Header ptr,VFS_LOAD_FILE(path,@fsize))
-	
-    if (image<>0 and fsize <>0) then
-        result = cptr(Process ptr,KAlloc(sizeof(Process)))
-        result->Constructor()
-		result->Image = image
-        result->ImageSize = fsize
-        
-		result->NextProcess = ProcessesToLoad
-		ProcessesToLoad = result
-		if (PROCESS_MANAGER_THREAD<>0) then
-			if (PROCESS_MANAGER_THREAD->State = ThreadState.waiting) then Scheduler.SetThreadReady(PROCESS_MANAGER_THREAD,0)
-		end if
+function Process.RequestLoadMem(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,args as any ptr,shouldFree as unsigned integer) as Process ptr
+    dim result as Process ptr = 0
+    result = cptr(Process ptr,KAlloc(sizeof(Process)))
+    result->Constructor()
+    result->Image = image
+    result->ImageSize = fsize
+    result->ShouldFreeMem = shouldFree
+    result->NextProcess = ProcessesToLoad
+    ProcessesToLoad = result
+    if (PROCESS_MANAGER_THREAD<>0) then
+        if (PROCESS_MANAGER_THREAD->State = ThreadState.waiting) then Scheduler.SetThreadReady(PROCESS_MANAGER_THREAD,0)
     end if
     return result
+end function
+
+function Process.RequestLoad(path as unsigned byte ptr,args as any ptr) as Process ptr
+	
+    dim fsize as unsigned integer
+    dim image as any ptr = VFS_LOAD_FILE(path,@fsize)
+	
+    if (image<>0 and fsize <>0) then
+        return Process.RequestLoadMem(cptr(EXECUTABLE_HEADER ptr,image),fsize,args,1)
+    end if
+    return 0
 end function
 
 function Process.SBRK(pagesToAdd as unsigned integer) as unsigned integer

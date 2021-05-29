@@ -22,11 +22,11 @@ copy bin\kernel.elf %Drive%\boot\kernel.elf
 copy bin\res\realmode.bin %Drive%\boot\realmode.bin
 
 
-for /d %%i in (userland\src\*.*) do (
+for /d %%i in (userland\apps\*.*) do (
 	echo    %%~ni
 	IF NOT EXIST %Drive%\apps\%%~ni.APP mkdir %Drive%\apps\%%~ni.APP
 	copy bin\userland\%%~ni.bin %Drive%\apps\%%~ni.APP\main.bin
-	if exist userland\src\%%~ni\app.bmp copy userland\src\%%~ni\app.bmp %Drive%\apps\%%~ni.APP\app.bmp
+	if exist userland\apps\%%~ni\app.bmp copy userland\apps\%%~ni\app.bmp %Drive%\apps\%%~ni.APP\app.bmp
 )
 
 

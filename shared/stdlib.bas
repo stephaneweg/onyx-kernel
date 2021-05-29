@@ -397,6 +397,85 @@ sub memcpy32(dst as any ptr,src as any ptr,cpt as unsigned integer)
 	end asm
 end sub
 
+
+sub memcpy512(dst as any ptr,src as any ptr,cpt as unsigned integer)
+	asm
+		mov esi, [src]	
+		mov edi, [dst]	
+		mov ecx, [cpt]	
+		
+		memcpy64t_LoopCopy:
+		movq  mm0, [esi+0]    ';1
+		movq  mm1, [esi+8]  ';1
+		movq  mm2, [esi+16]  ';1
+		movq  mm3, [esi+24]  ';1
+		movq  mm4, [esi+32]    ';1
+		movq  mm5, [esi+40]  ';1
+		movq  mm6, [esi+48]  ';1
+		movq  mm7, [esi+56]  ';1
+        
+		movq  [edi+0] , mm0 ';1
+		movq  [edi+8] , mm1 ';1
+		movq  [edi+16], mm2 ';1
+		movq  [edi+24], mm3 ';1   
+		movq  [edi+32] , mm4 ';1
+		movq  [edi+40] , mm5 ';1
+		movq  [edi+48], mm6 ';1
+		movq  [edi+56], mm7 ';1
+		add edi,64
+		add esi,64
+        loop memcpy64t_LoopCopy
+    
+    
+		emms
+	end asm
+end sub
+
+sub memcpy64(dst as any ptr,src as any ptr,cpt as unsigned integer)
+	dim dwByteCount as unsigned integer = cpt * 8
+	asm
+		mov esi, [src]
+		mov ecx, [dwByteCount]
+		mov edi, [dst]
+		sub ecx, 256
+		jl memcpy64_DonePreWarm
+
+		memcpy64_PreWarm:
+		'// Pre-warm the read buffer
+		';clocks
+		 mov al, [esi]  		';1
+		 mov bl, [esi+32] 		';0
+		 mov al, [esi+64] 		';1
+		 mov bl, [esi+96] 		';0
+		 mov al, [esi+128] 		';1
+		 mov bl, [esi+160] 		';0
+		 mov al, [esi+192] 		';1
+		 mov bl, [esi+224] 		';0
+ 
+		'// The nop will force the code
+		'// to pair better.
+		add esi, 256  			';1 
+		nop   		  			';0 
+ 
+		sub ecx, 256  			';1
+		jg memcpy64_PreWarm		';0
+
+		memcpy64_DonePreWarm:
+		mov ecx, [dwByteCount]	';
+		mov esi, [src]			';
+		sub ecx, 8
+		jl memcpy64_DoneCopy
+		
+		memcpy64_LoopCopy:
+		movq mm0, [esi+ecx] ';1
+		movq [edi+ecx], mm0 ';1
+		sub ecx, 8  		';1
+		jg memcpy64_LoopCopy  		';0
+		memcpy64_DoneCopy:
+		emms
+	end asm
+end sub
+
 sub memset(dst as any ptr,value as unsigned byte,cpt as unsigned integer) 
     asm
 		movb al,[value]

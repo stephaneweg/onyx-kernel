@@ -123,9 +123,9 @@ sub GDIBase.Invalidate()
     this.IsValid = 0
     if (this.Parent<>0) then this.Parent->Invalidate()
     if (this._isScreen) then
-        EnterCritical()
+        SpinLock()
         GDI_UPDATED = 1
-        ExitCritical()
+        SpinUnLock()
         'ThreadWakeUp(GUIThread,0,0)
         'if (GuiThread->State = ThreadState.waiting) then Scheduler.SetThreadReady(GuiThread,0)
     end if
@@ -336,10 +336,10 @@ sub GDIBase.syncScreen()
             
             if (this._lfbBytesPerPixel=3) then            
                 Convert32To24(this._lfbBack,this._buffer,this._width*this._height)
-                memcpy32(dst,src,cpt shr 2)
+                memcpy512(dst,src,cpt shr 6)
             else
                 src = cptr(any ptr,this._buffer)
-                memcpy32(dst,src,cpt shr 2)
+                memcpy512(dst,src,cpt shr 6)
             end if
     end if
 end sub

@@ -4,7 +4,7 @@
 #include once "tstring.bi"
 #include once "multiboot.bi"
 #include once "in_out.bi"
-
+#include once "modules.bi"
 #include once "realmode.bi"
 #include once "gdt.bi"
 #include once "pic.bi"
@@ -54,11 +54,11 @@ SUB MAIN (mb_info as multiboot_info ptr)
     
     IRQ_ATTACH_HANDLER(&h30,@Syscall30Handler)
     IRQ_ATTACH_HANDLER(&h31,@Syscall31Handler)
-    'IRQ_ATTACH_HANDLER(&h32,@Syscall32Handler)
     IRQ_ATTACH_HANDLER(&h33,@Syscall33Handler)
     Thread.InitManager()
     Process.InitEngine()
     
+    'MODULES_INIT(mb_info)
     VMM_EXIT()
     var mode = VesaProbe()
     vmm_init_local()
@@ -68,7 +68,7 @@ SUB MAIN (mb_info as multiboot_info ptr)
         VMM_EXIT()
         VesaSetMode(mode)
         vmm_init_local()
-        Process.RequestLoad(@"SYS:/APPS/DESKTOP.APP/MAIN.BIN",0)
+        Process.RequestLoad(@"SYS:/SYS/DESKTOP.BIN",0)
         Thread.Ready()
     else
         ConsoleWriteLine(@"Cannot set graphic mode")
@@ -110,6 +110,7 @@ end sub
 #include once "arch/x86/vmm.bas"
 #include once "arch/x86/pic.bas"
 #include once "console.bas"
+#include once "modules.bas"
 #include once "stdlib.bas"
 #include once "tobject.bas"
 #include once "tstring.bas"

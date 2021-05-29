@@ -50,9 +50,9 @@ sub KBD_IRQ_Handler(_intno as unsigned integer,_sender as unsigned integer,_eax 
 	inb(&h60,[akey])
     KBD_HANDLER(akey)
     
-    EnterCritical()
+    SpinLock()
     KBD_UPDATED = 1
-    ExitCritical()
+    SpinUnLock()
 	EndIRQHandler()
 end sub
 

@@ -490,7 +490,7 @@ end sub
 
 sub GImage.PutOtherRaw(src as unsigned integer ptr,_w as integer,_h as integer,x as integer,y as integer)
 
-dim sx1 as integer
+    dim sx1 as integer
     dim sy1 as integer
     dim sw as integer
     dim sh as integer
@@ -580,6 +580,7 @@ dim sx1 as integer
         pop ecx
     end asm
 end sub
+
 sub GImage.PutOther(src as GImage ptr,x as integer,y as integer,transparent as integer)
     dim sx1 as integer
     dim sy1 as integer
@@ -699,6 +700,13 @@ sub GImage.PutOther(src as GImage ptr,x as integer,y as integer,transparent as i
             
             cld
             mov ecx,[sw] 'width
+            'shr ecx,1
+            '.b1:
+            '    movq mm0,[esi]
+            '    movq [edi],mm0
+            '    add esi,8
+            '    add edi,8
+            'loop .b1
             rep movsd
             
             pop ecx
@@ -859,6 +867,13 @@ sub GImage.PutOtherPart(src as GImage ptr,x as integer,y as integer,sourceX as i
             
             cld
             mov ecx,[sw] 'width
+            'shr ecx,1
+            '.b2:
+            '    movq mm0,[esi]
+            '    movq [edi],mm0
+            '    add esi,8
+            '    add edi,8
+            'loop .b2
             rep movsd
             
             pop ecx

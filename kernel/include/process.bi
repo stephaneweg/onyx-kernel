@@ -19,7 +19,10 @@ TYPE Process field =1
     PagesCount as integer
     
     VMM_Context as VMMContext
+    ShouldFreeMem as unsigned integer
+    
     declare static sub InitEngine()
+    declare static function RequestLoadMem(image as EXECUTABLE_HEADER ptr,size as unsigned integer,args as any ptr,shouldFree as unsigned integer) as Process ptr
     declare static function RequestLoad(path as unsigned byte ptr,args as any ptr) as Process ptr
     
     declare static sub TerminateNow(app as Process ptr)

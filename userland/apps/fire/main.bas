@@ -241,14 +241,6 @@ sub FireThread()
     end asm
     frameCount+=1
     
-    'memcpy32(drawable->_buffer,buff,320*200)
-    'GDIPutImage(drawable,0,0,320,200,3,cuint(buff))
-    
-    'for i as unsigned integer = 0 to n
-    '    var cc = buff[i]
-    '    drawable->_buffer[i] = (*cptr(unsigned integer ptr,@buff[i])) or &hFF000000
-    'next i
-    
     ConvertBuffer24TO32(drawable->_buffer,buff,drawable->_width*drawable->_height)
     
     drawable->DrawText(@"FPS : ",5,5,&hFFFFFF,FontManager.ML,1)

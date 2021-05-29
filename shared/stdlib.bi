@@ -45,9 +45,11 @@ declare function substring(s as  unsigned byte ptr,index as unsigned integer, co
 declare sub memcpy(dst as any ptr,src as any ptr,cpt as unsigned integer)
 declare sub memcpy16(dst as any ptr,src as any ptr,cpt as unsigned integer)
 declare sub memcpy32(dst as any ptr,src as any ptr,cpt as unsigned integer)
+declare sub memcpy64(dst as any ptr,src as any ptr,cpt as unsigned integer) 
+declare sub memcpy512(dst as any ptr,src as any ptr,cpt as unsigned integer) 
 declare sub memset(dst as any ptr,value as unsigned byte,cpt as unsigned integer) 
 declare sub memset16(dst as any ptr,value as unsigned short,cpt as unsigned integer) 
-declare sub memset32(dst as any ptr,value as unsigned integer,cpt as unsigned integer) 
+declare sub memset32(dst as any ptr,value as unsigned integer,cpt as unsigned integer)
 
 declare function atoi(s as  unsigned byte ptr) as integer
 declare function atoihex(s as  unsigned byte ptr) as unsigned integer

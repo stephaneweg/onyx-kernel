@@ -17,24 +17,28 @@ if not exist bin\userland mkdir bin\userland
 if not exist bin\sys mkdir bin\sys
 
 %ASSEMBLER% userland/userland_header.asm obj/userland_header.o
-for /d %%j in (userland\src\*.*) do (
-	if exist userland/src/%%~nj/main.bas echo %COMPILER% %CFLAGS%  userland/src/%%~nj/main.bas -o obj/%%~nj.o
-	if exist userland/src/%%~nj/main.bas %COMPILER% %CFLAGS%  userland/src/%%~nj/main.bas -o obj/%%~nj.o
-	if exist userland/src/%%~nj/main.bas echo %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/userland/%%~nj.bin
-	if exist userland/src/%%~nj/main.bas %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/userland/%%~nj.bin
+for /d %%j in (userland\apps\*.*) do (
+	if exist userland\apps\%%~nj\main.bas echo %COMPILER% %CFLAGS%  userland/apps/%%~nj/main.bas -o obj/%%~nj.o
+	if exist userland\apps\%%~nj\main.bas %COMPILER% %CFLAGS%  userland/apps/%%~nj/main.bas -o obj/%%~nj.o
+	if exist userland\apps\%%~nj\main.bas echo %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/userland/%%~nj.bin
+	if exist userland\apps\%%~nj\main.bas %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/userland/%%~nj.bin
 	
-	if exist userland/src/%%~nj/main.asm echo %ASSEMBLER% userland/src/%%~nj/main.asm bin/userland/%%~nj.bin
-	if exist userland/src/%%~nj/main.asm %ASSEMBLER% userland/src/%%~nj/main.asm bin/userland/%%~nj.bin
+	if exist userland\apps\%%~nj\main.asm echo %ASSEMBLER% userland/apps/%%~nj/main.asm bin/userland/%%~nj.bin
+	if exist userland\apps\%%~nj\main.asm %ASSEMBLER% userland/apps/%%~nj/main.asm bin/userland/%%~nj.bin
 	
 )
 
 
 echo compile system binaries
-for /r %%j in (sys\*.bas) do (
-	echo %COMPILER% %CFLAGS%  sys/%%~nj.bas -o obj/%%~nj.o
-	%COMPILER% %CFLAGS%  sys/%%~nj.bas -o obj/%%~nj.o
-	echo %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/sys/%%~nj.bin
-	%LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/sys/%%~nj.bin
+for /d %%j in (userland\sys\*.*) do (
+	if exist userland\sys\%%~nj\main.bas echo %COMPILER% %CFLAGS%  userland/sys/%%~nj/main.bas -o obj/%%~nj.o
+	if exist userland\sys\%%~nj\main.bas %COMPILER% %CFLAGS%  userland/sys/%%~nj/main.bas -o obj/%%~nj.o
+	if exist userland\sys\%%~nj\main.bas echo %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/sys/%%~nj.bin
+	if exist userland\sys\%%~nj\main.bas %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/sys/%%~nj.bin
+	
+	if exist userland\sys\%%~nj/main.asm echo %ASSEMBLER% userland/sys/%%~nj/main.asm bin/sys/%%~nj.bin
+	if exist userland\sys\%%~nj/main.asm %ASSEMBLER% userland/sys/%%~nj/main.asm bin/sys/%%~nj.bin
+	
 )
 
 %ASSEMBLER% test.asm test.bin

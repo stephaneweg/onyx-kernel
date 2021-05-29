@@ -37,11 +37,11 @@ declare sub SpinLock()
 declare sub SpinUnLock()
 
 sub SpinLock()
-    while lockCritical = 1:wend
-    lockCritical = 1
+    while lockCritical<>0:wend
+        lockCritical = 1
 end sub
 sub SpinUnLock()
-    lockCritical = 0
+   lockCritical=0
 end sub
 
 dim shared WinColor as unsigned integer
@@ -63,7 +63,6 @@ declare sub GuiLoop(p as any ptr)
 
 
 sub MAIN(p as unsigned integer)
-    lockCritical = 0
 	SlabInit()
     
     
@@ -101,15 +100,15 @@ sub GuiLoop(p as any ptr)
     do
         'GetMouseInfo(@MouseX,@MouseY,@MouseB)
         if (MOUSE_UPDATED = 1 or KBD_UPDATED = 1 or GDI_UPDATED=1) then
-            EnterCritical()
+            SpinLock()
             if (MOUSE_UPDATED = 1) then MOUSE_UPDATED = 0
             if (KBD_UPDATED = 1) then KBD_UPDATED = 0
             if (GDI_UPDATED = 1) then GDI_UPDATED=0 
-            ExitCritical()
+            SpinUnLock()
+            
             ScreenLoop()
         end if
         if (ThreadToTerminate<>0) then
-            EnterCritical()
             KillProcess(ThreadToTerminate)
              'remove the from the gui
             var g = RootScreen->FirstChild
@@ -122,7 +121,6 @@ sub GuiLoop(p as any ptr)
             	g = n
             wend
             ThreadToTerminate = 0
-            ExitCritical()
         end if
         ThreadYield()
     loop

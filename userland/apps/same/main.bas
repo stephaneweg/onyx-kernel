@@ -169,12 +169,12 @@ sub CheckIfAnyPossible()
         DrawableImage->Clear(&hFF000000)
         drawableImage->Flush()
         MessageBoxShow(@"You won",@"info")
-        GameFinished=-1
+        NewGame()
     elseif not trouver then
         DrawableImage->Clear(&hFF000000)
         drawableImage->Flush()
         MessageBoxShow(@"You lost",@"info")
-        GameFinished=-1
+        NewGame()
     end if
 end sub
 

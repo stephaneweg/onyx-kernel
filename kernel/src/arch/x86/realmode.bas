@@ -1,18 +1,26 @@
+extern realmode_begin alias "realmode_begin" as byte
+extern realmode_end   alias "realmode_end"   as byte
+
 sub RealMode_INIT()
     ConsoleWrite(@"Loading realmode module ... ")
     dim fsize as unsigned integer=0
-    dim abuffer as unsigned byte ptr
-	abuffer	= VFS_LOAD_FILE(@"SYS:/BOOT/realmode.bin",@fsize)
+    dim abuffer as unsigned byte ptr=0
+    dim rstart as unsigned byte ptr = @realmode_begin
+    dim rend as unsigned byte ptr = @realmode_end
+    
+    MemCpy(cptr(unsigned byte ptr,RealModeAddr),rstart,cuint(rend)-cuint(rstart))
+    
+	'abuffer	= VFS_LOAD_FILE(@"SYS:/BOOT/realmode.bin",@fsize)
 
-    if (fsize<>0 and abuffer<>0) then
-        MemCpy(cptr(unsigned byte ptr,RealModeAddr),abuffer,fsize)
-        KFree(abuffer)
-        ConsolePrintOK()
-    else
-        ConsoleSetForeground(4)
-        ConsoleWrite(@"Load failed")
-        ConsoleSetForeground(7)
-    end if
+    'if (fsize<>0 and abuffer<>0) then
+    '    MemCpy(cptr(unsigned byte ptr,RealModeAddr),abuffer,fsize)
+    '    KFree(abuffer)
+    '    ConsolePrintOK()
+    'else
+    '    ConsoleSetForeground(4)
+    '    ConsoleWrite(@"Load failed")
+    '    ConsoleSetForeground(7)
+    'end if
     
     ConsoleNewLine()
     

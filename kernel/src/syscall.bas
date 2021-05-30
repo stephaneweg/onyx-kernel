@@ -1,7 +1,7 @@
 #include once "syscalls/syscall30.bas"
 #include once "syscalls/syscall31.bas"
 '#include once "syscalls/syscall32.bas"
-#include once "syscalls/syscall33.bas"
+'#include once "syscalls/syscall33.bas"
 
 sub XappSignal2Parameters(th as Thread ptr,callback as unsigned integer,p1 as unsigned integer, p2 as unsigned integer)
     var proc = cptr(Process ptr,th->Owner)
@@ -20,6 +20,29 @@ sub XappSignal2Parameters(th as Thread ptr,callback as unsigned integer,p1 as un
       
     end if
 end sub
+
+sub XappSignal6Parameters(th as Thread ptr,callback as unsigned integer,p1 as unsigned integer, p2 as unsigned integer,p3 as unsigned integer,p4 as unsigned integer,p5 as unsigned integer,p6 as unsigned integer)
+    var proc = cptr(Process ptr,th->Owner)
+    if (th->State = ThreadState.Waiting) then
+        var currentContext = vmm_get_current_context()
+        proc->VMM_Context.Activate()
+        
+        dim st as IRQ_Stack ptr = cptr(IRQ_Stack ptr,th->SavedESP)
+        st->EIP = callback
+        st->ESP = st->ESP-24
+        *cptr(unsigned integer ptr, st->ESP+4) =cast(unsigned integer, p1)
+        *cptr(unsigned integer ptr, st->ESP+8) =cast(unsigned integer, p2)
+        *cptr(unsigned integer ptr, st->ESP+12) =cast(unsigned integer, p3)
+        *cptr(unsigned integer ptr, st->ESP+16) =cast(unsigned integer, p4)
+        *cptr(unsigned integer ptr, st->ESP+20) =cast(unsigned integer, p5)
+        *cptr(unsigned integer ptr, st->ESP+24) =cast(unsigned integer, p6)
+        Scheduler.SetThreadReady(th,0)
+      
+        currentContext->Activate()
+      
+    end if
+end sub
+
 
 sub XappIRQReceived(intno as unsigned integer,p as IRQ_THREAD_POOL ptr)
     var th = cptr(Thread ptr,IRQ_THREAD_HANDLERS(intno).Owner)

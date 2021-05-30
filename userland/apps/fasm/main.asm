@@ -10,7 +10,7 @@ IMAGE_START:
 	dd INIT	 ;init method
 	dd 0x0
 	dd 0x0
-    dd IMAGE_END
+    dd _IMAGE_END
 	
 
 mainWin			dd 0x0
@@ -188,14 +188,26 @@ BtnRunClick:
 	push ebp
 	mov ebp,esp
 	
+	;get text
 	mov eax,0x13
 	mov ebx,[txtOutputFile]
 	mov edi,outputFileBuff
 	int 0x35
 	
-	mov eax,0x01
-	mov ebx,outputFileBuff
+	;open file
+	mov eax, 0x01
+	mov esi,outputFileBuff
+	mov edi,IMAGE_END
+	int 0x33
+	test eax,eax
+	jz .notOpened
+	;file size already in ecx
+	mov eax,0x1 ;execute process loaded in memory
+	mov ebx,IMAGE_END ;adress of loaded process
 	int 0x30
+	
+	
+	.notOpened:
 	
 	mov esp,ebp
 	pop ebp
@@ -559,3 +571,5 @@ ADD_MEM_END:
 MEM_START:
 	abuff	rb 1024*1024
 IMAGE_END:
+rb 1024*1024*10	
+_IMAGE_END:

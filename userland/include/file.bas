@@ -1,4 +1,23 @@
+function ExecApp(path as unsigned byte ptr) as unsigned integer
+	dim fsize as unsigned integer = 0
+	
+	dim img as unsigned byte ptr = VFS_LOAD_FILE(path,@fsize)
+	if (img<>0 and fsize<>0) then
+		asm
+			mov eax,&h01
+			mov ebx,[img]
+			mov ecx,[fsize]
+			int 0x30
+			mov [function],eax
+		end asm
+        MFree(img)
+	else
+		return 0
+	end if
+end function
+
 function FileOpen(p as unsigned byte ptr) as unsigned integer
+    
 	asm 
 		mov eax,0x03
 		mov esi,[p]
@@ -106,8 +125,12 @@ function VFS_Load_File(fname as unsigned byte ptr,fsize as unsigned integer ptr)
     var f = FileOpen(fname)
     if (f<>0) then
         *fsize = FileSize(f)
-        buffer = MAlloc(*fsize)
-        FileRead(f,*fsize,buffer)
+        if (*fsize)>0 then
+            buffer = MAlloc(*fsize)
+            if (buffer<>0) then
+                FileRead(f,*fsize,buffer)
+            end if
+        end if
         FileClose(f,0)
     end if
 	return buffer

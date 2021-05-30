@@ -1,13 +1,6 @@
 
 
-function ExecApp(path as unsigned byte ptr) as unsigned integer
-    asm
-        mov eax,&h01
-        mov ebx,[path]
-        int 0x30
-        mov [function],eax
-    end asm
-end function
+
 
 function  CreateThread(fn as any ptr,prio as unsigned integer) as unsigned integer
     asm
@@ -51,6 +44,39 @@ sub ThreadWakeUP(th as unsigned integer,p1 as unsigned integer,p2 as unsigned in
         int 0x30
     end asm
 end sub
+
+sub UDevCreate(n as unsigned byte ptr,descriptor as unsigned integer,entry as sub(descr as unsigned integer,sender as unsigned integer,param1 as unsigned integer,param2 as unsigned integer,param3 as unsigned integer,param4 as unsigned integer))
+    asm
+        mov eax,&h07
+        mov ebx,[n]
+        mov ecx,[descriptor]
+        mov edx,[entry]
+        int 0x30
+    end asm
+end sub
+
+function UDevFind(n as unsigned byte ptr) as unsigned integer
+    asm
+        mov eax,&h08
+        mov ebx,[n]
+        int 0x30
+        mov [function],eax
+    end asm
+end function
+ 
+function UDevInvoke(d as unsigned integer,p1 as unsigned integer,p2 as unsigned integer,p3 as unsigned integer,p4 as unsigned integer) as unsigned integer
+    asm
+        mov eax,&h09
+        mov ebx,[d]
+        mov ecx,[p1]
+        mov edx,[p2]
+        mov esi,[p3]
+        mov edi,[p4]
+        int 0x30
+        mov [function],eax
+    end asm
+end function
+        
 
 sub DefineIRQHandler(intNO as unsigned integer,c as sub(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer),synchronous as unsigned integer)
     asm

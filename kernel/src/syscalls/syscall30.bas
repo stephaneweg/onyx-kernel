@@ -1,17 +1,15 @@
 function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
     dim CurrentThread as Thread ptr = Scheduler.CurrentRuningThread
     select case stack->EAX
-        case &h01 'load app
-            ConsoleWrite(@"Starting app : ")
-            ConsoleWriteLine(cptr(unsigned byte ptr,stack->EBX))
+        case &h01 'load app from memory
             var ctx = vmm_get_current_context()
-            var p=Process.RequestLoad(cptr(unsigned byte ptr,stack->EBX),0)
+            var p=Process.RequestLoadUser(cptr( EXECUTABLE_HEADER ptr,stack->EBX),stack->ECX,0)
             ctx->Activate()
             if (p<>0) then 
                     stack->EAX = 1
                     return Scheduler.Switch(stack, Scheduler.Schedule())
             else
-                stack->EBX=0
+                stack->EAX=0
             end if
         case &h02 'create thread
             var prio = stack->ECX
@@ -35,6 +33,29 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             if (th->State=ThreadState.WaitingReply or th->State=ThreadState.Waiting) then
                 Scheduler.SetThreadReady(th,th->BasePriority)
             end if
+        case &h07 'UDev create
+            UserModeDevice.Create(cptr(unsigned byte ptr,stack->EBX),currentThread,stack->ECX,stack->EDX)
+        case &h08 'UDEV Find
+            stack->EAX =cuint( UserModeDevice.Find(cptr(unsigned byte ptr,stack->EBX)))
+        case &h09 'UDev invoke
+            if (UserModeDevice.Invoke(stack->EBX,currentThread,stack->ECX,stack->EDX,stack->ESI,stack->EDI)=1) then
+                return Scheduler.Switch(stack,Scheduler.Schedule()) 
+            else
+                stack->EAX = 0
+            end if
+        case &h0A 'UDev return
+            stack->ESP = stack->EBP
+            
+            if (CurrentThread->ReplyTO<>0) then
+                if ((CurrentThread->ReplyTO->State=ThreadState.WaitingReply) and (CurrentThread->ReplyTO->ReplyFrom = CurrentThread)) then
+                    var st =cptr(IRQ_Stack ptr, CurrentThread->ReplyTO->SavedESP)
+                    st->EAX = stack->EBX
+                    Scheduler.SetThreadReady(CurrentThread->ReplyTO,CurrentThread->ReplyTO->BasePriority)
+                end if
+            end if
+			stack->ESP+=36
+            return currentThread->DoWait(stack)
+            
         case &h0B 'define irq handler
             IRQ_SET_THREAD_HANDLER(stack->EBX,CurrentThread,stack->ECX,stack->EDX)
        

@@ -6,6 +6,7 @@ End Type
 
 
 
+declare function ExecApp(path as unsigned byte ptr) as unsigned integer
 declare function VFS_Load_File(fname as unsigned byte ptr,fsize as unsigned integer ptr) as unsigned byte ptr
 declare function FileOpen(p as unsigned byte ptr) as unsigned integer
 declare function FileCreate(p as unsigned byte ptr) as unsigned integer

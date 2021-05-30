@@ -4,11 +4,15 @@ declare sub SemaphoreLock(s as unsigned integer)
 declare sub SemaphoreUnlock(s as unsigned integer)
 declare sub EnterCritical()
 declare sub ExitCritical()
-declare function ExecApp(path as unsigned byte ptr) as unsigned integer
 declare function CreateThread(fn as any ptr,prio as unsigned integer) as unsigned integer
 declare sub ThreadYield()
 declare sub KillProcess(th as unsigned integer)
 declare sub ThreadWakeUP(th as unsigned integer,p1 as unsigned integer,p2 as unsigned integer)
+
+declare sub UDevCreate(n as unsigned byte ptr,descriptor as unsigned integer,entry as sub(descr as unsigned integer,sender as unsigned integer,param1 as unsigned integer,param2 as unsigned integer,param3 as unsigned integer,param4 as unsigned integer))
+declare function UDevFind(n as unsigned byte ptr) as unsigned integer
+declare function UDevInvoke(d as unsigned integer,p1 as unsigned integer,p2 as unsigned integer,p3 as unsigned integer,p4 as unsigned integer)  as unsigned integer
+
 
 declare function PAlloc(cnt as unsigned integer) as any ptr
 declare function GetStringFromCaller(dst as unsigned byte ptr,src as unsigned integer) as unsigned integer
@@ -54,6 +58,16 @@ do:loop
 #macro EndIRQHandlerAndSignal()
 asm
     mov eax,0x0D
+    int 0x30
+end asm
+do:loop
+#endmacro
+
+
+#macro UDevEndInvoke(r)
+asm
+    mov eax,&h0A
+    mov ebx,[r]
     int 0x30
 end asm
 do:loop

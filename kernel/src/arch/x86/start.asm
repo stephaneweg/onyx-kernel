@@ -3,7 +3,8 @@ use32
 
 public system_halt
 public Mboot
-
+public _realmode_begin
+public _realmode_end
 extrn _MAIN@4
 extrn ConsoleWriteLine
 section ".text"
@@ -14,6 +15,7 @@ align  4
 		dd 0x00000003 ;flags
 		dd -(0x1BADB002+0x00000003)
 	multiboot_entry:
+		
 		cli
 		mov esp,pile
 		push ebx
@@ -25,6 +27,10 @@ align  4
 		hlt
 	jmp     aloop
 
+_realmode_begin:
+	file "bin/res/realmode.bin"
+_realmode_end:	
+	
 section ".bss"
 	rb 1024*1024
 pile:

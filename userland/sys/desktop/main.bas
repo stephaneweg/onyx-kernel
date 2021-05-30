@@ -89,6 +89,7 @@ sub MAIN(p as unsigned integer)
     INIT_KBD()
     INIT_MOUSE()
     ThreadToTerminate = 0
+	GDI_UPDATED=1
 	ExecApp(@"SYS:/SYS/PIN.BIN")
     WaitForEvent()
 	do:loop

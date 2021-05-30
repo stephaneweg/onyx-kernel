@@ -62,6 +62,10 @@ function int_handler(stack as irq_stack ptr) as irq_stack ptr
 	
     
     if (IRQ_THREAD_HANDLERS(intno).Owner<>0) then
+        
+        var th =cptr(Thread ptr, IRQ_THREAD_HANDLERS(intno).Owner)
+        
+        
         var pool = cptr(IRQ_THREAD_POOL ptr,KAlloc(sizeof(IRQ_THREAD_POOL)))
         pool->SENDER = cuint(Scheduler.CurrentRuningThread)
         pool->EAX = stack->EAX
@@ -73,7 +77,6 @@ function int_handler(stack as irq_stack ptr) as irq_stack ptr
         pool->EBP = stack->EBP
         IRQ_THREAD_HANDLERS(intno).Enqueue(pool)
         
-        var th =cptr(Thread ptr, IRQ_THREAD_HANDLERS(intno).Owner)
         if (th->State=THreadState.Waiting) then
             var pool = IRQ_THREAD_HANDLERS(intno).Dequeue()
             if (pool<>0) then
@@ -84,10 +87,12 @@ function int_handler(stack as irq_stack ptr) as irq_stack ptr
         
         'if its a synchronous interrupt, make the caller "waiting for reply from "
         if (IRQ_THREAD_HANDLERS(intno).Synchronous = 1) then
+            stack->EAX = &hFF
             Scheduler.CurrentRuningThread->State=ThreadState.WaitingReply
             Scheduler.CurrentRuningThread->ReplyFrom=th
             returnStack = Scheduler.Switch(stack,Scheduler.Schedule()) 
         end if
+        
     else
     
         dim handler as function(stack as irq_stack ptr) as irq_stack ptr

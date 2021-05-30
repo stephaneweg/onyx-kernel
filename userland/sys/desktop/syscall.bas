@@ -1,7 +1,6 @@
 
 
 sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
-    EnterCritical()
     dim signalSender as boolean = true
     select case _EAX
         case &h01 'create generic ui element
@@ -257,8 +256,11 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
             if (btn->TypeName=TButtonTypeName) then
                 
                 GetStringFromCaller(TmpString,_ECX)
-                btn->_Skin = Skin.Create(TmpString,3,12,12,12,12)
-                btn->Invalidate()
+                var sk = Skin.Create(TmpString,3,12,12,12,12)
+                if (sk<>0) then
+                    btn->_Skin = sk
+                    btn->Invalidate()
+                end if
             end if
             
         case &h12'ButtonSetIcon
@@ -372,7 +374,6 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
             _EAX = XRES
             _EBX = YRES
     end select
-    ExitCritical()
     if (signalSender) then
         EndIRQHandlerAndSignal()
     else

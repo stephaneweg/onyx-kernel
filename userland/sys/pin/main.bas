@@ -1,11 +1,13 @@
 
 #include once "stdlib.bi"
 #include once "system.bi"
+#include once "file.bi"
 #include once "gdi.bi"
 #include once "slab.bi"
 
 #include once "stdlib.bas"
 #include once "system.bas"
+#include once "file.bas"
 #include once "gdi.bas"
 #include once "slab.bas"
 
@@ -58,14 +60,10 @@ sub Main(p as any ptr)
     var b4 = GDIButtonCreate(panel,3*buttonWidth,0,panelHeight,panelHeight,@"",@btnCollapseClick,4)
     GDIButtonSetSkin(b1,@"SYS:/RES/PINBTN1.BMP")
     GDIButtonSetIcon(b1,@"SYS:/ICONS/APPS2.BMP",0)
-    
     GDIButtonSetSkin(b2,@"SYS:/RES/PINBTN1.BMP")
     GDIButtonSetIcon(b2,@"SYS:/ICONS/CONTROL.BMP",0)
-    
-    
     GDIButtonSetSkin(b3,@"SYS:/RES/PINBTN1.BMP")
     GDIButtonSetIcon(b3,@"SYS:/ICONS/DOCS2.BMP",0)
-    
     GDIButtonSetSkin(b4,@"SYS:/RES/STRIP.BMP")
     
     GDIButtonSetSkinColor(b1,1)

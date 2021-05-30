@@ -10,6 +10,12 @@ set LINKER=Toolchain\bin\linux\ld.exe
 set AFLAGS=
 set objs=
 
+echo compile resources
+IF NOT EXIST bin\res mkdir bin\res
+for /r %%j in (res\*.asm) do (
+	echo    %%~nj...
+	ToolChain\fasm.exe res/%%~nj.asm bin/res/%%~nj.bin
+)
 
 echo compile kernel objects
 if not exist obj mkdir obj
@@ -47,11 +53,6 @@ for /r %%j in (keymaps\*.asm) do (
 	ToolChain\fasm.exe keymaps/%%~nj.asm bin/keymaps/%%~nj.map
 )
 
-echo compile resources
-IF NOT EXIST bin\res mkdir bin\res
-for /r %%j in (res\*.asm) do (
-	echo    %%~nj...
-	ToolChain\fasm.exe res/%%~nj.asm bin/res/%%~nj.bin
-)
+
 
 pause

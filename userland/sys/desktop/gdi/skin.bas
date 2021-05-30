@@ -17,18 +17,21 @@ function Skin.Create(path as unsigned byte ptr,count as unsigned integer,lw as i
     
     if img<>0 then
         dim result as Skin Ptr = cptr(Skin ptr,MAlloc(sizeof(Skin)))
-        result->Constructor()
-        result->Image = GImage.LoadFromBitmap(path)
-        
-        result->leftWidth = lw
-        result->rightWidth = rw
-        result->topHeight=th
-        result->bottomHeight=bh
-        result->SkinWidth = img->_width
-        result->SkinHeight = img->_height/count
-        result->partCount = count
-        
-        return result
+        if result<>0 then
+                
+            result->Constructor()
+            result->Image = img
+            
+            result->leftWidth = lw
+            result->rightWidth = rw
+            result->topHeight=th
+            result->bottomHeight=bh
+            result->SkinWidth = img->_width
+            result->SkinHeight = img->_height/count
+            result->partCount = count
+            
+            return result
+        end if
     end if
     return 0
 end function

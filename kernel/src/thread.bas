@@ -45,6 +45,7 @@ end sub
 
 sub PROCESS_MANAGER(p as any ptr)
     do
+		asm cli
         while (ProcessesToTerminate<>0)
             var proc = ProcessesToTerminate
             ProcessesToTerminate = proc->NextProcess
@@ -57,6 +58,7 @@ sub PROCESS_MANAGER(p as any ptr)
             proc->NextProcess = 0
 			Proc->DoLoad()
 		wend 
+		asm sti
         ThreadSleep()
     loop
 end sub
@@ -212,7 +214,7 @@ end sub
 
 function Thread.DoWait(stack as IRQ_Stack ptr) as IRQ_Stack ptr
     this.State=ThreadState.waiting
-    this.ReplyTo = 0
+    'this.ReplyTo = 0
     dim i as integer
     for i = 0 to &h40
         if (IRQ_THREAD_HANDLERS(i).Owner= @this)then

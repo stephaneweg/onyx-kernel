@@ -53,14 +53,16 @@ function Process.RequestLoadMem(image as EXECUTABLE_HEADER ptr,fsize as unsigned
     return result
 end function
 
-function Process.RequestLoad(path as unsigned byte ptr,args as any ptr) as Process ptr
+function Process.RequestLoadUser(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,args as any ptr) as Process ptr
 	
-    dim fsize as unsigned integer
-    dim image as any ptr = VFS_LOAD_FILE(path,@fsize)
-	
-    if (image<>0 and fsize <>0) then
-        return Process.RequestLoadMem(cptr(EXECUTABLE_HEADER ptr,image),fsize,args,1)
-    end if
+	if (fsize<>0) then
+		dim newImg as EXECUTABLE_HEADER ptr = MAlloc(fsize)
+		if (newImg<>0) then
+			memcpy(cptr(unsigned byte ptr,newImg),cptr(unsigned byte ptr,image),fsize)
+    
+			return Process.RequestLoadMem(newImg,fsize,args,1)
+		end if
+	end if
     return 0
 end function
 

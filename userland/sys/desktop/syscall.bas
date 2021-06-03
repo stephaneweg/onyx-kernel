@@ -1,6 +1,6 @@
 
 
-sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
+sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
     dim signalSender as boolean = true
     select case _EAX
         case &h01 'create generic ui element
@@ -14,7 +14,7 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
             NewObj(gd,GDIBase)
             gd->SetSize(_w,_h)
             gd->SetPosition(_x,_y)
-            gd->Owner = _sender
+            gd->Owner = _senderproc
             gd->OwnerThread = _sender
             if (_parent<>&hFFFFFFFF) then
                 if (_parent<>0) then
@@ -35,7 +35,7 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
             NewObj(win,TWindow)
             win->SetSize(_w + win->_paddingLeft + win->_paddingRight,_h+win->_paddingTop+win->_paddingBottom)
             win->SetPosition(_x,_y)
-            win->Owner = _sender
+            win->Owner = _senderproc
             win->OwnerThread = _sender
             win->Title = TmpString
             rootScreen->AddChild(win)
@@ -54,7 +54,7 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
             NewObj(btn,TButton)
             btn->SetSize(_w,_h)
             btn->SetPosition(_x,_y)
-            btn->Owner = _sender
+            btn->Owner = _senderproc
             btn->OwnerThread = _sender
             btn->Text = TmpString
             btn->OnClick = @XAppButtonClick
@@ -75,7 +75,7 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
             NewObj(txt,TextBox)
             txt->SetSize(_w,_h)
             txt->SetPosition(_x,_y)
-            txt->Owner = _sender
+            txt->Owner = _senderproc
             txt->OwnerThread = _sender
             
             _parent->AddChild(txt)
@@ -92,7 +92,7 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
             tb->SetPosition(_x,_y)
             tb->Text = TmpString
             tb->ForeColor = _c
-            tb->Owner = _sender
+            tb->Owner = _senderproc
             tb->OwnerThread = _sender
 			
             
@@ -116,7 +116,7 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
             console->SetSize(_w,_h)
             console->SetPosition(_x,_y)
 			console->Clear(&hFF000000)
-            console->Owner = _sender
+            console->Owner = _senderproc
             console->OwnerThread = _sender
             if (_parent<>0) then
                 _parent->AddChild(console)
@@ -229,7 +229,7 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
                     src32[i] = (r shl 16) or (g shl 8) or (b) or &hFF000000 
                 next i
                 _gd->PutOtherRaw(src32,_w,_h,_x,_y)
-                Mfree(src32)
+                Free(src32)
             else
                 _gd->PutOtherRaw(src,_w,_h,_x,_y)
             end if
@@ -251,7 +251,16 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
             g->_transparent = _ECX
             g->Invalidate()
             
-        case &h11 'ButtonSetSkin
+        case &h11 'GDIElem Set visibility
+            dim g as GDIBase ptr = cptr(GDIBase ptr,_EBX)
+            if (_ECX = 1) then
+                g->Visible = -1
+            else
+                g->Visible = 0
+            end if
+            g->Invalidate
+            
+        case &h12 'ButtonSetSkin
             dim btn as TButton ptr = cptr(TButton ptr,_EBX)
             if (btn->TypeName=TButtonTypeName) then
                 
@@ -263,7 +272,7 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
                 end if
             end if
             
-        case &h12'ButtonSetIcon
+        case &h13'ButtonSetIcon
             dim btn as TButton ptr = cptr(TButton ptr,_EBX)
             if (btn->TypeName=TButtonTypeName) then
                 GetStringFromCaller(TmpString,_ECX)
@@ -275,13 +284,13 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
                 btn->Invalidate()
             end if  
             
-        case &h13 'Textbox get text
+        case &h14 'Textbox get text
             dim txt as TextBox ptr = cptr(TextBox ptr,_EBX)
             if (txt->TypeName = TextBoxTypeName) then
 				SetStringToCaller(_EDI,txt->_Text->Buffer)
             end if
             
-        case &h14 'textbox set text
+        case &h15 'textbox set text
             dim txt as TextBox ptr = cptr(TextBox ptr,_EBX)
             if (txt->TypeName = TextBoxTypeName) then
 				if (GetStringFromCaller(TmpString,_ESI)=1) then
@@ -291,7 +300,7 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
 				end if
             end if
             
-        case &h15'textbox append char
+        case &h16'textbox append char
             dim txt as TextBox ptr = cptr(TextBox ptr,_EBX)
             if (txt->TypeName = TextBoxTypeName) then
                 dim c as unsigned byte = cast(unsigned byte,_ECX)
@@ -300,7 +309,7 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
             end if
             
         
-        case &h16 'console write
+        case &h17 'console write
             dim console as TConsole ptr = cptr(TConsole ptr,_EBX)
             if (console->TypeName=TConsoleTypeName) then
 				GetStringFromCaller(TmpString,_Ecx)
@@ -308,32 +317,27 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
                 console->parent->invalidate()
             end if
             
-        case &h17 'console write line
+        case &h18 'console write line
             dim console as TConsole ptr = cptr(TConsole ptr,_EBX)
             if (console->TypeName=TConsoleTypeName) then
 				GetStringFromCaller(TmpString,_Ecx)
                 console->WriteLine(TmpString)
                 console->parent->invalidate()
             end if
-        case &h18 'console put char
+        case &h19 'console put char
             dim console as TConsole ptr = cptr(TConsole ptr,_EBX)
             if (console->TypeName=TConsoleTypeName) then
                 console->PutChar(cast(unsigned byte,_ECX))
                 console->parent->invalidate()
             end if
             
-        case &h19 'console new line
+        case &h1A 'console new line
             dim console as TConsole ptr = cptr(TConsole ptr,_EBX)
             if (console->TypeName=TConsoleTypeName) then
                 console->NewLine()
             end if
-        case  &h20 'get buffer
-            dim gd as GDIBase ptr = cptr(GDIBase ptr,_EBX)
-            var virt = MapBufferToCaller(gd->_buffer,gd->_width*gd->_height*4)
-            _eax = cuint(virt)
-            _ebx = gd->_width
-            _ecx = gd->_height
-        case &h21'button set skin color
+        
+        case &h1B'button set skin color
             dim btn as TButton ptr=cptr(TButton ptr,_EBX)
             if (btn->TypeName=TButtonTypeName) then
                 if (btn->_Skin<>0 and btn->_Skin<>ButtonSkin) then
@@ -343,6 +347,23 @@ sub int35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as 
                 end if
             end if
             
+        case  &h1F 'bring to front
+            dim gd as GDIBase ptr = cptr(GDIBase ptr,_EBX)
+            gd->BringToFront()
+            
+        case  &h20 'get buffer
+            if (_ebx=0) then
+                var virt = MapBufferToCaller(ScreenBGR->_buffer,ScreenBGR->_width*ScreenBGR->_height*4)
+                _eax = cuint(virt)
+                _ebx = ScreenBGR->_width
+                _ecx =ScreenBGR->_height
+            else
+                dim gd as GDIBase ptr = cptr(GDIBase ptr,_EBX)
+                var virt = MapBufferToCaller(gd->_buffer,gd->_width*gd->_height*4)
+                _eax = cuint(virt)
+                _ebx = gd->_width
+                _ecx = gd->_height
+            end if
         case &h60 'OnKeyPress
             dim _g as GDIBase ptr = cptr(GDIBase ptr,_EBX)
             _g->_onUserKeyDown = _ECX

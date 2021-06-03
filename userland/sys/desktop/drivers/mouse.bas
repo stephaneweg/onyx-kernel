@@ -21,7 +21,7 @@ sub MOUSE_Thread_Loop(p as any ptr)
 	do:loop
 end sub
 
-sub MOUSE_IRQ_Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
+sub MOUSE_IRQ_Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
     MOUSE_DATA_ARIVED(Mouse_READ())
     EndIRQHandler()
 end sub

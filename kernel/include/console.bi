@@ -18,3 +18,4 @@ declare sub ConsoleUpdateCursor()
 declare sub ConsolePrintOK()
 declare sub ConsolePrintFAIL()
 declare sub ConsolePutChar (c as byte)
+dim shared VIRT_CONSOLE_MEM as unsigned byte ptr

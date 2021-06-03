@@ -2,16 +2,16 @@
 #include once "in_out.bi"
 #include once "stdlib.bi"
 #include once "system.bi"
+#include once "slab.bi"
 #include once "file.bi"
 #include once "console.bi"
-#include once "slab.bi"
 #include once "tobject.bi"
 #include once "tstring.bi"
 #include once "gdi/gdi.bi"
 #include once "drivers/mouse.bi"
 #include once "drivers/keyboard.bi"
 
-dim shared ThreadToTerminate as unsigned integer
+dim shared ProcToTerminate as unsigned integer
 
 dim shared LFB as unsigned integer
 dim shared LFBSize as unsigned integer
@@ -22,8 +22,8 @@ dim shared BytesPerPixel as unsigned integer
 dim shared TMPString as unsigned byte ptr
 dim shared TMPString2 as unsigned byte ptr
 
-declare sub MAIN(p as unsigned integer)
-declare sub INT35Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
+declare sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
+declare sub INT35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
 
 declare sub XAppButtonClick(btn as TButton ptr)
 declare sub XAppMouseClick(elem as GDIBase ptr,mx as integer,my as integer)
@@ -62,7 +62,7 @@ dim shared GUIThread as unsigned integer
 declare sub GuiLoop(p as any ptr)
 
 
-sub MAIN(p as unsigned integer)
+sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
 	SlabInit()
     
     
@@ -88,9 +88,9 @@ sub MAIN(p as unsigned integer)
     
     INIT_KBD()
     INIT_MOUSE()
-    ThreadToTerminate = 0
+    ProcToTerminate = 0
 	GDI_UPDATED=1
-	ExecApp(@"SYS:/SYS/PIN.BIN")
+	ExecApp(@"SYS:/SYS/PIN.BIN",0)
     WaitForEvent()
 	do:loop
 end sub
@@ -109,19 +109,19 @@ sub GuiLoop(p as any ptr)
             
             ScreenLoop()
         end if
-        if (ThreadToTerminate<>0) then
-            KillProcess(ThreadToTerminate)
+        if (ProcToTerminate<>0) then
+            KillProcess(ProcToTerminate)
              'remove the from the gui
             var g = RootScreen->FirstChild
             while g<>0
             	var  n = g->NextChild
-            	if (g->OwnerThread = ThreadToTerminate) then
+            	if (g->Owner = ProcToTerminate) then
             		RootScreen->RemoveChild(g)
             		DestroyObj(g)
             	end if
             	g = n
             wend
-            ThreadToTerminate = 0
+            ProcToTerminate = 0
         end if
         ThreadYield()
     loop

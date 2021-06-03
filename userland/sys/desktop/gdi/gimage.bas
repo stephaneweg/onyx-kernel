@@ -11,7 +11,7 @@ end constructor
 
 destructor GImage()
     if (this._buffer<>0) then
-        MFree(this._buffer)
+        Free(this._buffer)
         this._buffer = 0
         this._bufferSize=0
     end if
@@ -43,7 +43,7 @@ function GImage.LoadFromRaw(path as unsigned byte ptr,_w as unsigned integer,_h 
 			end if
             result->_buffer[i] =  c
         next i
-        MFree(fbuff)
+        Free(fbuff)
         return result
     end if
 	
@@ -84,7 +84,7 @@ Function GImage.LoadFromBitmap(path as unsigned byte ptr) as GImage ptr
         next ty
         
     
-        MFree(header)
+        Free(header)
         return result
     end if
 	
@@ -124,7 +124,7 @@ sub GImage.CreateBuffer()
 	dim newsize as unsigned integer = this._width*this._height
 	if (newsize>this._bufferSize) then
 		if (this._buffer<>0) then
-			MFree(this._buffer)
+			Free(this._buffer)
 			this._buffer = 0
             this._bufferSize = 0
 		end if
@@ -900,7 +900,7 @@ sub GImage.DrawTextMultiLine(s as unsigned byte ptr,x1 as integer,y1 as integer,
     tlen=strlen(s)
     if tlen>0 then
         dim fontHeight as integer=fdata->FLEN/256  
-        dim fontWidth as integer=8
+        dim fontWidth as integer=9
         dim maxTextLen as integer=w/(fontWidth*ratio)
         if tlen>maxTextLen then
             tlen = maxTextLen     

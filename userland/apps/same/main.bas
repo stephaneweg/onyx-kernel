@@ -40,11 +40,12 @@ declare sub GetSame(x as unsigned integer,y as unsigned integer)
 declare sub AddSame(x as unsigned integer,y as unsigned integer,c as unsigned integer)
 declare sub FaireTomber()
 declare sub CheckIfAnyPossible()
-sub MAIN(p as any ptr) 
+sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
     SlabInit()
     FontManager.Init()
     
 	MainWin = GDIWindowCreate(19*32,13*32,@"SAME")
+	GDISetVisible(MainWin,0)
     drawableImage = cptr(GImage ptr,MAlloc(sizeof(GImage)))
     drawableImage->constructor(MainWin,0,0,19*32,13*32)
     drawableImage->OnMouseClick(@drawOnMouseClick)
@@ -63,6 +64,7 @@ sub MAIN(p as any ptr)
     ' 
     SameList = MALLOC(hauteur*largeur*sizeof(unsigned integer))
     NewGame()
+	GDISetVisible(MainWin,1)
 	WaitForEvent()
 end sub
 
@@ -111,7 +113,7 @@ end sub
 
 sub NewGame()
     if (Grille<>0) then
-        MFree(Grille)
+        Free(Grille)
     end if
     Grille = MAlloc(hauteur*largeur*sizeof(unsigned integer))
     for i as unsigned integer =0 to (hauteur*largeur)-1

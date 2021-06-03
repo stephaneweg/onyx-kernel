@@ -104,25 +104,20 @@ sub TButton_Draw(elem as TButton ptr)
     if (elem->BigIcon=0) then
         elem->_Skin->DrawOn(elem,num,0,0,elem->_width ,elem->_height,cb,1)
     else
-        if (elem->MouseOver) then
-            elem->Clear(&h88FFFFDD) 
-            if (elem->MousePressed) then
-                elem->DrawRectangle(0,0,elem->_width-1,elem->_height-1,&hFFAAAAAA)
-            end if
-        else
-            elem->Clear(&hFFFFFFFF)
-        end if
+        elem->_Skin->DrawOn(elem,num,0,0,elem->_width ,elem->_height,cb,1)
     end if
 	var l = elem->_Text->Len
     var tw = l*9
     var th = (FontManager.M->FontHeight-4)
     
     if (elem->SmallIcon<>0) then
-        tw+=elem->SmallIcon->_width +5
+        tw+=elem->SmallIcon->_width
+        if (elem->_Text->Len>0) then tw+=5
     end if
     
     if (elem->BigIcon<>0) then
-        th+=elem->BigIcon->_height+5
+        th+=elem->BigIcon->_height
+        if (elem->_Text->Len>0) then th+=5
     end if
     
     var tx = (elem->_width -tw) shr 1

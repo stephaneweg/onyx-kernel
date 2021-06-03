@@ -81,7 +81,9 @@ sub VesaSetMode(mode as unsigned integer)
     LFBSize = current_mode_info.YResolution * current_mode_info.BytesPerScanLine
     var nbrPages = (LFBSize shr 12) +1
     var lfbEND =LFB+(((LFBSize shr 12) +1) shl 12)
+    VIRT_CONSOLE_MEM =  PMM_ALLOCPAGE(1)
     kernel_context.map_range(cptr(any ptr,LFB),cptr(any ptr, LFB),cptr(any ptr, lfbEND), VMM_FLAGS_USER_DATA)
+    kernel_context.map_range(cptr(any ptr,&HB8000),VIRT_CONSOLE_MEM,VIRT_CONSOLE_MEM+4096, VMM_FLAGS_USER_DATA)
 	DoRealModeActionReg(&h4F02,mode,0,0,0,0,0,&h10)
     
 end sub

@@ -16,7 +16,7 @@ dim shared MouseMaxY as integer
 dim shared MOUSE_Thread as unsigned integer
 dim shared MOUSE_UPDATED as unsigned integer
 declare sub INIT_MOUSE()
-declare sub MOUSE_IRQ_Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
+declare sub MOUSE_IRQ_Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
 declare sub MOUSE_Thread_Loop(p as any ptr)
 declare sub MOUSE_INSTALL()
 declare function MOUSE_READ() as byte

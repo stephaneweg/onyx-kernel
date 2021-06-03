@@ -41,6 +41,6 @@ for /d %%j in (userland\sys\*.*) do (
 	
 )
 
-%ASSEMBLER% test.asm test.bin
-
+echo building FASM
+%ASSEMBLER% userland/FASM/main.asm bin/fasm.bin
 pause

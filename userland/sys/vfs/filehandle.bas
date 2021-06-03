@@ -13,7 +13,7 @@ end destructor
 
 sub FileHandle.DeleteBuffer()
     if (this.Buffer<>0) then
-        MFree(this.Buffer)
+        Free(this.Buffer)
         this.Buffer=0
         this.FileSize = 0
         this.FilePos = 0
@@ -29,7 +29,7 @@ sub FileHandle.CreateBuffer(s as unsigned integer)
         dim b as unsigned byte ptr = MAlloc(ss)
         if (this.Buffer<>0) then
             memcpy(b,this.Buffer,this.BufferSize)
-            MFree(this.Buffer)
+            Free(this.Buffer)
         end if
         this.Buffer = b
         this.BufferSize = ss
@@ -50,7 +50,7 @@ function FileHandle.Open(p as unsigned byte ptr) as unsigned integer
     if (b<>0 and s<>0) then
         this.CreateBuffer(s)
         memcpy(this.Buffer,b,s)
-        MFree(b)
+        Free(b)
         this.FileSize = s
         this.FilePos = 0
         this.Dirty = 0

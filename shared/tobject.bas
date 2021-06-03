@@ -14,6 +14,6 @@ end sub
 sub DestroyObj(o as TObject ptr)
     if (o->Destruct<>0) then
         cptr(sub(o as TObject ptr),o->Destruct)(o)
-        MFree(o)
+        Free(o)
     end if
 end sub

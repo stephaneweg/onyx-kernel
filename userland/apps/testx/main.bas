@@ -14,7 +14,7 @@
 dim shared fline(0 to 255) as unsigned byte
 
 dim shared entries(0 to 50) as VFSDirectoryEntry
-sub MAIN(p as any ptr) 
+sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
 	SlabInit()
     ConsoleWriteLine(@"Test from userland")
     ExitApp()

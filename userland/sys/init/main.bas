@@ -14,7 +14,7 @@
 dim shared fline(0 to 255) as unsigned byte
 
 dim shared entries(0 to 50) as VFSDirectoryEntry
-sub MAIN(p as any ptr) 
+sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
 	SlabInit()
     var vfs = UDevFind(@"VFS")
     while (vfs=0)
@@ -24,6 +24,7 @@ sub MAIN(p as any ptr)
     
     
     ConsoleWriteLine(@"INIT starting")
+	'ExecApp(@"SYS:/APPS/FASM.APP/MAIN.BIN",@"SYS:/TEST.ASM SYS:/TEST.BIN")
     dim f as unsigned integer = FileOpen(@"SYS:/ETC/INIT.CFG")
     if (f<>0) then
         
@@ -31,9 +32,9 @@ sub MAIN(p as any ptr)
             FileReadLine(f,@fline(0))
             
             if strlen(@fline(0))>0 then
-                ExecApp(@fline(0))
-                'ConsoleWrite(@"Process to execute : ")
-                'ConsoleWriteLine(@fline(0))
+                ConsoleWrite(@"Starting : ")
+                ConsoleWriteLine(@fline(0))
+                ExecApp(@fline(0),0)
             end if
         wend
         FileClose(f,0)

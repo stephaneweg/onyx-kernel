@@ -46,7 +46,7 @@ end constructor
 destructor GDIBase()
 	this.DestroyChildren()
     if (this._lfbBack<>0) then
-        MFree(this._lfbBack)
+        Free(this._lfbBack)
         this._lfbBack=0
     end if
     this._left = 0

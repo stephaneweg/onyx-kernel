@@ -25,7 +25,7 @@ end constructor
 
 destructor MessageBox()
     if message<>0 then
-        MFree(Message)
+        Free(Message)
     end if
 end destructor
 
@@ -102,8 +102,8 @@ sub MessageBox_Redraw(elem as MessageBox ptr)
     'elem->DrawRectangle(5,5,elem->_width-6,elem->_height-6,&hFF000000)
     'elem->FillRectangle(6,6,elem->_width-7,elem->_height-7,&hFFFFFFFF)
     TWindowRedraw(elem)
-    elem->DrawTextMultiLine(elem->Message,elem->_paddingLeft+10,elem->_paddingTop+10,&hFF000000,FontManager.ML,1, _
-        elem->_width-elem->_paddingLeft-elem->_paddingRight - 20,HorizontalAlignment.Center)
+    elem->DrawTextMultiLine(elem->Message,0,elem->_paddingTop+30,&hFF000000,FontManager.ML,1, _
+        elem->_width,HorizontalAlignment.Center)
 end sub
 
 

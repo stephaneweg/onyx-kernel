@@ -68,6 +68,7 @@ function int_handler(stack as irq_stack ptr) as irq_stack ptr
         
         var pool = cptr(IRQ_THREAD_POOL ptr,KAlloc(sizeof(IRQ_THREAD_POOL)))
         pool->SENDER = cuint(Scheduler.CurrentRuningThread)
+        pool->SENDERPROCESS = cuint(Scheduler.CurrentRuningThread->Owner)
         pool->EAX = stack->EAX
         pool->EBX = stack->EBX
         pool->ECX = stack->ECX

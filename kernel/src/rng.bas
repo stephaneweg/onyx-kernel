@@ -1,6 +1,3 @@
-
-
-
 function NextRandomNumber(_min as unsigned integer,_max as unsigned integer) as unsigned integer
     dim mi as unsigned integer=_min
     dim ma as unsigned integer=_max

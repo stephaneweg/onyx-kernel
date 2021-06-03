@@ -31,8 +31,8 @@ function FAT_SELECT(disk as unsigned integer, parametre as byte ptr)  as FS_RESS
 	MyBoot32=cptr(BS32 ptr, cast(unsigned integer,myboot)+sizeof(FAT_BOOTSECTOR))
 	
 	if (UDevInvoke(disk,0,0,1,cuint(myboot))=0) then
-		MFree(myboot)
-		MFree(retval)
+		Free(myboot)
+		Free(retval)
 		ConsoleSetForeground(12)
 		ConsoleWriteLine(@"Unable to read disk")
 		ConsoleSetForeground(7)
@@ -40,8 +40,8 @@ function FAT_SELECT(disk as unsigned integer, parametre as byte ptr)  as FS_RESS
 	end if
 	
 	if (myboot->bps=0) or (myboot->spc=0) then
-		MFree(myboot)
-		MFree(retval)
+		Free(myboot)
+		Free(retval)
 		ConsoleSetForeground(12)
 		ConsoleWriteLine(@"BPS or SPC values is invalid")
 		ConsoleSetForeground(7)
@@ -55,8 +55,8 @@ function FAT_SELECT(disk as unsigned integer, parametre as byte ptr)  as FS_RESS
 		retval->SECTOR_COUNT=(myboot->Sectors_Count2)
 	end if
 	if (retval->SECTOR_COUNT=0) then
-		MFree(myboot)
-		MFree(retval)
+		Free(myboot)
+		Free(retval)
 		ConsoleSetForeground(12)
 		ConsoleWriteLine(@"SectorCount is invalid")
 		ConsoleSetForeground(7)
@@ -80,8 +80,8 @@ function FAT_SELECT(disk as unsigned integer, parametre as byte ptr)  as FS_RESS
 	'	retval->Fat_limit=&h0FFFFFF8
 	end if
 	if (sign <> &h29 and sign <> &h0) then
-		MFree(myboot)
-		MFree(retval)
+		Free(myboot)
+		Free(retval)
 		ConsoleSetForeground(12)
 		ConsoleWriteLine(@" Signature invalid")
 		ConsoleSetForeground(7)
@@ -108,7 +108,7 @@ function FAT_SELECT(disk as unsigned integer, parametre as byte ptr)  as FS_RESS
 	retval->total_clusters = retval->data_sectors / retval->sector_per_cluster
 	retval->first_data_sector = retval->reserved_sectors + retval->fat_sectors + retval->root_dir_sectors
 	retval->first_fat_sector =  retval->reserved_sectors
-	MFree(myboot)
+	Free(myboot)
 	
 	retval->fat_table=MAlloc(retval->bytes_per_sector* retval->fat_sectors*2)
 
@@ -561,9 +561,9 @@ function FAT_WRITEFILE(ressource  as FS_RESSOURCE ptr,fichier as unsigned byte p
 		theFat->Write(cnum,cptr(unsigned byte ptr,newrep))
         theFat->Write(clusternum,buffer)
         theFat->Write(clusternum,buffer)
-        'MFree(newrep)
-        MFree(tmpname)
-        MFree(acreer)
+        'Free(newrep)
+        Free(tmpname)
+        Free(acreer)
 		return -1
 	else
         
@@ -597,8 +597,8 @@ function FAT_WRITEFILE(ressource  as FS_RESSOURCE ptr,fichier as unsigned byte p
                 'ConsoleSetForeground(12)
 				'ConsoleWriteLine(@"Can not find parrent directory")
                 'ConsoleSetForeground(7)
-                MFree(tmpname)
-                MFree(acreer)
+                Free(tmpname)
+                Free(acreer)
 				return 0
 			else
                 
@@ -651,9 +651,9 @@ function FAT_WRITEFILE(ressource  as FS_RESSOURCE ptr,fichier as unsigned byte p
                     exit for
                 end if
 			next
-			'MFree(newrep)
-			MFree(tmpname)
-            MFree(acreer)
+			'Free(newrep)
+			Free(tmpname)
+            Free(acreer)
             
 			if (trouve<>0) then
 				theFat->write(clusternum,buffer)
@@ -676,8 +676,8 @@ function FAT_WRITEFILE(ressource  as FS_RESSOURCE ptr,fichier as unsigned byte p
 			ConsoleSetForeground(12)
             ConsoleWriteLine(@"No more cluster to create file")
 			ConsoleSetForeground(7)
-            MFree(tmpname)
-            MFree(acreer)
+            Free(tmpname)
+            Free(acreer)
 			return 0
         end if
 	end if
@@ -716,11 +716,6 @@ function fat_loadfile(ressource  as FS_RESSOURCE ptr,fichier as unsigned byte pt
 		return buffer
 	else
 		*size=0
-		ConsoleSetForeground(12)
-		ConsoleWrite(@"FILE NOT FOUND : ")
-		ConsoleWrite(fichier)
-		consoleNewLine()
-		ConsoleSetForeground(7)
 		return 0
 	end if
 	return 0

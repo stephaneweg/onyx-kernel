@@ -7,7 +7,7 @@ constructor TString()
 end constructor
 
 destructor TString()
-    if this.Buffer<>0 then MFree(this.Buffer)
+    if this.Buffer<>0 then Free(this.Buffer)
     this.Buffer = 0
     this.BufferSize = 0
     this.Len = 0
@@ -37,7 +37,7 @@ end sub
 sub TString.ResizeBuffer(newlen as unsigned integer)
     var newBufferSize=newlen+(512-(newlen mod 512))
     if (this.Buffer=0 or this.BufferSize<newBufferSize) then
-        if (this.Buffer<>0) then MFree(this.Buffer)
+        if (this.Buffer<>0) then Free(this.Buffer)
         var b=MAlloc(newBufferSize)
         if (this.Buffer<>0) then memcpy(b,this.Buffer,this.BufferSize)
         this.Buffer=b
@@ -76,6 +76,8 @@ sub TString.SubStr(start as unsigned integer,l as integer)
 	if (l<0) then l=0
 	this.SetText( substring(this.Buffer,start,l))
 end sub
+
+
 
 function TString.Compare(s as unsigned byte ptr) as integer
     return strcmp(this.Buffer,s)

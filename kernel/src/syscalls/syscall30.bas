@@ -3,7 +3,9 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
     select case stack->EAX
         case &h01 'load app from memory
             var ctx = vmm_get_current_context()
-            var p=Process.RequestLoadUser(cptr( EXECUTABLE_HEADER ptr,stack->EBX),stack->ECX,0)
+            var args = cptr(unsigned byte ptr,stack->ESI)
+            if (strlen(args)=0) then args = 0
+            var p=Process.RequestLoadUser(cptr( EXECUTABLE_HEADER ptr,stack->EBX),stack->ECX,args)
             ctx->Activate()
             if (p<>0) then 
                     stack->EAX = 1
@@ -31,6 +33,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             st->EAX = stack->ECX
             st->EBX = stack->EDX
             if (th->State=ThreadState.WaitingReply or th->State=ThreadState.Waiting) then
+                'make it ready and run it at the next tick
                 Scheduler.SetThreadReady(th,th->BasePriority)
             end if
         case &h07 'UDev create
@@ -39,6 +42,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             stack->EAX =cuint( UserModeDevice.Find(cptr(unsigned byte ptr,stack->EBX)))
         case &h09 'UDev invoke
             if (UserModeDevice.Invoke(stack->EBX,currentThread,stack->ECX,stack->EDX,stack->ESI,stack->EDI)=1) then
+                'the udev thread will be run directly
                 return Scheduler.Switch(stack,Scheduler.Schedule()) 
             else
                 stack->EAX = 0
@@ -50,6 +54,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
                 if ((CurrentThread->ReplyTO->State=ThreadState.WaitingReply) and (CurrentThread->ReplyTO->ReplyFrom = CurrentThread)) then
                     var st =cptr(IRQ_Stack ptr, CurrentThread->ReplyTO->SavedESP)
                     st->EAX = stack->EBX
+                    'wake the caller and run it directly
                     Scheduler.SetThreadReady(CurrentThread->ReplyTO,CurrentThread->ReplyTO->BasePriority)
                 end if
             end if
@@ -69,25 +74,26 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             if (CurrentThread->ReplyTO<>0) then
                 if ((CurrentThread->ReplyTO->State=ThreadState.WaitingReply) and (CurrentThread->ReplyTO->ReplyFrom = CurrentThread)) then
                     var st =cptr(IRQ_Stack ptr, CurrentThread->ReplyTO->SavedESP)
-                    st->EAX = *cptr(unsigned integer ptr,stack->ESP+16)
-                    st->EBX = *cptr(unsigned integer ptr,stack->ESP+20)
-                    st->ECX = *cptr(unsigned integer ptr,stack->ESP+24)
-                    st->EDX = *cptr(unsigned integer ptr,stack->ESP+28)
-                    st->ESI = *cptr(unsigned integer ptr,stack->ESP+32)
-                    st->EDI = *cptr(unsigned integer ptr,stack->ESP+36)
-                    st->EBP = *cptr(unsigned integer ptr,stack->ESP+40)
+                    st->EAX = *cptr(unsigned integer ptr,stack->ESP+20)
+                    st->EBX = *cptr(unsigned integer ptr,stack->ESP+24)
+                    st->ECX = *cptr(unsigned integer ptr,stack->ESP+28)
+                    st->EDX = *cptr(unsigned integer ptr,stack->ESP+32)
+                    st->ESI = *cptr(unsigned integer ptr,stack->ESP+36)
+                    st->EDI = *cptr(unsigned integer ptr,stack->ESP+40)
+                    st->EBP = *cptr(unsigned integer ptr,stack->ESP+44)
+                    'reply directly from interrupt
                     Scheduler.SetThreadReady(CurrentThread->ReplyTO,CurrentThread->ReplyTO->BasePriority)
                 end if
             end if
-			stack->ESP+=40
+			stack->ESP+=44
             return currentThread->DoWait(stack)
         
         case &h0E 'signal trhead
             XappSignal2Parameters(cptr(Thread ptr,stack->EBX),stack->ECX,stack->esi, stack->EDI)
         case &h0F 'kill process
-            var th = cptr(thread ptr,stack->EBX)
-			Process.TerminateNow(th->Owner)
-            if (th= CurrentThread) then return Scheduler.Switch(stack, Scheduler.Schedule())
+            var pc = cptr(Process ptr,stack->EBX)
+			Process.TerminateNow(pc)
+            if (CurrentThread->Owner=pc) then return Scheduler.Switch(stack, Scheduler.Schedule())
         case &h10 'get string
             if (currentThread->ReplyTo<>0) then
                 var phys = CurrentThread->ReplyTo->VMM_Context->Resolve(cptr(any ptr,stack->ESI))

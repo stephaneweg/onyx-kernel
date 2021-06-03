@@ -5,7 +5,6 @@ type TConsole extends GDIBase field = 1
     _cursorX as unsigned integer
     _cursorY as unsigned integer
     
-    
     declare constructor()
     declare destructor()
 
@@ -21,4 +20,5 @@ end type
 
 declare sub TConsoleSizeChanged(elem as TConsole ptr)
 declare sub TConsoleDestroy(elem as TConsole ptr) 
+declare sub TConsoleRedraw(elem as TConsole ptr)
 dim shared TConsoleTypeName as unsigned byte ptr=@"TConsole"

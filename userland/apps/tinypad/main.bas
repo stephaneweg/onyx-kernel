@@ -2,8 +2,8 @@
 #include once "stdlib.bi"
 #include once "system.bi"
 #include once "gdi.bi"
-#include once "file.bi"
 #include once "slab.bi"
+#include once "file.bi"
 #include once "tobject.bi"
 #include once "font.bi"
 #include once "fontmanager.bi"
@@ -12,8 +12,8 @@
 #include once "stdlib.bas"
 #include once "system.bas"
 #include once "gdi.bas"
-#include once "file.bas"
 #include once "slab.bas"
+#include once "file.bas"
 #include once "tobject.bas"
 #include once "font.bas"
 #include once "fontmanager.bas"
@@ -42,11 +42,12 @@ declare sub drawOnMouseClick(elem as unsigned integer,param as unsigned integer)
 declare sub NewFile()
 declare sub RedrawText()
 declare sub CheckScroll()
-sub MAIN(p as any ptr) 
+sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
     SlabINIT()
     FontManager.Init()
     TextBuffer = MAlloc(1024*1024*5)
 	MainWin = GDIWindowCreate(600,440,@"Simple Text Editor")
+	GDISetVisible(MainWin,0)
     drawable = cptr(GImage ptr,MAlloc(sizeof(GImage)))
     drawable->Constructor(MainWin,0,0,600,400)
     MaxY = ((400-4)/16)-1
@@ -59,6 +60,7 @@ sub MAIN(p as any ptr)
     Drawable->OnMouseClick(@drawOnMouseClick)
     NewFile()
     
+	GDISetVisible(MainWin,1)
 	WaitForEvent()
 end sub
 

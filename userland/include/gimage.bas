@@ -1,4 +1,20 @@
 
+constructor GImage()
+    this._handle = 0
+    this._parent = 0
+    dim w as unsigned integer
+    dim h as unsigned integer
+    var buff = GDIGetBuffer(0,@w,@h)
+    if (buff<>0) then
+        this._buffer = buff
+        this._width = w
+        this._height = h
+        this._bufferSize = w*h*4
+    end if
+    this.Destruct = @GImageDestroy
+    this.TypeName = GImageTypeName
+end constructor
+    
 constructor GImage(parent as unsigned integer,x as unsigned integer,y as unsigned integer,w as unsigned integer,h as unsigned integer)
     this._handle =  GDICreate(parent,x,y,w,h)
     this._parent = parent
@@ -67,7 +83,7 @@ function GImage.LoadFromRaw(path as unsigned byte ptr,_w as unsigned integer,_h 
 			end if
             result->_buffer[i] =  c
         next i
-        MFree(fbuff)
+        Free(fbuff)
         return result
     end if
 	
@@ -107,7 +123,7 @@ Function GImage.LoadFromBitmap(path as unsigned byte ptr) as GImage ptr
         next ty
         
     
-        MFree(header)
+        Free(header)
         return result
     end if
 	
@@ -1003,7 +1019,7 @@ sub GImage.DrawChar(asciicode as unsigned byte,x1 as integer,y1 as integer,c as 
             if ((bData shr colNum) and &h1)=&h1 then
                     
                     if (ratio=1) then
-                        x=x1+((fontWidth+1) )+((fontWidth -1)-colNum)
+                        x=x1+((fontWidth -1)-colNum)
                         y=rowNum+y1
                         this.SetPixel(x,y,c)
                     else

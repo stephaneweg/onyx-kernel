@@ -52,7 +52,7 @@ end sub
 sub TWIndowCLoseBtnClick(elem as TButton ptr)
 	dim win as TWindow ptr =cptr(TWindow ptr ptr, elem->Parent)
 	if (win->OwnerThread<>0 and win->Collapsed=0) then
-        ThreadToTerminate = win->OwnerThread
+        ProcToTerminate = win->Owner
 	end if
 end sub
 

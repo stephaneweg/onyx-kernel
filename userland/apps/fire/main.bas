@@ -46,7 +46,7 @@ sub btnClick(btn as unsigned integer,parm as unsigned integer)
     EndCallBack()
 end sub
 
-sub MAIN(p as any ptr) 
+sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
     SlabINIT()
     FPM = 900/60
     FontManager.Init()
@@ -54,6 +54,7 @@ sub MAIN(p as any ptr)
     FPS=0
 	fcolor = 1
 	MainWin = GDIWindowCreate(320,240,@"Fire demo")
+	GDISetVisible(MainWin,0)
     drawable = cptr(GImage ptr,MAlloc(sizeof(GImage)))
     drawable->Constructor(MainWin,0,0,320,200)
     
@@ -64,6 +65,7 @@ sub MAIN(p as any ptr)
     drawable->Flush()
     CreateThread(@FPSCounter,3)
     CreateThread(@FireThread,3)
+	GDISetVisible(MainWin,1)
     WaitForEvent()
 end sub
 

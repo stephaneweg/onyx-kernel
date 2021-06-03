@@ -25,7 +25,7 @@ declare sub XappSignal2Parameters(th as unsigned integer,callback as unsigned in
 
 declare sub WaitForEvent()
 declare sub IRQ_ENABLE(intno as unsigned integer)
-declare sub DefineIRQHandler(intNO as unsigned integer,c as sub(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer),synchronous as unsigned integer)
+declare sub DefineIRQHandler(intNO as unsigned integer,c as sub(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer),synchronous as unsigned integer)
 declare sub WaitN(delay as unsigned integer)
 declare function GetTimer() as unsigned long
 declare function NextRandomNumber(_min as unsigned integer,_max as unsigned integer) as unsigned integer
@@ -47,7 +47,7 @@ declare sub SetPriority(p as unsigned integer)
 #macro EndIRQHandler()
 asm
     mov esp,ebp
-    add esp,40
+    add esp,44
     mov eax,0x04
     int 0x30
 end asm

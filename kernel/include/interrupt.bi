@@ -41,6 +41,7 @@ end type
 
 type IRQ_THREAD_POOL field = 1
     SENDER as unsigned integer
+    SENDERPROCESS as unsigned integer
     EAX as unsigned integer
     EBX as unsigned integer
     ECX as unsigned integer

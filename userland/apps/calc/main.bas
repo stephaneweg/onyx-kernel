@@ -1,4 +1,4 @@
-declare sub MAIN (p as any ptr)
+declare sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
 
 
 #include once "stdlib.bi"
@@ -62,7 +62,7 @@ dim shared btnSQRT as unsigned integer
 dim shared btnSIN as unsigned integer
 dim shared btnCOS as unsigned integer
 
-sub MAIN(p as any ptr) 
+sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
    
     ISOpComplete = 0
 	OP = Operation.NONE
@@ -70,6 +70,7 @@ sub MAIN(p as any ptr)
 	value = 0
     
 	MainWin = GDIWindowCreate(285,225,@"Calculator")
+	GDISetVisible(MainWin,0)
 	DisplayTxt = GDITextBoxCreate(MainWin,10,10,265,30)
     
     btnCos = GDIButtonCreate(MainWin,10,45,40,30,@"COS",@btnFuncClick,0)
@@ -104,6 +105,7 @@ sub MAIN(p as any ptr)
     
     GDIButtonCreate(MainWin,235,150,40,30,@"%",@BTNPERCENTClick,0)
     GDIButtonCreate(MainWin,190,185,85,30,@"=",@BTNEqualsClick,0)
+	GDISetVisible(MainWin,1)
     WaitForEvent()
 	do:loop
 end sub

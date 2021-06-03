@@ -56,7 +56,24 @@ function PMM_ALLOCPAGE(pagesCount as unsigned integer) as any ptr
     dim i as unsigned integer
     dim obase as unsigned integer = FirstPage
     dim cptFree as unsigned integer = 0
-    for i = FirstPage to LastPage
+    'for i = FirstPage to LastPage
+    '    if (PageBitmap(i)= 0) then 
+    '        cptFree+=1
+    '        if (cptFree=pagesCount) then
+    '            for i = obase to obase+pagesCount-1
+    '                PageBitmap(i) = 1
+    '            next i
+    '            PageBitmap(obase) = pagesCount
+    '            TotalPagesCount-=pagesCount
+    '            return cptr(any ptr,obase shl 12)
+    '        end if
+    '    else
+    '        cptFree=0
+    '        obase = i+1
+    '    end if
+    'next i
+    i = FirstPage
+    while i < LastPage
         if (PageBitmap(i)= 0) then 
             cptFree+=1
             if (cptFree=pagesCount) then
@@ -67,11 +84,18 @@ function PMM_ALLOCPAGE(pagesCount as unsigned integer) as any ptr
                 TotalPagesCount-=pagesCount
                 return cptr(any ptr,obase shl 12)
             end if
+            i+=1
         else
             cptFree=0
-            obase = i+1
+            if (PageBitmap(i)=&hFFFFFFFF) then
+                i+=1
+            else
+                i+=PageBitmap(i)
+            end if
+            obase = i
         end if
-    next i
+    wend
+    
     KERNEL_ERROR(@"Cannot find enought free page",0)
     return 0
 end function

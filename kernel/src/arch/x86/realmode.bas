@@ -10,18 +10,6 @@ sub RealMode_INIT()
     
     MemCpy(cptr(unsigned byte ptr,RealModeAddr),rstart,cuint(rend)-cuint(rstart))
     
-	'abuffer	= VFS_LOAD_FILE(@"SYS:/BOOT/realmode.bin",@fsize)
-
-    'if (fsize<>0 and abuffer<>0) then
-    '    MemCpy(cptr(unsigned byte ptr,RealModeAddr),abuffer,fsize)
-    '    KFree(abuffer)
-    '    ConsolePrintOK()
-    'else
-    '    ConsoleSetForeground(4)
-    '    ConsoleWrite(@"Load failed")
-    '    ConsoleSetForeground(7)
-    'end if
-    
     ConsoleNewLine()
     
 end sub
@@ -51,8 +39,6 @@ sub DoRealModeAction(src as  REALMODE_MODULE ptr)
         module->EDI=src->edi
         module->ES=src->es
     end if
-    
-
     
     module->PMIdt=cast(unsigned integer,@IDT_POINTER)
 	rmsub()

@@ -25,5 +25,5 @@ declare sub KBD_FLUSH()
 declare sub INIT_KBD()
 declare sub KBD_Thread_Loop(p as any ptr)
 declare function KBD_GetChar() as unsigned byte
-declare sub KBD_IRQ_Handler(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
+declare sub KBD_IRQ_Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
 declare sub KBD_HANDLER(akey as unsigned byte)

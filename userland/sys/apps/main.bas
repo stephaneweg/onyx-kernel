@@ -1,14 +1,14 @@
 #include once "stdlib.bi"
 #include once "system.bi"
+#include once "slab.bi"
 #include once "file.bi"
 #include once "gdi.bi"
-#include once "slab.bi"
 
 #include once "stdlib.bas"
 #include once "system.bas"
+#include once "slab.bas"
 #include once "file.bas"
 #include once "gdi.bas"
-#include once "slab.bas"
 
 
 
@@ -30,7 +30,7 @@ dim shared btnSpace as integer
 declare sub AppButtonClick(btn as unsigned integer,num as unsigned integer)
 declare sub btnScrollClick(btn as unsigned integer,num as unsigned integer)
 
-sub MAIN(p as any ptr) 
+sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
     SlabINIT()
     scrollViewHeight = 310
     btnHeight = 140
@@ -42,6 +42,7 @@ sub MAIN(p as any ptr)
     txtArrow(3) = 0
     
 	MainWin = GDIWindowCreate(490,scrollViewHeight+5,@"Applications")
+	GDISetVisible(MainWin,0)
     drawable = GDICreate(MainWin,0,0,490,scrollViewHeight)
     
     scrollViewOuter = gdiCreate(drawable,1,1,458,scrollViewHeight-2)
@@ -93,6 +94,8 @@ sub MAIN(p as any ptr)
     GDIInvalidate(buttonContainer)
     GDIInvalidate(scrollViewOuter)
     GDIInvalidate(drawable)
+	
+	GDISetVisible(MainWin,1)
 	WaitForEvent()
 end sub
 
@@ -122,6 +125,6 @@ sub AppButtonClick(btn as unsigned integer,num as unsigned integer)
     strcpy(@executablePath(0),strcat(@"SYS:/APPS/",@(DirEntries[num].FileName(0))))
     strcpy(@executablePath(0),strcat(@executablePath(0),@"/main.bin"))
     
-    ExecApp(@executablePath(0))
+    ExecApp(@executablePath(0),0)
     EndCallBack()
 end sub

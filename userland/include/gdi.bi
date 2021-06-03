@@ -15,6 +15,7 @@ declare sub GDIPutImage(_gd as unsigned integer,_x as unsigned integer,_y as uns
 declare sub GDISetForegroundColor(g as unsigned integer,c as unsigned integer)
 declare sub GDISetPosition(_gd as unsigned integer,x as integer,y as integer)
 declare sub GDISetTransparent(_gdi as unsigned integer,transparent as unsigned integer)
+declare sub GDISetVisible(_gdi as unsigned integer,visible as unsigned integer)
 declare function GDIGetBuffer(_gdi as unsigned integer,w as unsigned integer ptr,h as unsigned integer ptr) as unsigned integer ptr
 
 
@@ -25,7 +26,7 @@ declare sub GDIButtonSetSkinColor(_btn as unsigned integer,c as unsigned integer
 declare sub GDITextBoxGetText(_tb as unsigned integer,dst  as unsigned byte ptr)
 declare sub GDITextBoxSetText(_p as unsigned integer,text as unsigned byte ptr)
 declare sub GDITextBoxAppendChar(_p as unsigned integer,c as unsigned byte)
-
+declare sub GDIBringToFront(_elem as unsigned integer)
 declare sub GDIOnKeyPress(_elem as unsigned integer,callback as any ptr)
 declare sub GDIOnMouseClick(_elem as unsigned integer,callback as any ptr)
 

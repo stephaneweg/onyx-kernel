@@ -1,7 +1,7 @@
 type multiboot_module_info  FIELD=1
     mod_start as unsigned integer
     mod_end as unsigned integer
-    mod_string as unsigned integer
+    mod_string as unsigned byte ptr
     reserved as unsigned integer
 end type
 

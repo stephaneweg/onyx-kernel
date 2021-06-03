@@ -1,5 +1,3 @@
-
-
 function PageAlloc(count as unsigned integer) as any ptr
     'var addr = find_free_pages(@kernel_context,1,cuint(KEND),VMM_PAGETABLES_VIRT_START)
     'if (addr=0) then

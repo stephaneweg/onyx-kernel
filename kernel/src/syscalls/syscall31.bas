@@ -1,6 +1,8 @@
 function SysCall31Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
     dim CurrentThread as Thread ptr = Scheduler.CurrentRuningThread
     select case stack->EAX
+        case 0
+            ConsolePutChar(cast(unsigned byte ,stack->EBX))
         case 1
             ConsoleWrite(cptr(unsigned byte ptr,stack->EBX))
         case 2
@@ -16,7 +18,9 @@ function SysCall31Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
         case 7
             ConsoleSetForeground(stack->EBX)
         case 8
-            ConsolePutChar(cast(unsigned byte ,stack->EBX))
+            ConsoleSetBackground(stack->EBX)
+        case &hF
+            ConsoleClear()
     end select
     return stack
 end function

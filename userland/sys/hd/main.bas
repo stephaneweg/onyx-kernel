@@ -95,7 +95,7 @@ end function
 
 
 
-sub MAIN(p as any ptr) 
+sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
 	EnterCritical()
 	SlabInit()
 	ConsoleWriteLine(@"Starting usermode hard disk driver")
@@ -360,10 +360,6 @@ function HD_WRITE_SECTOR(drivenum as unsigned byte,alba as unsigned integer,sect
         dim buff as unsigned integer = cast(unsigned integer,b)
 		for cpt=0 to sectorcount-1
                 HD_WAIT(abase)
-				'for x=0 to 255
-                '    outwval = buffer[x+(256*cpt)]
-                '	outw([abase],[outwval])
-				'next
                 asm
                     mov esi,[buff]
                     mov ecx,256
@@ -399,7 +395,6 @@ sub HD_IOCTL(descr as unsigned integer,sender as unsigned integer,param1 as unsi
 end sub
 
 function HD_Read(res as BlockDevice ptr, lba as unsigned integer,sectorcount as unsigned short, b as byte ptr) as unsigned integer
-	
 	return HD_READ_SECTOR(res->DiskNumber, lba+res->Begin,sectorcount,b)
 end function
 

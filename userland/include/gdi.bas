@@ -187,6 +187,13 @@ sub GDIPutImage(_gd as unsigned integer,_x as unsigned integer,_y as unsigned in
     end asm
 end sub
 
+sub GDIBringToFront(_gd as unsigned integer)
+    asm
+        mov eax,&h1F
+        mov ebx,[_gd]
+        int 0x35
+    end asm
+end sub
 
 function GDIGetBuffer(_gdi as unsigned integer,w as unsigned integer ptr,h as unsigned integer ptr) as unsigned integer ptr
     dim _w as unsigned integer
@@ -233,9 +240,19 @@ sub GDISetTransparent(_gdi as unsigned integer,transparent as unsigned integer)
     end asm
 end sub
 
-sub GDIButtonSetSkin(_btn as unsigned integer,skin as unsigned byte ptr)
+sub GDISetVisible(_gdi as unsigned integer,visible as unsigned integer)
     asm
         mov eax,&h11
+        mov ebx,[_gdi]
+        mov ecx,[visible]
+        int 0x35
+    end asm
+end sub
+
+
+sub GDIButtonSetSkin(_btn as unsigned integer,skin as unsigned byte ptr)
+    asm
+        mov eax,&h12
         mov ebx,[_btn]
         mov ecx,[skin]
         int 0x35
@@ -244,7 +261,7 @@ end sub
 
 sub GDIButtonSetIcon(_btn as unsigned integer,icon as unsigned byte ptr,big as unsigned integer)
     asm
-        mov eax,&h12
+        mov eax,&h13
         mov ebx,[_btn]
         mov ecx,[icon]
         mov edx,[big]
@@ -255,7 +272,7 @@ end sub
 sub GDITextBoxGetText(_tb as unsigned integer,dst  as unsigned byte ptr)
 
     asm
-        mov eax,&h13
+        mov eax,&h14
         mov ebx,[_tb]
 		mov edi,[dst]
         int 0x35
@@ -264,7 +281,7 @@ end sub
 
 sub GDITextBoxSetText(_tb as unsigned integer,text as unsigned byte ptr)
     asm
-        mov eax,&h14
+        mov eax,&h15
         mov ebx,[_tb]
         mov esi,[text]
         int 0x35
@@ -273,7 +290,7 @@ end sub
 
 sub GDITextBoxAppendChar(_tb as unsigned integer,c as unsigned byte)
     asm
-        mov eax,&h15
+        mov eax,&h16
         mov ebx,[_tb]
         mov ecx,[c]
         int 0x35
@@ -282,7 +299,7 @@ end sub
 
 sub GDIConsoleWrite(_console as unsigned integer,txt as unsigned byte ptr)
 	asm
-		mov eax,&h16
+		mov eax,&h17
 		mov ebx,[_console]
 		mov ecx,[txt]
 		int 0x35
@@ -291,7 +308,7 @@ end sub
 
 sub GDIConsoleWriteLine(_console as unsigned integer,txt as unsigned byte ptr)
 	asm
-		mov eax,&h17
+		mov eax,&h18
 		mov ebx,[_console]
 		mov ecx,[txt]
 		int 0x35
@@ -300,7 +317,7 @@ end sub
 
 sub GDIConsolePutChar(_console as unsigned integer,c as unsigned byte)
 	asm
-		mov eax,&h18
+		mov eax,&h19
 		mov ebx,[_console]
 		mov ecx,[c]
 		int 0x35
@@ -309,7 +326,7 @@ end sub
 
 sub GDIConsoleNewLine(_console as unsigned integer)
 	asm
-		mov eax,&h19
+		mov eax,&h1A
 		mov ebx,[_console]
 		int 0x35
 	end asm
@@ -317,7 +334,7 @@ end sub
 
 sub GDIButtonSetSkinColor(_btn as unsigned integer,c as unsigned integer)
     asm
-        mov eax,&h21
+        mov eax,&h1B
         mov ebx,[_btn]
         mov ecx,[c]
         int 0x35

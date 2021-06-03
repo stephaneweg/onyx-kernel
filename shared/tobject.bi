@@ -1,7 +1,7 @@
 
 #define NewObj(v,t) var v = cptr(t ptr,MAlloc(sizeof(t))) : v->constructor()
 #define AssignNewObj(v,t) v = cptr(t ptr,MAlloc(sizeof(t))) : v->constructor()
-#define DeleteObj(o) MFree(o)
+#define DeleteObj(o) Free(o)
 
 type TObject field = 1
     Destruct as any ptr

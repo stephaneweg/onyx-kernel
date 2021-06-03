@@ -2,10 +2,6 @@
 static shared Result(0 to 2047) as unsigned byte
 static shared Result2(0 to 2047) as unsigned byte
 
-function min(v1 as unsigned integer,v2 as unsigned integer) as unsigned integer
-    if (v1<v2) then return v1
-    return v2
-end function
 
 function sqrt(d as double) as double
 	dim result as double = d
@@ -47,6 +43,24 @@ function fsin(d as double) as double
 end function
 
 function strlen(s as unsigned byte ptr) as unsigned integer
+    dim retval as unsigned integer
+    retval=0
+    while s[retval]<>0
+        retval+=1
+    wend
+    return retval
+end function
+
+function strwlen(s as unsigned short ptr) as unsigned integer
+    dim retval as unsigned integer
+    retval=0
+    while s[retval]<>0
+        retval+=1
+    wend
+    return retval
+end function
+
+function strdlen(s as unsigned integer ptr) as unsigned integer
     dim retval as unsigned integer
     retval=0
     while s[retval]<>0
@@ -154,6 +168,14 @@ function strcmp(s1 as unsigned byte ptr,s2 as unsigned byte ptr) as integer
     return s1[i]-s2[i]
 end function
 
+function strwcmp(s1 as unsigned short ptr,s2 as unsigned short ptr) as integer
+    dim retval as integer=0
+    dim i as integer=0
+    while s1[i]=s2[i] and s1[i]<>0 and s2[i]<>0
+        i+=1
+    wend
+    return s1[i]-s2[i]
+end function
 
 
 sub strrev(s as unsigned byte ptr)
@@ -186,6 +208,18 @@ function strtoupper(s as unsigned byte ptr) as unsigned byte ptr
     return dst
 end function
 
+
+sub strToLowerFix(s as unsigned byte ptr)
+    dim i as unsigned integer
+    i=0
+    while s[i]<>0 and i<1022
+        if (s[i]>=65 and s[i]<=90) then
+            s[i]=s[i]+32
+        end if
+        i+=1
+    wend
+    s[i]=0
+end sub
 function strtolower(s as unsigned byte ptr) as unsigned byte ptr
     dim i as unsigned integer
     dim dst as unsigned byte ptr=@(Result(0))
@@ -289,7 +323,7 @@ sub ftoa(d as double,b as unsigned byte ptr)
     end if
 end sub
 
-function DoubleToStr(c as double) as unsigned byte ptr
+function FloatToStr(c as single) as unsigned byte ptr
     var dbl=c
     dim neg as integer=0
     if dbl<0 then
@@ -298,8 +332,8 @@ function DoubleToStr(c as double) as unsigned byte ptr
     end if
     
     
-    dim intDbl as double =  dbl shr 0
-    var floatPart=(dbl*cast(double,1000000))-(intDbl*1000000)
+    dim intDbl as single =  dbl shr 0
+    var floatPart=(dbl*cast(single,1000000))-(intDbl*1000000)
     if neg then
         intDbl=-intDbl
     end if
@@ -319,13 +353,80 @@ function DoubleToStr(c as double) as unsigned byte ptr
     return strResult
 end function
 
-function IntToStr (number as unsigned integer,abase as unsigned integer) as unsigned byte ptr
+function DoubleToStr(c as double) as unsigned byte ptr
+    var dbl=c
+    dim neg as integer=0
+    if dbl<0 then
+        neg=-1
+        dbl=-dbl
+    end if
+    
+    
+    dim intDbl as double =  dbl shr 0
+    'var floatPart=(dbl*cast(double,10000000000))-(intDbl*10000000000)
+    var floatPart=(dbl*cast(double,1000000))-(intDbl*1000000)
+    if neg then
+        intDbl=-intDbl
+    end if
+    
+    dim strResult as unsigned byte ptr= @(Result2(0))
+    strCpy(strResult,IntToStr(intDbl,10))
+   
+    if (floatPart>0) then
+         strCat(strResult,@".")
+         'if (floatPart<1000000000) then strCat(strResult,@"0")
+         'if (floatPart<100000000) then strCat(strResult,@"0")
+         'if (floatPart<10000000) then strCat(strResult,@"0")
+         'if (floatPart<1000000) then strCat(strResult,@"0")
+         if (floatPart<100000) then strCat(strResult,@"0")
+         if (floatPart<10000) then strCat(strResult,@"0")
+         if (floatPart<1000) then strCat(strResult,@"0")
+         if (floatPart<100) then strCat(strResult,@"0")
+         if (floatPart<10) then strCat(strResult,@"0")
+         strCat(strResult,IntToStr(floatPart,10))
+    end if
+    return strResult
+end function
+
+
+function ULongToStr (number as unsigned long,abase as unsigned integer) as unsigned byte ptr
     dim buffer as unsigned byte ptr
     dim dst as unsigned byte ptr=@(Result(0))
-    dim i as  unsigned integer=number
-    dim l as unsigned integer=0
+    dim i as  unsigned long=number
+    dim l as unsigned long=0
+    dim n as unsigned long
+    dim bbase as unsigned long = abase
+    
+    if (i=0) then
+        dst[0]=48
+        dst[1]=0
+        return dst
+    end if
+    
+    
+    while (i>0)
+        n = i mod bbase
+        if (n<10) then
+            dst[l]=n+48
+        else
+            dst[l]=n+55
+        end if
+        i=(i - n)/bbase
+        l+=1
+    wend
+    dst[l]=0
+    strrev(dst)
+    return dst
+end function
+
+function LongToStr (number as long,abase as unsigned integer) as unsigned byte ptr
+    dim buffer as unsigned byte ptr
+    dim dst as unsigned byte ptr=@(Result(0))
+    dim i as  long=number
+    dim l as long=0
     dim neg as integer=0
     dim n as integer
+    dim bbase as unsigned long = abase
     if (i=0) then
         dst[0]=48
         dst[1]=0
@@ -338,6 +439,39 @@ function IntToStr (number as unsigned integer,abase as unsigned integer) as unsi
     end if
     
     while (i>0)
+        n = i mod bbase
+        if (n<10) then
+            dst[l]=n+48
+        else
+            dst[l]=n+55
+        end if
+        i=(i - n)/bbase
+        l+=1
+    wend
+    if (neg) then
+        dst[l]=45
+        l+=1
+    end if
+    dst[l]=0
+    strrev(dst)
+    return dst
+end function
+
+
+function UIntToStr (number as unsigned integer,abase as unsigned integer) as unsigned byte ptr
+    dim buffer as unsigned byte ptr
+    dim dst as unsigned byte ptr=@(Result(0))
+    dim i as  unsigned integer=number
+    dim l as unsigned integer=0
+    dim n as unsigned integer
+    if (i=0) then
+        dst[0]=48
+        dst[1]=0
+        return dst
+    end if
+    
+    
+    while (i>0)
         n = i mod abase
         if (n<10) then
             dst[l]=n+48
@@ -345,6 +479,40 @@ function IntToStr (number as unsigned integer,abase as unsigned integer) as unsi
             dst[l]=n+55
         end if
         i=(i - n)/abase
+        l+=1
+    wend
+    dst[l]=0
+    strrev(dst)
+    return dst
+end function
+
+function IntToStr (number as integer,abase as unsigned integer) as unsigned byte ptr
+    dim buffer as unsigned byte ptr
+    dim dst as unsigned byte ptr=@(Result(0))
+    dim i as  integer=number
+    dim l as integer=0
+    dim neg as integer=0
+    dim n as integer
+    dim bbase as integer = abase
+    if (i=0) then
+        dst[0]=48
+        dst[1]=0
+        return dst
+    end if
+    
+    if (i<0) then
+        i=-i
+        neg=-1
+    end if
+    
+    while (i>0)
+        n = i mod bbase
+        if (n<10) then
+            dst[l]=n+48
+        else
+            dst[l]=n+55
+        end if
+        i=(i - n)/bbase
         l+=1
     wend
     if (neg) then
@@ -367,7 +535,7 @@ function strcpy(dst as unsigned byte ptr,src as unsigned byte ptr) as unsigned b
     return dst
 end function
 
-sub memcpy(dst as any ptr,src as any ptr,cpt as unsigned integer)
+sub memcpy cdecl alias "memcpy"(dst as any ptr,src as any ptr,cpt as unsigned integer)
     asm
 		mov esi,[src]
 		mov edi,[dst]
@@ -476,7 +644,7 @@ sub memcpy64(dst as any ptr,src as any ptr,cpt as unsigned integer)
 	end asm
 end sub
 
-sub memset(dst as any ptr,value as unsigned byte,cpt as unsigned integer) 
+sub memset cdecl alias "memset"(dst as any ptr,value as unsigned byte,cpt as unsigned integer) 
     asm
 		movb al,[value]
 		mov ecx,[cpt]

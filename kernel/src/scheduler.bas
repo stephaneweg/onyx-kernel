@@ -4,6 +4,7 @@ constructor ThreadQueue()
     this.count = 0
 end constructor
 
+
 sub ThreadQueue.Enqueue(t as Thread ptr)
     if (this.FirstThread<>0) then
         this.LastThread->NextThreadQueue = t
@@ -140,6 +141,8 @@ sub ThreadScheduler.SetThreadRealTime(t as Thread ptr,delay as unsigned integer)
     t->Priority= t->BasePriority
     t->State=ThreadState.Ready
 end sub
+
+
 
 sub ThreadScheduler.SetThreadReady(t as Thread ptr,priority as unsigned integer)
     if (t->State=ThreadState.Ready) then exit sub

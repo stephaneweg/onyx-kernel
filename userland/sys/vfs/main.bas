@@ -1,8 +1,8 @@
 #include once "stdlib.bi"
 #include once "system.bi"
+#include once "slab.bi"
 #include once "console.bi"
 #include once "gdi.bi"
-#include once "slab.bi"
 #include once "tobject.bi"
 #include once "tstring.bi"
 
@@ -10,12 +10,12 @@
 #include once "filehandle.bi"
 
 #include once "stdlib.bas"
+#include once "system.bas"
+#include once "slab.bas"
 #include once "tobject.bas"
 #include once "tstring.bas"
-#include once "system.bas"
 #include once "console.bas"
 #include once "gdi.bas"
-#include once "slab.bas"
 #include once "filehandle.bas"
 
 
@@ -27,7 +27,8 @@ dim shared tmpFname as unsigned byte ptr
 #include once "fs/fatfs.bas"
 #include once "syscall33.bas"
 
-sub MAIN(p as any ptr)
+declare sub mountSys(argc as unsigned integer,argv as unsigned byte ptr ptr) 
+sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
     SlabInit()
     tmpFname = MAlloc(1024)
     TMPString = MAlloc(1024)
@@ -37,12 +38,33 @@ sub MAIN(p as any ptr)
 	FS_ENTRIES = 0
     
     FAT_INIT()
-    VFS_MOUNT(@"HDA1",@"FATFS",@"SYS:/")
+	mountSys(argc,argv)
     DefineIRQHandler(&h33,@int33Handler,1)
     
     UDevCreate(@"VFS",1,0)
     WaitForEvent()
     Do:loop
+end sub
+
+sub mountSys(argc as unsigned integer,argv as unsigned byte ptr ptr) 
+	dim drivename(0 to 20) as unsigned byte
+	dim fsname(0 to 20) as unsigned byte
+	if (argc>0) then
+		for i as unsigned integer=0 to argc-1
+			if (strncmp(argv[i],@"sys=",4)=0) then
+				dim parm as unsigned byte ptr = cptr(unsigned byte ptr,cuint(argv[i])+4)
+				var dd  = strindexof(parm,@":")
+				if (dd>0 and dd<20) then
+					memcpy(@drivename(0),parm,dd)
+					drivename(dd)=0
+					memcpy(@fsname(0),parm+dd+1,(strlen(parm)-dd)-1)
+					fsname((strlen(parm)-dd)-1)=0
+					
+					VFS_MOUNT(@drivename(0),@fsname(0),@"SYS:/")
+				end if
+			end if
+		next i
+	end if
 end sub
 
 sub VFS_SHOW_DESCRIPTORS()
@@ -216,7 +238,6 @@ function VFS_DELETE_FILE(filename as unsigned byte ptr) as unsigned integer
 end function
 
 function VFS_WRITE_FILE(filename as unsigned byte ptr,filesize as unsigned integer,buffer as unsigned byte ptr) as unsigned integer
-	ConsoleWriteLine(@"VFS_WRITE_FILE")
 	dim entry as VFS_ENTRY ptr
 	dim foundEntry as VFS_ENTRY ptr
 	
@@ -345,10 +366,6 @@ function VFS_ENTRY.DELETE_FILE(fname as unsigned byte ptr) as unsigned integer
 end function
 
 function VFS_ENTRY.WRITE_FILE(fname as unsigned byte ptr,filesize as unsigned integer,buffer as unsigned byte ptr) as unsigned integer
-    ConsoleWrite(@"VFS_ENTRY.WRITE_FILE ")
-    ConsoleWriteLine(fname)
-    
-    
     dim relativePath as unsigned byte ptr = tmpFname
     strcpy(relativePath,fname)  
 	dim cpt as integer

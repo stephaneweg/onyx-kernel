@@ -48,6 +48,8 @@ copy bin\res\mousecur.bin %Drive%\res
 echo Instal System bin
 copy bin\sys\*.* %Drive%\sys
 
+copy bin\*.bin %Drive%\bin
+
 echo Install config
 copy etc\*.* %Drive%\etc
 

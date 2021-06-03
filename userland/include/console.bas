@@ -1,3 +1,12 @@
+
+sub ConsolePutChar(c as unsigned byte)
+    asm
+        mov eax,&h00
+        mov ebx,[c]
+        int &h31
+    end asm
+end sub
+    
 sub ConsoleWrite(txt as unsigned byte ptr)
     asm
         mov eax,&h01
@@ -52,11 +61,18 @@ sub ConsoleSetForeground(c as unsigned integer)
     end asm
 end sub
 
-sub ConsolePutChar(c as unsigned byte)
+sub ConsoleSetBackground(c as unsigned integer)
     asm
         mov eax,&h08
         mov ebx,[c]
         int &h31
     end asm
 end sub
-    
+
+
+sub ConsoleClear()
+    asm
+        mov eax,&hF
+        int &h31
+    end asm
+end sub

@@ -21,7 +21,7 @@ sub VMM_INIT()
     'kernel_context.map_range(KSTART, KSTART, KEND, VMM_FLAGS_KERNEL_DATA)
     kernel_context.map_range(cptr(any ptr,0), cptr(any ptr,0),cptr(any ptr,min(cuint( MemoryEnd),ProcessAddress)), VMM_FLAGS_KERNEL_DATA)
     'kernel_context.map_range(KSTART, KSTART, VMM_IDENTITY_MEMORY_END, VMM_FLAGS_KERNEL_DATA)
-    kernel_context.map_page(cptr(any ptr, &hB8000), cptr(any ptr, &hB8000), VMM_FLAGS_KERNEL_DATA)
+    kernel_context.map_page(cptr(any ptr, &hB8000), cptr(any ptr, &hB8000), VMM_FLAGS_USER_DATA)
     kernel_context.v_dir = cptr(uinteger ptr, (VMM_PAGETABLES_VIRT_START shr 22)*4096*1024 + (VMM_PAGETABLES_VIRT_START shr 22)*4096)
     kernel_context.map_page(cptr(any ptr, RealModeAddr), cptr(any ptr, RealModeAddr), VMM_FLAGS_KERNEL_DATA)
     

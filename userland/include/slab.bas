@@ -1,6 +1,27 @@
 
 
-declare function GetSmallestPowerOfTwoo(value as unsigned integer) as unsigned integer
+
+function Malloc cdecl alias "malloc" (s as unsigned integer) as any ptr
+    return SlabMeta.Alloc(s)
+end function
+
+sub Free cdecl alias "free" (addr as any ptr)
+     SlabMeta.Free(addr)
+end sub
+
+function Realloc alias "realloc" (addr as any ptr,newsize as unsigned integer) as any ptr
+    dim b as unsigned byte ptr =SlabMeta.Alloc(newsize)
+    
+    if (b<>0) then
+        dim oldSize as unsigned integer= SlabMeta.GetSize(addr)
+        memcpy(b,addr,min(newsize,oldsize))
+        slabMeta.free(addr)
+        return b
+    else
+        return addr
+    end if
+end function
+
 function GetSmallestPowerOfTwoo(value as unsigned integer) as unsigned integer
     dim pwr as unsigned integer = 0
     dim v as unsigned integer = value
@@ -56,6 +77,17 @@ sub SlabMetaData.SlabFreePage(addr as any ptr)
     wend
 end sub
 
+function SlabMetaData.SlabPageSize(addr as any ptr) as unsigned integer
+    var entry = SlabPagesEntries
+    while entry<>0
+        if (entry->PageAddr = addr) then
+            return entry->PagesCount shl 12
+        end if
+        entry = entry->NextPage
+    wend
+    return 0
+end function
+
 function SlabMetaData.Alloc(size as unsigned integer) as any ptr
      dim s as unsigned integer = GetSmallestPowerOfTwoo(size)
     if (s>=&h1000) then
@@ -107,7 +139,23 @@ sub SlabMetaData.Free(addr as any ptr)
     end if
     'KERNEL_ERROR(@"The address is not part of a slab",0)
 end sub
-        
+
+function SlabMetaData.GetSize(addr as any ptr) as unsigned integer
+  var current = FirstSlab
+  dim xaddr as unsigned integer=cuint(addr)
+  while current<>0
+        if (current->Owns(addr)) = 1 then
+            return current->ItemSize
+        end if
+        current=>Current->NextSlab
+  wend
+  if ((xaddr shr 12) shl 12) = xaddr then
+      return SlabPageSize(addr)
+  end if
+  return 0
+end function
+
+
 sub Slab.Init(isize as unsigned integer)
     
     if (isize<minSize) then isize=minSize
@@ -157,5 +205,12 @@ function Slab.Free(addr as any ptr) as unsigned byte
     newEntry->NextEntry = this.FreeList
     this.FreeList = newEntry
     this.IsFull = 0
+    return 1
+end function
+
+function Slab.Owns(addr as any ptr) as unsigned integer
+     if (addr < this.SlabStart) or (addr>=this.SlabStart+&h4000) then
+        return 0
+    end if
     return 1
 end function

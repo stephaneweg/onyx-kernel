@@ -1,5 +1,6 @@
 #include once "console.bi"
 #include once "stdlib.bi"
+
 dim shared consoleCursorX as integer
 dim shared consoleCursorY as integer
 dim shared consoleForeground as byte

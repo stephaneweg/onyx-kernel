@@ -36,21 +36,22 @@ SUB MAIN (mb_info as multiboot_info ptr)
     UDEV_INIT()
     RealMode_INIT()
     IRQ_DISABLE(0)
-    
-    
-    
-    
+	
     IRQ_ATTACH_HANDLER(&h30,@Syscall30Handler)
     IRQ_ATTACH_HANDLER(&h31,@Syscall31Handler)
     Thread.InitManager()
     Process.InitEngine()
     
     MODULES_INIT(mb_info)
+    
+    'find the best graphic mode
     VMM_EXIT()
     var mode = VesaProbe()
     vmm_init_local()
+    
     ConsoleNewLine()
     if (mode<>0) then        
+        'switch to selected graphic mode
         VMM_EXIT()
         VesaSetMode(mode)
         vmm_init_local()
@@ -65,10 +66,6 @@ SUB MAIN (mb_info as multiboot_info ptr)
     do
     loop
 end sub
-
-
-
-
 
 sub KERNEL_ERROR(message as unsigned byte ptr,code as unsigned integer)
     VMM_EXIT()

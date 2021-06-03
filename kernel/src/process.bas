@@ -34,15 +34,101 @@ sub Process.DoLoad()
         KFree(image)
 	end if
     Image =  targetImg
+	Image->ArgsCount = 0
+	ParseArguments()
 	Thread.Create(@this,Image->Init,5)
     IRQ_ENABLE(0)
 end sub
 
-function Process.RequestLoadMem(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,args as any ptr,shouldFree as unsigned integer) as Process ptr
+sub Process.ParseArguments()
+    if TmpArgs<>0 then
+		if (Image->ArgsValues<>0) then
+            dim tmpBuffer as unsigned byte ptr =Malloc(strlen(TmpArgs)+1)
+            var slen = strlen(TmpArgs)
+			dim prev as unsigned integer = 0
+            dim dst as unsigned byte ptr = tmpBuffer
+            
+			'parse the arguments to split the string and remove the quotes
+			dim inQuotes as unsigned integer = 0
+			dim quoteType as unsigned integer = 0
+            dim j as unsigned integer = 0
+            for i as unsigned integer =0 to slen
+                if (TmpArgs[i]=34) then
+                    if (inQuotes = 0) then
+                        inQuotes = 1
+                        quoteType = 1
+                        continue for
+                    elseif quotetype = 1 then
+                        inquotes  = 0
+                        quotetype = 0
+                        continue for
+                    end if
+                end if
+                if (TmpArgs[i]=asc("'")) then
+                    if (inQuotes = 0) then
+                        inQuotes = 1
+                        quoteType = 2
+                        continue for
+                    elseif quotetype = 2 then
+                        inquotes  = 0
+                        quotetype = 0
+                        continue for
+                    end if
+                end if
+                
+                if (tmpArgs[i]=0 or tmpArgs[i]=32) and (inquotes=0) then
+                    if (j>0) then
+                        dst[j] = 0
+                        j+=1
+                        'the pointer relative to the start of the string
+                        Image->ArgsValues[image->ArgsCount]=dst-cuint(tmpBuffer)
+                        dst =cptr(unsigned byte ptr, cuint(dst)+j)
+                        j=0
+                        image->ArgsCount+=1
+                    end if
+                else
+                    dst[j]=tmpArgs[i]
+                    j+=1
+                end if
+            next i
+            if (j>0) then
+                dst[j] = 0
+                Image->ArgsValues[image->ArgsCount]=dst-cuint(tmpBuffer)
+                dst =cptr(unsigned byte ptr, cuint(dst)+j)
+                image->ArgsCount+=1
+            end if
+            'the strings pointer array at the begining of the zone
+            dim dstArray as unsigned byte ptr ptr = cptr(unsigned byte ptr ptr,Image->ArgsValues)
+            'the strings data after the pointer array
+            dim dstString as unsigned byte ptr =cptr(unsigned byte ptr,cuint(Image->ArgsValues)+(image->ArgsCount*sizeof(unsigned byte ptr)))
+            dim strSize as unsigned integer = (cuint(dst)-cuint(tmpBuffer))+1
+            memcpy(dstString,tmpBuffer,strSize)
+            'relocate the pointers
+            for i as unsigned integer = 0 to image->ArgsCount-1
+                dstArray[i] = cptr(unsigned byte ptr, cuint(dstArray[i])+cuint(dstString))
+            next i
+            
+            
+            MFree(TmpArgs)
+            MFree(tmpBuffer)
+		end if
+	end if
+end sub
+
+function Process.RequestLoadMem(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,shouldFree as unsigned integer,args as unsigned byte ptr) as Process ptr
     dim result as Process ptr = 0
     result = cptr(Process ptr,KAlloc(sizeof(Process)))
     result->Constructor()
+	
     result->Image = image
+	result->Image->ArgsCount = 0'argsCount
+	'to do: copy data of arguments
+	if (args<>0) then
+		result->TmpArgs = Malloc(strlen(args))
+		memcpy(result->TmpArgs,args,strlen(args)+1)
+	else
+		result->TmpArgs = 0
+	end if
     result->ImageSize = fsize
     result->ShouldFreeMem = shouldFree
     result->NextProcess = ProcessesToLoad
@@ -53,14 +139,14 @@ function Process.RequestLoadMem(image as EXECUTABLE_HEADER ptr,fsize as unsigned
     return result
 end function
 
-function Process.RequestLoadUser(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,args as any ptr) as Process ptr
+function Process.RequestLoadUser(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,args as unsigned byte ptr) as Process ptr
 	
 	if (fsize<>0) then
 		dim newImg as EXECUTABLE_HEADER ptr = MAlloc(fsize)
 		if (newImg<>0) then
 			memcpy(cptr(unsigned byte ptr,newImg),cptr(unsigned byte ptr,image),fsize)
     
-			return Process.RequestLoadMem(newImg,fsize,args,1)
+			return Process.RequestLoadMem(newImg,fsize,1,args)
 		end if
 	end if
     return 0

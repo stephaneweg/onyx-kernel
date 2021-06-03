@@ -39,7 +39,7 @@ sub LoadMouseCursor()
                     MouseCursor._buffer[i]=0
                 end select
         next i
-        MFree(fmousebuff)
+        Free(fmousebuff)
     end if
     MouseCursor.IsValid=1
 end sub
@@ -168,7 +168,7 @@ sub GenBackground()
         
         
        
-        MFree(ptArray)
+        Free(ptArray)
 end sub
 
 function ComputeColor(c as unsigned integer,chanel as unsigned integer) as unsigned integer

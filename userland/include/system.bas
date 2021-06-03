@@ -78,7 +78,7 @@ function UDevInvoke(d as unsigned integer,p1 as unsigned integer,p2 as unsigned 
 end function
         
 
-sub DefineIRQHandler(intNO as unsigned integer,c as sub(_intno as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer),synchronous as unsigned integer)
+sub DefineIRQHandler(intNO as unsigned integer,c as sub(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer),synchronous as unsigned integer)
     asm
         mov eax,&h0B
         mov ebx,[intNO]
@@ -108,10 +108,10 @@ sub XappSignal2Parameters(th as unsigned integer,callback as unsigned integer,p1
     end asm
 end sub
 
-sub KillProcess(th as unsigned integer)
+sub KillProcess(pc as unsigned integer)
     asm
         mov eax,&h0F
-        mov ebx,[th]
+        mov ebx,[pc]
         int 0x30
     end asm
 end sub

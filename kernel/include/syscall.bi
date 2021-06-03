@@ -1,4 +1,3 @@
-
 declare function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr 'system
 declare function SysCall31Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr 'console
 declare function SysCall33Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr 'Files

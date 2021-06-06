@@ -9,5 +9,6 @@ declare sub ConsoleBackSpace()
 declare sub ConsoleSetForeground(c as unsigned integer)
 declare sub ConsoleSetBackground(c as unsigned integer)
 declare sub ConsoleClear()
+declare sub ConsoleCreate()
 
     

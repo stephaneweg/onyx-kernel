@@ -10,7 +10,7 @@ function PageAlloc(count as unsigned integer) as any ptr
     'else
     'map to kernel address space
     '
-        return paddr
+      return paddr
     'end if
 end function
 

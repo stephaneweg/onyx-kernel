@@ -76,3 +76,11 @@ sub ConsoleClear()
         int &h31
     end asm
 end sub
+
+
+sub ConsoleCreate()
+    asm
+        mov eax,&hFF
+        int &h31
+    end asm
+end sub

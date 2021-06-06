@@ -45,7 +45,7 @@ end sub
 
 sub PROCESS_MANAGER(p as any ptr)
     do
-		asm cli
+		'asm cli
         while (ProcessesToTerminate<>0)
             var proc = ProcessesToTerminate
             ProcessesToTerminate = proc->NextProcess
@@ -58,7 +58,7 @@ sub PROCESS_MANAGER(p as any ptr)
             proc->NextProcess = 0
 			Proc->DoLoad()
 		wend 
-		asm sti
+		'asm sti
         ThreadSleep()
     loop
 end sub

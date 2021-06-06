@@ -157,6 +157,7 @@ sub GDIBase.AddChild(child as GDIBase ptr)
             
         end if
         this.LastChild = child
+        
         child->Parent = @this
         this.ChildCount+=1
         child->UpdateAbsolutePosition()

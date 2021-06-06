@@ -55,10 +55,7 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
 	drawableImage->Clear(&hFF000000)
     CreateThread(@ConsoleThread,3)
 	GDISetVisible(MainWin,1)
-	
-    ConsoleSetBackGround(0)
-    ConsoleSetForeground(15)
-    ConsoleClear()
+	ConsoleCreate()
 	ConsoleWrite(@"Console Ready")
     ConsolePrintOK()
     ConsoleNewLine()
@@ -68,8 +65,8 @@ end sub
 
 sub btnClick(btn as unsigned integer,parm as unsigned integer)
     
+    dim tmpString as unsigned byte ptr = malloc(1024)
     if (parm=0) then
-        dim tmpString as unsigned byte ptr = malloc(1024)
         dim args as unsigned byte ptr = tmpString
         
         GDITextBoxGetText(txtInputFile,tmpString)
@@ -86,13 +83,17 @@ sub btnClick(btn as unsigned integer,parm as unsigned integer)
         
         'MessageBoxShow(args,@"arguments")
         ExecApp(@"SYS:/BIN/FASM.BIN",args)
-        Free(args)
+		tmpString = args
+	elseif parm=1 then
+        GDITextBoxGetText(txtOutputFile,tmpString)
+        ExecApp(tmpString,0)
     end if
+    Free(tmpString)
 	EndCallBack()
 end sub
 
 sub ConsoleThread()
-    dim src as unsigned short ptr = cptr(unsigned short ptr,&HB8000)
+    dim src as unsigned short ptr = cptr(unsigned short ptr,&hA0000000)
     dim Colors16(0 to 15) as unsigned integer
     
     Colors16(0) = &hFF000000

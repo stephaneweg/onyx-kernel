@@ -70,7 +70,7 @@ sub drawOnMouseClick(elem as unsigned integer,param as unsigned integer)
     dim mx as short =cast(short, param shr 16)
     dim my as short =cast(short, param and &hFFFFFF)
     
-    CursorX = ((cast(integer,mx)-8)/9)-cast(integer,ScrollX)
+    CursorX = ((cast(integer,mx)-2)/9)-cast(integer,ScrollX)
     CursorY = ((cast(integer,my)-2)/16)-cast(integer,ScrollY)
     CursorCoordToCursorPos()
     
@@ -224,7 +224,7 @@ sub RedrawText()
         CursorX = tx
         CursorY = ty
     end if
-    Drawable->FillRectangle(1+(CursorX+1)*9,2+(CursorY+ScrollY)*16,3+(CursorX+1)*9,2+(CursorY+ScrollY+1)*16,&hAAFF0000)
+    Drawable->FillRectangle(1+(CursorX)*9,2+(CursorY+ScrollY)*16,3+(CursorX)*9,2+(CursorY+ScrollY+1)*16,&hAAFF0000)
     Drawable->Flush()
 end sub
 

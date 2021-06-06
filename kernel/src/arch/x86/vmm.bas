@@ -18,12 +18,24 @@ sub VMM_INIT()
     current_context = @kernel_context
     
     kernel_context.p_dir[VMM_PAGETABLES_VIRT_START shr 22] = cuint(kernel_context.p_dir) or VMM_FLAG_PRESENT or VMM_FLAG_WRITEABLE
-    'kernel_context.map_range(KSTART, KSTART, KEND, VMM_FLAGS_KERNEL_DATA)
+    
+    'map kernel 1:1
+    'kernel_context.map_range(0, 0, KEND, VMM_FLAGS_KERNEL_DATA)
+    
+    'map from 0 to memory end 
     kernel_context.map_range(cptr(any ptr,0), cptr(any ptr,0),cptr(any ptr,min(cuint( MemoryEnd),ProcessAddress)), VMM_FLAGS_KERNEL_DATA)
     'kernel_context.map_range(KSTART, KSTART, VMM_IDENTITY_MEMORY_END, VMM_FLAGS_KERNEL_DATA)
+    
+    'map first meg 1:1
+    'kernel_context.map_range(0,0,1024*1024,VMM_FLAGS_KERNEL_DATA)
+    
+    'map video memory 1:1
     kernel_context.map_page(cptr(any ptr, &hB8000), cptr(any ptr, &hB8000), VMM_FLAGS_USER_DATA)
     kernel_context.v_dir = cptr(uinteger ptr, (VMM_PAGETABLES_VIRT_START shr 22)*4096*1024 + (VMM_PAGETABLES_VIRT_START shr 22)*4096)
+    
+    'map real mode address 1:1
     kernel_context.map_page(cptr(any ptr, RealModeAddr), cptr(any ptr, RealModeAddr), VMM_FLAGS_KERNEL_DATA)
+    
     
     kernel_context.version = 1
 	latest_context = @kernel_context
@@ -44,6 +56,8 @@ sub VMM_EXIT()
         and ebx, &h7FFFFFFF
         mov cr0,ebx
     end asm
+    SysConsole.VIRT = SysConsole.PHYS
+    CurrentConsole = @SysConsole
     paging_active = 0
     ConsolePrintOK()
     ConsoleNewLine()
@@ -55,7 +69,7 @@ end function
 
 
 function vmm_kernel_automap (p_start as any ptr, size as unsigned integer, flags as unsigned integer ) as any ptr
-	return vmm_get_current_context()->automap(p_start, size, VMM_IDENTITY_MEMORY_END, &h40000000, flags)
+	return vmm_get_current_context()->automap(p_start, size, PAGE_SIZE, ProcessAddress, flags)
 end function
 
 
@@ -83,6 +97,9 @@ sub vmm_init_local ()
 		mov cr4, ebx
 	end asm
     KTSS.cr3 = cuint(pagedir)
+    
+    SysConsole.Virt = cptr(unsigned byte ptr, ProcessConsoleAddress)
+    current_context->map_page(SysConsole.VIRT,SysConsole.PHYS, VMM_FLAGS_USER_DATA)
     
 	paging_active = 1
     ConsolePrintOK()
@@ -256,7 +273,7 @@ function VMMContext.MAP_PAGE(virt as any ptr,phys as any ptr, flags as unsigned 
 		'' set the clear flag because the table is new, we cannot clear it now because it's not mapped
 		clear_page = true
         
-        if (virt < &h40000000) then
+        if (virt < ProcessAddress) then
 			this.version = latest_context->version+1
 			latest_context = @this
 		end if

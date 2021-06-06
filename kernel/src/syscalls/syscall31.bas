@@ -21,6 +21,8 @@ function SysCall31Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             ConsoleSetBackground(stack->EBX)
         case &hF
             ConsoleClear()
+        case &hFF
+            CurrentThread->Owner->CreateConsole()
     end select
     return stack
 end function

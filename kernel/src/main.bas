@@ -32,6 +32,9 @@ SUB MAIN (mb_info as multiboot_info ptr)
     VMM_INIT()
     
     VMM_INIT_LOCAL()
+    SysConsole.Virt = cptr(unsigned byte ptr, ProcessConsoleAddress)
+    current_context->map_page(SysConsole.VIRT,SysConsole.PHYS, VMM_FLAGS_USER_DATA)
+    
     SlabInit()
     UDEV_INIT()
     RealMode_INIT()
@@ -43,7 +46,6 @@ SUB MAIN (mb_info as multiboot_info ptr)
     Process.InitEngine()
     
     MODULES_INIT(mb_info)
-    
     'find the best graphic mode
     VMM_EXIT()
     var mode = VesaProbe()
@@ -57,7 +59,7 @@ SUB MAIN (mb_info as multiboot_info ptr)
         vmm_init_local()
         Thread.Ready()
     else
-        ConsoleWriteLine(@"Cannot set graphic mode")
+       ConsoleWriteLine(@"Cannot set graphic mode")
     end if
    
     

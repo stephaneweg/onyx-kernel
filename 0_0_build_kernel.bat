@@ -1,5 +1,5 @@
 @echo off
-set KERNEL_NAME=\"Q-STEP\"
+set KERNEL_NAME=\"Onyx\"
 set KERNEL_VERSION=\"0.0.1\"
 set searchPath=kernel\src\arch\x86,kernel\src,shared
 

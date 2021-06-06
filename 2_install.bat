@@ -53,5 +53,7 @@ copy bin\*.bin %Drive%\bin
 echo Install config
 copy etc\*.* %Drive%\etc
 
+copy macros.inc %Drive%\macros.inc
 copy test.asm %Drive%\test.asm
+toolchain\fasm test.asm test.bin
 pause

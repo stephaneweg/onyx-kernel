@@ -1,11 +1,34 @@
 sub Process.InitEngine()
-        FirstProcess = 0
+        FirstProcessList = 0
+        LastProcessList = 0
+        
         ProcessesToTerminate = 0
         ProcessesToLoad = 0
 end sub
 
 constructor Process()
     Image  = 0
+    
+    if (LastProcessList<>0) then
+        LastProcessList->NextProcessList = @this
+    else
+        FirstProcessList = @This
+    end if
+    PrevProcessList = LastProcessList
+    LastProcessList = @this
+    NextProcessList = 0
+    
+    if (Scheduler.CurrentRuningThread<>0) then
+        if (Scheduler.CurrentRuningThread->Owner<>0) then
+            VIRT_CONSOLE = Scheduler.CurrentRUningThread->Owner->VIRT_CONSOLE
+        else
+            VIRT_CONSOLE = @SYSCONSOLE
+        end if
+    else
+        VIRT_CONSOLE = @SYSCONSOLE
+    end if
+    
+    
     NextProcess = 0
     Threads = 0
     PagesCount = 0
@@ -13,11 +36,62 @@ end constructor
 
 
 destructor Process()
+    if (NextProcessList<>0) then
+        NextProcessList->PrevProcessList = PrevProcessList
+    else
+        LastProcessList = PrevProcessList
+    end if
+    
+    if (PrevProcessList<>0) then
+        PrevProcessList->NextProcessList = NextProcessList
+    else
+        FirstProcessList = NextProcessList
+    end if
+    
+    NextProcessList= 0
+    PrevProcessList= 0
+
 	for i as unsigned integer = 0 to this.PagesCount -1
         var phys = this.VMM_Context.Resolve(cptr(any ptr,(i shl 12)+ProcessAddress))
         PMM_FREEPAGE(phys)
     next i
+    
+    FreeConsole()
 end destructor
+
+sub Process.CreateConsole()
+    FreeConsole()
+    var console = cptr(VirtConsole ptr, KAlloc(sizeof(VirtConsole)))
+    console->CursorX = 0
+    console->CursorY = 0
+    console->Foreground = 7
+    console->Background = 0
+    console->PHYS = PMM_ALLOCPAGE(1)
+    console->VIRT =cptr(unsigned byte ptr, ProcessConsoleAddress)'cptr(unsigned byte ptr,&HB8000)
+    
+    current_context->map_page(console->VIRT,console->PHYS, VMM_FLAGS_USER_DATA)
+    console->Activate()
+    console->Clear()
+    
+    VIRT_CONSOLE = console
+end sub
+
+sub Process.FreeConsole()
+    if (VIRT_CONSOLE <> @SYSCONSOLE) then
+        var used = false
+        var proc=FirstProcessList
+        while proc<>0
+            if (proc<>@this) and (proc->VIRT_CONSOLE=VIRT_CONSOLE) then
+                used = true
+            end if
+            proc=proc->NextProcessList
+        wend
+        if (not used) then
+            VIRT_CONSOLE->Destructor()
+            MFree(VIRT_CONSOLE)
+        end if
+    end if
+end sub
 
 
 sub Process.DoLoad()
@@ -26,6 +100,7 @@ sub Process.DoLoad()
     var ctx = current_context
 	VMM_Context.Initialize()
 	VMM_Context.Activate()
+    VMM_Context.map_page(VIRT_CONSOLE->VIRT,VIRT_CONSOLE->PHYS, VMM_FLAGS_USER_DATA)
 	SBRK(neededPages)
 	
 	var targetImg = cptr(EXECUTABLE_HEADER ptr,ProcessAddress)
@@ -41,76 +116,80 @@ sub Process.DoLoad()
 end sub
 
 sub Process.ParseArguments()
+    
     if TmpArgs<>0 then
-		if (Image->ArgsValues<>0) then
-            dim tmpBuffer as unsigned byte ptr =Malloc(strlen(TmpArgs)+1)
-            var slen = strlen(TmpArgs)
-			dim prev as unsigned integer = 0
-            dim dst as unsigned byte ptr = tmpBuffer
-            
-			'parse the arguments to split the string and remove the quotes
-			dim inQuotes as unsigned integer = 0
-			dim quoteType as unsigned integer = 0
-            dim j as unsigned integer = 0
-            for i as unsigned integer =0 to slen
-                if (TmpArgs[i]=34) then
-                    if (inQuotes = 0) then
-                        inQuotes = 1
-                        quoteType = 1
-                        continue for
-                    elseif quotetype = 1 then
-                        inquotes  = 0
-                        quotetype = 0
-                        continue for
-                    end if
-                end if
-                if (TmpArgs[i]=asc("'")) then
-                    if (inQuotes = 0) then
-                        inQuotes = 1
-                        quoteType = 2
-                        continue for
-                    elseif quotetype = 2 then
-                        inquotes  = 0
-                        quotetype = 0
-                        continue for
-                    end if
-                end if
+        if (strlen(strtrim(TmpArgs))>0) then
+            if(Image->ArgsValues<>0) then
+                dim tmpBuffer as unsigned byte ptr =Malloc(strlen(TmpArgs)+1)
+                var slen = strlen(TmpArgs)
+                dim prev as unsigned integer = 0
+                dim dst as unsigned byte ptr = tmpBuffer
                 
-                if (tmpArgs[i]=0 or tmpArgs[i]=32) and (inquotes=0) then
-                    if (j>0) then
-                        dst[j] = 0
-                        j+=1
-                        'the pointer relative to the start of the string
-                        Image->ArgsValues[image->ArgsCount]=dst-cuint(tmpBuffer)
-                        dst =cptr(unsigned byte ptr, cuint(dst)+j)
-                        j=0
-                        image->ArgsCount+=1
+                'parse the arguments to split the string and remove the quotes
+                dim inQuotes as unsigned integer = 0
+                dim quoteType as unsigned integer = 0
+                dim j as unsigned integer = 0
+                for i as unsigned integer =0 to slen
+                    if (TmpArgs[i]=34) then
+                        if (inQuotes = 0) then
+                            inQuotes = 1
+                            quoteType = 1
+                            continue for
+                        elseif quotetype = 1 then
+                            inquotes  = 0
+                            quotetype = 0
+                            continue for
+                        end if
                     end if
-                else
-                    dst[j]=tmpArgs[i]
-                    j+=1
+                    if (TmpArgs[i]=asc("'")) then
+                        if (inQuotes = 0) then
+                            inQuotes = 1
+                            quoteType = 2
+                            continue for
+                        elseif quotetype = 2 then
+                            inquotes  = 0
+                            quotetype = 0
+                            continue for
+                        end if
+                    end if
+                    
+                    if (tmpArgs[i]=0 or tmpArgs[i]=32) and (inquotes=0) then
+                        if (j>0) then
+                            dst[j] = 0
+                            j+=1
+                            'the pointer relative to the start of the string
+                            Image->ArgsValues[image->ArgsCount]=dst-cuint(tmpBuffer)
+                            dst =cptr(unsigned byte ptr, cuint(dst)+j)
+                            j=0
+                            image->ArgsCount+=1
+                        end if
+                    else
+                        dst[j]=tmpArgs[i]
+                        j+=1
+                    end if
+                next i
+                if (j>0) then
+                    dst[j] = 0
+                    Image->ArgsValues[image->ArgsCount]=dst-cuint(tmpBuffer)
+                    dst =cptr(unsigned byte ptr, cuint(dst)+j)
+                    image->ArgsCount+=1
                 end if
-            next i
-            if (j>0) then
-                dst[j] = 0
-                Image->ArgsValues[image->ArgsCount]=dst-cuint(tmpBuffer)
-                dst =cptr(unsigned byte ptr, cuint(dst)+j)
-                image->ArgsCount+=1
+                'the strings pointer array at the begining of the zone
+                dim dstArray as unsigned byte ptr ptr = cptr(unsigned byte ptr ptr,Image->ArgsValues)
+                'the strings data after the pointer array
+                dim dstString as unsigned byte ptr =cptr(unsigned byte ptr,cuint(Image->ArgsValues)+(image->ArgsCount*sizeof(unsigned byte ptr)))
+                dim strSize as unsigned integer = (cuint(dst)-cuint(tmpBuffer))+1
+                memcpy(dstString,tmpBuffer,strSize)
+                'relocate the pointers
+                for i as unsigned integer = 0 to image->ArgsCount-1
+                    dstArray[i] = cptr(unsigned byte ptr, cuint(dstArray[i])+cuint(dstString))
+                next i
+                
+                
+                MFree(tmpBuffer)
             end if
-            'the strings pointer array at the begining of the zone
-            dim dstArray as unsigned byte ptr ptr = cptr(unsigned byte ptr ptr,Image->ArgsValues)
-            'the strings data after the pointer array
-            dim dstString as unsigned byte ptr =cptr(unsigned byte ptr,cuint(Image->ArgsValues)+(image->ArgsCount*sizeof(unsigned byte ptr)))
-            dim strSize as unsigned integer = (cuint(dst)-cuint(tmpBuffer))+1
-            memcpy(dstString,tmpBuffer,strSize)
-            'relocate the pointers
-            for i as unsigned integer = 0 to image->ArgsCount-1
-                dstArray[i] = cptr(unsigned byte ptr, cuint(dstArray[i])+cuint(dstString))
-            next i
-            
-            
+        
             MFree(TmpArgs)
-            MFree(tmpBuffer)
 		end if
 	end if
 end sub

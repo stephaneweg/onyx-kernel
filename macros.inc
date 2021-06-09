@@ -38,11 +38,12 @@ macro getParm reg,num{
 }	
 
 macro program{
-	org 0x40000000
-	use32
-	IMAGE_START:
-	dd 0xAADDBBFF
-	dd MAIN	 ;init method
+format binary
+use32
+org 0x40000000
+IMAGE_START:
+		dd 0xAADDBBFF
+		dd MAIN	 ;init method
 _argc	dd 0x0
 		dd _argv
 		dd IMAGE_END
@@ -50,34 +51,118 @@ _argc	dd 0x0
 
 }
 
-macro endprogram{
+macro endProgram{
+
+_tmpNext dd 0x0
+_tryStackPos dd _tryStack
+_tryStack:
+	rb 1024
 
 _argv rb 1024
 	IMAGE_END:
 }
 
+macro try id{
+	local .n
+	
+	mov eax,dword [_tryStackPos]
+	
+	mov dword [eax],.n
+	add eax,4
+	
+	mov dword [eax],ebp
+	add eax,4
+	
+	mov dword [eax],esp
+	add eax,4
+	mov dword [_tryStackPos],eax
+	
+	xor eax,eax
+	.n:
+	test eax,eax
+	jnz catch#id
+}
+macro endtry id{
+	jmp ecatch#id
+	etry#id:
+	mov eax,[_tryStackPos]
+	sub eax,12
+	mov dword [_tryStackPos],eax
+	ecatch#id:
+}
+
+macro throw x{
+	mov eax,[_tryStackPos]
+	sub eax,12
+	mov dword [_tryStackPos],eax
+	
+	mov ebp,[eax+4]
+	mov esp,[eax+8]
+	push dword [eax]
+	pop dword [_tmpNext]
+	
+	mov eax,x
+	push dword [_tmpNext]
+	ret
+}
+
+macro catch id{
+	jmp etry#id
+	catch#id:
+	
+}
+	
+	
+	
 macro var name {
 nblocals equ nblocals+4
 sub esp,4
 name equ ebp-(nblocals)
 }
 
+macro xcmp v1,v2{
+	push dword v1
+	pop dword eax
+	push dword v2
+	pop dword ebx
+	cmp eax,ebx
+}
+
+macro ifeq v1,v2,id{
+	xcmp v1,v2
+	jne .suite#id
+}
+
+macro ifl v1,v2,id{
+	xcmp v1,v2
+	jnl .suite#id
+}
+
+macro ifg v1,v2,id{
+	xcmp v1,v2
+	jng .suite#id
+}
+
+
+macro endif id{
+	.suite#id:
+}
 
 numFor equ 0
 macro for variable,initial,last,steps,id{
 	numFor equ numFor+1
 	
 	
-	push initial
+	push dword initial
 	pop dword [variable]
 	
-	push last
+	push dword last
 	pop dword [l.#id]
 	
 	if ~ steps eq
-		push steps
+		push dword steps
 	else
-		push 1
+		push dword 1
 	end if
 	pop dword [s.#id]
 	
@@ -101,49 +186,39 @@ macro next variable,id{
 	jmp b.#id
 	s.#id dd 0x0
 	l.#id dd 0x0
-	
 	e.#id:
 	
 }
+
+macro twoOP v1,v2{
+	mov eax,v1
+	mov ebx,v2
+}
+
+macro xmul v1,v2{
+	twoOP v1,v2
+	imul eax,ebx
+	push eax
+}
+
+macro xadd v1,v2{
+	twoOP v1,v2
+	add eax,ebx
+	push eax
+}
+
+macro xsub v1,v2{
+	twoOP v1,v2
+	sub eax,ebx
+	push eax
+}
+
+macro let dst{
+	pop dst
+}
 	
 
-beginProc consoleWrite,t
-	mov eax,0x1
-	mov ebx,[t]
-	int 0x31
-endProc 1
 
-beginProc consoleWriteLine,t
-	mov eax,0x2
-	mov ebx,[t]
-	int 0x31
-endProc 1
-
-
-beginProc consoleWriteNumber,c,b
-	mov eax,0x3
-	mov ebx,[c]
-	mov ecx,[b]
-	int 0x31
-endProc 2
-
-beginProc consoleNewLine
-	mov eax,0x4
-	int 0x31
-endProc
-
-beginProc consolePutChar,c
-	mov eax,0x8
-	mov ebx,[c]
-	and ebx, 0xFF
-	int 0x31
-	
-	mov esp,ebp
-	pop ebp
-	pop edi
-endProc 1
-
-beginProc exitProg
-	mov eax,0x5
-	int 0x30
-endProc
+macro string n,t{
+	n db t,0
+}

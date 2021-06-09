@@ -61,8 +61,7 @@ dim shared buttonSize as integer
 dim shared buttonCount as integer 
 
 dim shared nbrApps as integer = 3
-dim shared Collapsing as integer = 0
-declare sub ThreadCollapse(p as any ptr)
+dim shared Collapsed as integer = 0
 declare sub CreateAppPanel()
 declare sub Collapse()
 declare sub UnCollapse()
@@ -71,7 +70,7 @@ declare sub btnCollapseClick(btn as unsigned integer,parm as unsigned integer)
 sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
 	buttonSize= 64
 	buttonCount = 7
-    Collapsing = -1
+    Collapsed = 1
     SlabINIT()
     
     GetScreenRes(xres,yres)
@@ -108,7 +107,6 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
 	GDISetVisible(panel,1)
     
     CreateAppPanel()
-    CreateThread(@ThreadCollapse,0)
 	WaitForEvent()
 end sub
 
@@ -207,7 +205,7 @@ sub AppButtonClick(btn as unsigned integer,num as unsigned integer)
     strcpy(@executablePath(0),strcat(@"SYS:/APPS/",@(DirEntries[num].FileName(0))))
     strcpy(@executablePath(0),strcat(@executablePath(0),@"/main.bin"))
     
-	Collapsing=-1
+    Collapse()
     ExecApp(@executablePath(0),@"module /sys/vfs.bin sys=HDA1:FATFS")
     EndCallBack()
 end sub
@@ -218,32 +216,34 @@ sub btnClick(btn as unsigned integer,parm as unsigned integer)
 end sub
 
 sub btnCollapseClick(btn as unsigned integer,parm as unsigned integer)
-	dim x as integer
-    dim i as unsigned integer
-    dim diff as integer = maxPanelXPos -minPanelXPos
-    collapsing = -collapsing
-	EndCallBack()
+	if (Collapsed=1)  then
+        UnCollapse()
+    else
+        Collapse()
+    end if
+    EndCallBack()
 end sub
 
 sub Collapse()
     dim tStart as unsigned long
     dim tEnd as unsigned long
     dim tDiff as unsigned long
-	dim x as integer
-    dim i as unsigned integer
-	for x = currentPanelXPos to minPanelXPos step -4
-        if (collapsing<>-1) then exit sub
-        tStart = GetTimer()
-		GDISetPosition(panelApps, x,panelYPos)
-        currentPanelXPos = x
-		tEnd = GetTimer()
-        tDiff = tEnd-tStart
-        if (tDiff <3) then
-            WaitN(3-tDiff)
-        end if
-	next x
+	'dim x as integer
+    'dim i as unsigned integer
+	'for x = currentPanelXPos to minPanelXPos step -4
+    '    if (collapsing<>-1) then exit sub
+    '    tStart = GetTimer()
+    '	GDISetPosition(panelApps, x,panelYPos)
+    '      currentPanelXPos = x
+	'	tEnd = GetTimer()
+    '    tDiff = tEnd-tStart
+    '    if (tDiff <3) then
+    '        WaitN(3-tDiff)
+    '    end if
+	'next x
     currentPanelXPos=minPanelXPos
     GDISetPosition(panelApps, minPanelXPos,panelYPos)
+    Collapsed=1
 end sub
 
 sub UnCollapse()
@@ -254,29 +254,20 @@ sub UnCollapse()
 	GDIBringToFront(panelApps)
 	GDIBringToFront(panel)
 	GDISetVisible(panelApps,1)
-	dim x as integer
-    dim i as unsigned integer
-	for x = currentPanelXPos to maxPanelXPos step 4
-            if (collapsing<>1) then exit sub
-            tStart = GetTimer()
-            GDISetPosition(panelApps, x,panelYPos)
-            currentPanelXPos = x
-            tEnd = GetTimer()
-            tDiff = tEnd-tStart
-            if (tDiff <3) then
-                WaitN(3-tDiff)
-            end if
-	next x
+	'dim x as integer
+    'dim i as unsigned integer
+	'for x = currentPanelXPos to maxPanelXPos step 4
+    '        if (collapsing<>1) then exit sub
+    '        tStart = GetTimer()
+    '        GDISetPosition(panelApps, x,panelYPos)
+    '        currentPanelXPos = x
+    '        tEnd = GetTimer()
+    '        tDiff = tEnd-tStart
+    '        if (tDiff <3) then
+    '            WaitN(3-tDiff)
+    '        end if
+	'next x
     currentPanelXPos=maxPanelXPos
     GDISetPosition(panelApps, maxPanelXPos,panelYPos)
-end sub
-
-sub ThreadCollapse(p as any ptr)
-    do
-        if (Collapsing<>0) then
-            if (Collapsing=1 and currentPanelXPos<maxPanelXPos) then UnCollapse()
-            if (Collapsing=-1 and currentPanelXPos>minPanelXPos) then Collapse()
-        end if
-        ThreadYield()
-    loop
+    Collapsed=0
 end sub

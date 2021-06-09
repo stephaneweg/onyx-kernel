@@ -183,14 +183,14 @@ sub WaitN(delay as unsigned integer)
 end sub
 
 
-sub EnterCritical()
+sub SysEnterCritical()
 	asm
 		mov eax ,&hE1
 		int 0x30
 	end asm
 end sub
 
-sub ExitCritical()
+sub SysExitCritical()
 	asm
 		mov eax,&hE2
 		int 0x30

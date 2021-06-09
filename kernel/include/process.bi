@@ -22,8 +22,8 @@ TYPE Process field =1
     PagesCount as integer
     
     VMM_Context as VMMContext
-    ShouldFreeMem as unsigned integer
     TmpArgs as unsigned byte ptr
+    ShouldFreeMem as integer
     
     VIRT_CONSOLE as VirtConsole ptr
     

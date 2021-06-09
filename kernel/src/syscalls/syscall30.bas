@@ -92,7 +92,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             XappSignal2Parameters(cptr(Thread ptr,stack->EBX),stack->ECX,stack->esi, stack->EDI)
         case &h0F 'kill process
             var pc = cptr(Process ptr,stack->EBX)
-			Process.TerminateNow(pc)
+			Process.RequestTerminateProcess(pc)
             if (CurrentThread->Owner=pc) then return Scheduler.Switch(stack, Scheduler.Schedule())
         case &h10 'get string
             if (currentThread->ReplyTo<>0) then

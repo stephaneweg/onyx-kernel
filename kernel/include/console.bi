@@ -10,6 +10,7 @@ Type VirtConsole
     declare sub PrintFAIL()
     declare sub BackSpace()
     declare sub Write(src as unsigned byte ptr)
+    declare sub WriteLine(src as unsigned byte ptr)
     declare sub NewLine()
     declare sub Scroll()
     declare sub Clear()

@@ -270,7 +270,7 @@ end function
 sub FAT_FS_RESSOURCE.Read_ROOT(dst as FAT_ENTRY ptr)
 	if (this.Fat_Type<>32) then
         this.Disk->Read(this.Disk,this.reserved_sectors+this.fat_sectors,this.root_dir_sectors,cptr(byte ptr,dst))
-		this.Disk->Read(this.Disk,this.reserved_sectors+this.fat_sectors,this.root_dir_sectors,cptr(byte ptr,dst))
+		'this.Disk->Read(this.Disk,this.reserved_sectors+this.fat_sectors,this.root_dir_sectors,cptr(byte ptr,dst))
 	else
 		this.Read(this.root_cluster,cptr(byte ptr,dst))
 	end if
@@ -300,7 +300,7 @@ sub FAT_FS_RESSOURCE.READ(clusternum as unsigned integer, dst as unsigned byte p
     cpt = 0
     while(nxt<this.fat_limit)
         this.Disk->Read(this.Disk,this.Absolute_sector(nxt)-1,this.sector_per_cluster,buf)
-        this.Disk->Read(this.Disk,this.Absolute_sector(nxt)-1,this.sector_per_cluster,buf)
+        'this.Disk->Read(this.Disk,this.Absolute_sector(nxt)-1,this.sector_per_cluster,buf)
         nxt	=find_fatentry(nxt)
         buf +=(this.sector_per_cluster*this.bytes_per_sector)
         cpt+=1
@@ -714,7 +714,7 @@ function fat_loadfile(ressource  as FS_RESSOURCE ptr,fichier as unsigned byte pt
 		buffer=MAlloc(nbrclust*theFat->sector_per_cluster*theFat->bytes_per_sector)
 		
 		theFat->read(clusternum,buffer)
-		theFat->read(clusternum,buffer)
+		'theFat->read(clusternum,buffer)
 		
 		return buffer
 	else

@@ -65,8 +65,11 @@ sub XappIRQReceived(intno as unsigned integer,p as IRQ_THREAD_POOL ptr)
             *cptr(unsigned integer ptr, st->ESP+36) =p->EDI      
             *cptr(unsigned integer ptr, st->ESP+40) =p->EBP
             th->ReplyTo = cptr(Thread ptr,p->Sender)
-            Scheduler.SetThreadReady(th,0)
-                
+            if (intno<&h30) then
+                Scheduler.SetThreadReadyNow(th)
+            else
+                Scheduler.SetThreadReady(th,0)
+            end if
             currentContext->Activate()
         end if
     end if

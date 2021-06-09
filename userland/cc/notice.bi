@@ -1,0 +1,5 @@
+#define VERSION @"Simple C Compiler - Onyx, Release 0.1.1"
+#define CRIGHT1 @"Copyright 1982, 1983, 1985, 1988 J. E. Hendrix"
+#define CRIGHT2	@"Copyright 1998  H T Walheim"
+#define CRIGHT3 @"Copyright 2003 Charles Childers"
+#define CRIGHT4 @"Copyright 2021 STEPHAN WEGENER"

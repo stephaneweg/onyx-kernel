@@ -42,6 +42,22 @@ type BlockDevice field=1
         writeFN as function(res as BlockDevice ptr,lba as unsigned integer,sectorcount as unsigned short, b as byte ptr) as unsigned integer) as BlockDevice ptr
 end type
 
+type RamDisk extends BlockDevice field=1
+    RDBuffer as unsigned byte ptr
+    
+    declare static function Create(_
+        buff as unsigned byte ptr,_
+        resname as unsigned byte ptr,_
+        diskNum as integer,_
+        Begin as unsigned integer,_
+        sectCount as unsigned integer,_
+        bytesCount as unsigned integer,_
+        readFn as function(res as BlockDevice ptr,lba as unsigned integer,sectorcount as unsigned short, b as byte ptr) as unsigned integer,_
+        writeFN as function(res as BlockDevice ptr,lba as unsigned integer,sectorcount as unsigned short, b as byte ptr) as unsigned integer) as RamDisk ptr
+end type
+
+
+
 dim shared BlockDevices as BlockDevice ptr
 
 
@@ -81,6 +97,35 @@ function BlockDevice.Create(_
     ConsoleWrite(@"Created "):ConsoleWrite(resname):ConsoleNEwLine()
     return dev
 end function
+
+
+function RamDisk.Create(_
+    buff as unsigned byte ptr,_
+    resname as unsigned byte ptr,_
+    diskNum as integer,_
+    Begin as unsigned integer,_
+    sectCount as unsigned integer,_
+    bytesCount as unsigned integer,_
+    readFn as function(res as BlockDevice ptr,lba as unsigned integer,sectorcount as unsigned short, b as byte ptr) as unsigned integer,_
+    writeFN as function(res as BlockDevice ptr,lba as unsigned integer,sectorcount as unsigned short, b as byte ptr) as unsigned integer) as RamDisk ptr
+
+    dim dev as RamDisk ptr =cptr(RamDisk ptr, Malloc(sizeof(RamDisk)))
+    dev->RDBuffer = buff
+    dev->RessourceName = resName
+    dev->DiskNumber = diskNum
+    'dev->Begin = Begin
+    dev->SectorCount = sectCount
+    'dev->BytesCount = bytesCount
+    dev->Read = readFn
+    dev->Write = writeFN
+    dev->MAGIC = &hABCDABCD
+    
+    dev->NextDevice = BlockDevices
+    BlockDevices = dev
+    ConsoleWrite(@"Created "):ConsoleWrite(resname):ConsoleNEwLine()
+    return dev
+end function
+    
     
 function HD_FIND(n as unsigned byte ptr) as BLockDevice ptr
     var dev = BlockDevices

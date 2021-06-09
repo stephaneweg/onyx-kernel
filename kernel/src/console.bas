@@ -120,6 +120,10 @@ sub VirtConsole.BackSpace()
     VIRT[(CursorY*consoleWidth+CursorX)*2]=0
     VIRT[(CursorY*consoleWidth+CursorX)*2+1]=(Background* 16 +Foreground)
 end sub
+sub VirtConsole.WriteLine(src as unsigned byte ptr)
+    this.Write(src)
+    this.NewLine()
+end sub
 
 sub VirtConsole.Write(src as unsigned byte ptr)
     dim cpt as integer
@@ -170,8 +174,7 @@ sub ConsoleSetBackground(c as byte)
 end sub
 
 sub ConsoleWriteLine(src as unsigned byte ptr)
-    ConsoleWrite(src)
-    ConsoleNewLine()
+    CurrentConsole->WriteLine(src)
 end sub
 
 sub ConsoleWriteTextAndHex(src as unsigned byte ptr,n as unsigned integer,newline as boolean)

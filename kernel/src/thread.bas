@@ -2,6 +2,8 @@
 dim shared TotalThreadCount as unsigned integer
 dim shared ThreadIDS as unsigned integer
 dim shared CriticalCount as unsigned integer
+dim shared ThreadSpinLock as unsigned integer
+
 sub EnterCritical()
     if (Scheduler.CurrentRuningThread<>0) then
         Scheduler.CurrentRuningThread->InCritical = 1 
@@ -21,7 +23,31 @@ sub ThreadSleep()
     end asm
 end sub
 
+
+sub ThreadManagerLock()
+    dim slock as unsigned integer ptr= @ThreadSpinLock
+    asm
+        mov ecx,[slock]
+        .acquire:
+            lock bts dword ptr [ecx],0
+            jnc .acquired
+        .retest:
+            pause
+            test dword ptr [ecx],1
+            je .retest
+            
+            lock bts dword ptr [ecx],0
+            jc .retest
+        .acquired:
+    end asm
+end sub
+        
+sub ThreadManagerUnLock()
+    ThreadSpinLock = 0
+end sub
+
 sub Thread.InitManager()
+        ThreadSpinLock=0
         TotalEllapsed = 0
         CriticalCount = 0
         TotalThreadCount = 0
@@ -45,21 +71,27 @@ end sub
 
 sub PROCESS_MANAGER(p as any ptr)
     do
-		'asm cli
-        while (ProcessesToTerminate<>0)
-            var proc = ProcessesToTerminate
-            ProcessesToTerminate = proc->NextProcess
-            Process.Terminate(proc,0)
-		wend
-		
-		while (ProcessesToLoad<>0) 
-            var proc = ProcessesToLoad
-			ProcessesToLoad = proc->NextProcess
-            proc->NextProcess = 0
-			Proc->DoLoad()
-		wend 
-		'asm sti
-        ThreadSleep()
+        if (ProcessesToTerminate<>0) then
+            while (ProcessesToTerminate<>0)
+                var proc = ProcessesToTerminate
+                ProcessesToTerminate = proc->NextProcess
+                Process.Terminate(proc,0)
+            wend
+            
+            
+        end if
+        
+        if (ProcessesToLoad<>0) then
+            while (ProcessesToLoad<>0)
+                var proc = ProcessesToLoad
+                ProcessesToLoad = proc->NextProcess
+                proc->NextProcess = 0
+                proc->DoLoad()
+            wend
+        end if
+        if (ProcessesToLoad=0 and ProcessesToTerminate=0) then
+            ThreadSleep()
+        end if
     loop
 end sub
 

@@ -52,6 +52,10 @@ dim shared IDLE_THREAD as Thread ptr
 dim shared PROCESS_MANAGER_THREAD as Thread ptr
 dim shared IDLE_THREADRunCount as unsigned integer
 dim shared TotalEllapsed as unsigned long
+
+
+declare sub ThreadManagerLock()
+declare sub ThreadManagerUnLock()
 declare sub EnterCritical()
 declare sub ExitCritical()
 declare sub ThreadSleep()

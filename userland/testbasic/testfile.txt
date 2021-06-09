@@ -1,0 +1,52 @@
+program
+	sub main(argCount as uint,argArray as string ptr)
+		for i=0 to argCount-1 step 4
+			ConsoleWrite(argArray)
+			ConsoleWrite(argArray[i])
+			ConsoleWrite(argArray[i*2])
+			ConsoleWrite(argArray[i].x)
+			ConsoleWrite(fntest())
+			ConsoleWrite(fntest(i))
+			ConsoleWrite(fntest(i)[0])
+			ConsoleWrite(fntest(i)[0].x)
+			ConsoleWrite(fntest(i)[1*2])
+			ConsoleWrite(fntest(i)[0].x)
+		next
+	end sub
+
+	sub ConsoleWrite(p1 as string)
+		asm
+			mov eax,3
+			mov ebx,p1
+			int 0x31
+		end asm
+	end sub
+
+	sub fn1 (p1 as int,p2 as int)   
+		#this is a comment
+		p1 = 3
+		p2=4  #another comment
+		p1= "ceci est un test"
+		p2= "ceci #est un test"
+
+		for i= 3 to 9
+			for j=0 to 5 step -2
+			next
+		next
+		i+=3
+		do:loop
+		if j=3 to i<4 then
+			aa[3] = 5
+		else if i+5=6 then
+			aa[3+8]=9
+			aa[fn(test)]=3
+		end if
+	
+	end sub
+
+	
+end program
+
+
+
+

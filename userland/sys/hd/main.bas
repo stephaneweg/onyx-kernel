@@ -96,12 +96,10 @@ end function
 
 
 sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
-	EnterCritical()
 	SlabInit()
 	ConsoleWriteLine(@"Starting usermode hard disk driver")
 	HD_INIT()
 	ConsolePrintOK()
-	ExitCritical()
 	WaitForEvent()
     do:loop
 end sub

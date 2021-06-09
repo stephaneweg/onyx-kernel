@@ -2,8 +2,8 @@
 declare function SemaphoreCreate() as unsigned integer
 declare sub SemaphoreLock(s as unsigned integer)
 declare sub SemaphoreUnlock(s as unsigned integer)
-declare sub EnterCritical()
-declare sub ExitCritical()
+declare sub SysEnterCritical()
+declare sub SysExitCritical()
 declare function CreateThread(fn as any ptr,prio as unsigned integer) as unsigned integer
 declare sub ThreadYield()
 declare sub KillProcess(th as unsigned integer)

@@ -65,6 +65,7 @@ function int_handler(stack as irq_stack ptr) as irq_stack ptr
         
         var th =cptr(Thread ptr, IRQ_THREAD_HANDLERS(intno).Owner)
         
+        var shouldShedule = 0
         
         var pool = cptr(IRQ_THREAD_POOL ptr,KAlloc(sizeof(IRQ_THREAD_POOL)))
         pool->SENDER = cuint(Scheduler.CurrentRuningThread)
@@ -83,6 +84,7 @@ function int_handler(stack as irq_stack ptr) as irq_stack ptr
             if (pool<>0) then
                 XappIRQReceived(intno,pool)
                 KFree(pool)
+                shouldShedule = 1
             end if
         end if
         
@@ -91,6 +93,8 @@ function int_handler(stack as irq_stack ptr) as irq_stack ptr
             stack->EAX = &hFF
             Scheduler.CurrentRuningThread->State=ThreadState.WaitingReply
             Scheduler.CurrentRuningThread->ReplyFrom=th
+            returnStack = Scheduler.Switch(stack,Scheduler.Schedule()) 
+        elseif shouldShedule=1 then
             returnStack = Scheduler.Switch(stack,Scheduler.Schedule()) 
         end if
         

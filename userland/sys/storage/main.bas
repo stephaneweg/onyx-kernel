@@ -28,9 +28,9 @@ dim shared tmpFname as unsigned byte ptr
 #include once "fs/fatfs.bas"
 #include once "syscall33.bas"
 
+declare sub mountRamdisk()
 declare sub mountSys(argc as unsigned integer,argv as unsigned byte ptr ptr) 
 sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
-    EnterCritical()
     SlabInit()
     HD_INIT()
     tmpFname = MAlloc(1024)
@@ -42,10 +42,10 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
     
     FAT_INIT()
 	mountSys(argc,argv)
+    'mountRamdisk()
     DefineIRQHandler(&h33,@int33Handler,1)
     
     UDevCreate(@"VFS",1,0)
-    ExitCritical()
     WaitForEvent()
     Do:loop
 end sub
@@ -69,6 +69,39 @@ sub mountSys(argc as unsigned integer,argv as unsigned byte ptr ptr)
 			end if
 		next i
 	end if
+end sub
+
+function RDREAD(res as BlockDevice ptr,lba as unsigned integer,sectorcount as unsigned short, b as byte ptr) as unsigned integer
+    dim rd as Ramdisk ptr = cptr(Ramdisk ptr,res)
+    var src = cptr(unsigned byte ptr,cuint(rd->RDBuffer)+lba*512)
+    var cpt = sectorcount*512
+    memcpy32(b,src,cpt/4)
+    return 1
+end function
+
+function RDWRITE(res as BlockDevice ptr,lba as unsigned integer,sectorcount as unsigned short, b as byte ptr) as unsigned integer
+    dim rd as Ramdisk ptr = cptr(Ramdisk ptr,res)
+    var dst = cptr(unsigned byte ptr,cuint(rd->RDBuffer)+lba*512)
+    var cpt = sectorcount*512
+    memcpy32(dst,b,cpt/4)
+    return 1
+end function
+
+
+sub mountRamdisk()
+    dim fsize as unsigned integer
+    ConsoleWrite(@"Loading ramdisk")
+    dim buff as unsigned byte ptr = VFS_LOAD_FILE(@"SYS:/BOOT/RD.IMG",@fsize)
+    if (fsize>0 and buff<>0) then
+        ConsoleNewLine()
+        ConsoleWriteLine(@"Creating ramdisk device")
+        RamDisk.Create(buff,@"RD",0,0,fsize/512,fsize,@RDREAD,@RDWRITE)
+        ConsoleWriteLine(@"Mounting")
+        VFS_MOUNT(@"RD",@"FATFS",@"SYS:/")
+    else
+        ConsoleWrite(@" ... Not found")
+        ConsoleNewLine()
+    end if
 end sub
 
 sub VFS_SHOW_DESCRIPTORS()

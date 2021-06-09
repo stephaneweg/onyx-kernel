@@ -1,7 +1,10 @@
+#include once "console.bi"
+#include once "console.bas"
 function ExecApp(path as unsigned byte ptr,args as unsigned byte ptr) as unsigned integer
 	dim fsize as unsigned integer = 0
-	
+	var n1 = GetTimer()
 	dim img as unsigned byte ptr = VFS_LOAD_FILE(path,@fsize)
+    var n2 = GetTimer()
 	if (img<>0 and fsize<>0) then
 		asm
 			mov eax,&h01
@@ -12,6 +15,13 @@ function ExecApp(path as unsigned byte ptr,args as unsigned byte ptr) as unsigne
 			mov [function],eax
 		end asm
         Free(img)
+        var n3 = GetTimer()
+        dim nn1  as unsigned integer = n2-n1
+        dim nn2  as unsigned integer = n3-n2
+        dim nn3 as unsigned integer = n3-n1
+        ConsoleWrite(@"Loading took"):ConsoleWriteNumber(nn1,10):COnsoleWriteLine(@"ms")
+        ConsoleWrite(@"Starting took"):ConsoleWriteNumber(nn2,10):COnsoleWriteLine(@"ms")
+        ConsoleWrite(@"Total took"):ConsoleWriteNumber(nn3,10):COnsoleWriteLine(@"ms")
 	else
 		return 0
 	end if

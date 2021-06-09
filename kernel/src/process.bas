@@ -28,7 +28,6 @@ constructor Process()
         VIRT_CONSOLE = @SYSCONSOLE
     end if
     
-    
     NextProcess = 0
     Threads = 0
     PagesCount = 0
@@ -78,6 +77,10 @@ end sub
 
 sub Process.FreeConsole()
     if (VIRT_CONSOLE <> @SYSCONSOLE) then
+        if (CurrentConsole = VIRT_CONSOLE) then
+            SysConsole.Activate()
+        end if
+        
         var used = false
         var proc=FirstProcessList
         while proc<>0
@@ -95,23 +98,45 @@ end sub
 
 
 sub Process.DoLoad()
+    
     IRQ_DISABLE(0)
 	dim neededPages as unsigned integer = ((image->ImageEnd - ProcessAddress) shr 12)+2
-    var ctx = current_context
+    
 	VMM_Context.Initialize()
-	VMM_Context.Activate()
     VMM_Context.map_page(VIRT_CONSOLE->VIRT,VIRT_CONSOLE->PHYS, VMM_FLAGS_USER_DATA)
 	SBRK(neededPages)
 	
-	var targetImg = cptr(EXECUTABLE_HEADER ptr,ProcessAddress)
-	memcpy(targetImg,image,ImageSize)
+    
+	dim remaining as unsigned integer = ImageSize
+    dim addr as unsigned integer = ProcessAddress
+    dim src as unsigned integer = cuint(image)
+    while remaining>0
+        dim chunkSize as unsigned integer = iif(remaining>PAGE_SIZE,PAGE_SIZE,remaining)
+        dim phys as any ptr = VMM_CONTEXT.Resolve(cptr(any ptr,addr))
+        
+        dim dst as any ptr = VMM_KERNEL_AUTOMAP(phys,PAGE_SIZE,VMM_FLAGS_KERNEL_DATA)
+        memcpy(dst,cptr(any ptr,src),chunkSize)
+        VMM_KERNEL_UNMAP(dst,PAGE_SIZE)
+        
+        addr+=chunkSize
+        src+=chunkSize
+        remaining-=chunkSize
+    wend
+    
+    
+    asm cli
+    var ctx = current_context
+    VMM_Context.Activate()
     if ShouldFreeMem then
         KFree(image)
 	end if
-    Image =  targetImg
+    Image =  cptr(EXECUTABLE_HEADER ptr,ProcessAddress)
 	Image->ArgsCount = 0
 	ParseArguments()
 	Thread.Create(@this,Image->Init,5)
+    ctx->Activate()
+    asm sti
+    
     IRQ_ENABLE(0)
 end sub
 
@@ -210,8 +235,11 @@ function Process.RequestLoadMem(image as EXECUTABLE_HEADER ptr,fsize as unsigned
 	end if
     result->ImageSize = fsize
     result->ShouldFreeMem = shouldFree
+    
     result->NextProcess = ProcessesToLoad
     ProcessesToLoad = result
+    
+    
     if (PROCESS_MANAGER_THREAD<>0) then
         if (PROCESS_MANAGER_THREAD->State = ThreadState.waiting) then Scheduler.SetThreadReady(PROCESS_MANAGER_THREAD,0)
     end if
@@ -224,7 +252,6 @@ function Process.RequestLoadUser(image as EXECUTABLE_HEADER ptr,fsize as unsigne
 		dim newImg as EXECUTABLE_HEADER ptr = MAlloc(fsize)
 		if (newImg<>0) then
 			memcpy(cptr(unsigned byte ptr,newImg),cptr(unsigned byte ptr,image),fsize)
-    
 			return Process.RequestLoadMem(newImg,fsize,1,args)
 		end if
 	end if
@@ -252,40 +279,22 @@ end sub
 
 
 
-sub Process.TerminateNow(app as Process ptr)
-    'destroy the thread
-	 var th=cptr(Thread ptr,app->Threads)
-	 while th<>0
-		var n = th->NextThreadProc
-        IRQ_THREAD_TERMINATED(cuint(th))
-		Scheduler.RemoveThread(th)
-		'destroy the thread
-		th->destructor()
-		'free its memory
-		KFree(th)
-		
-		th=n
-	 wend
-     
-     'destroy the app	
-    app->Destructor()
-    
-    KFree(app)
-end sub
-
 sub Process.RequestTerminateProcess(app as Process ptr)
+    
     var th=cptr(Thread ptr,app->Threads)
+    
+    IRQ_DISABLE(0)
     while(th<>0)
         IRQ_THREAD_TERMINATED(cuint(th))
         th->State = ThreadState.Terminating
         Scheduler.RemoveThread(th)
         th=th->NextThreadProc
     wend
-	
+    IRQ_ENABLE(0)
+    
     app->NextProcess = ProcessesToTerminate
     ProcessesToTerminate = app
     
-	
     if (PROCESS_MANAGER_THREAD<>0) then
         if (PROCESS_MANAGER_THREAD->State = ThreadState.waiting) then Scheduler.SetThreadReady(PROCESS_MANAGER_THREAD,0)
     end if
@@ -296,8 +305,9 @@ end sub
 
 sub Process.Terminate(app as Process ptr,args as any ptr)
 	'destroy the thread
-	 var th=cptr(Thread ptr,app->Threads)
-	 while th<>0
+    IRQ_DISABLE(0)
+    var th=cptr(Thread ptr,app->Threads)
+    while th<>0
 		var n = th->NextThreadProc
 		
 		'destroy the thread
@@ -306,10 +316,37 @@ sub Process.Terminate(app as Process ptr,args as any ptr)
 		KFree(th)
 		
 		th=n
-	 wend
-	
+    wend
+    IRQ_ENABLE(0)
+    
 	'destroy the app	
     app->Destructor()
     
     KFree(app)
 end sub
+
+
+sub Process.TerminateNow(app as Process ptr)
+  
+    'destroy the thread
+    IRQ_DISABLE(0)
+    var th=cptr(Thread ptr,app->Threads)
+    while th<>0
+		var n = th->NextThreadProc
+        IRQ_THREAD_TERMINATED(cuint(th))
+		Scheduler.RemoveThread(th)
+		'destroy the thread
+		th->destructor()
+		'free its memory
+		KFree(th)
+		
+		th=n
+    wend
+    IRQ_ENABLE(0)
+    
+     'destroy the app	
+    app->Destructor()
+    
+    KFree(app)
+end sub
+

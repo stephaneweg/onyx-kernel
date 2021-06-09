@@ -1,57 +1,58 @@
-format binary
-org 0x40000000
-use32
-IMAGE_START:
-		dd 0xAADDBBFF
-		dd MAIN	 ;init method
-_argc	dd 0x0
-		dd _argv
-		dd IMAGE_END
-		
+
 include 'macros.inc'
+program
+		
+include 'sys.inc'
+
 MAIN:
 	push ebp
 	mov ebp,esp
 	
 	
-	var x
-	var s
+	try t1
+		xcall consoleWrite, lblHello
+		xcall consoleNewLine
+		xcall subMethod,0,20
+		xcall consoleWrite,lblHello1
+		xcall consoleNewLine
+	catch t1
+		push eax
+		let [errNo]
+		xcall consoleWrite,lblHello2
+		xcall consoleWriteNumber,[errNo],10
+		xcall consoleNewLine
+	endtry t1
 	
-	mov dword [x],3
-	mov dword [s],5
-	
-	xcall consoleWriteLine, lblHello
-	xcall consoleWriteLine, lblHello1
-	
-	
-	xcall consoleWriteNumber,[x],10
-	xcall consoleNewLine
-	xcall consoleWriteNumber,[s],10
-	xcall consoleNewLine
-	
-	
-	for x,1,5,1,f1
-	xcall consoleWriteNumber,[x],10
-	xcall consoleNewLine
-	next x,f1
-	xcall consoleNewLine
-	
-	for x,10,5,-1,f2
-	xcall consoleWriteNumber,[x],10
-	xcall consoleNewLine
-	next x,f2
-	xcall consoleNewLine
-	
-	xcall consoleWriteLine,lblHello2
 	
 	
 	mov eax,0x5
 	int 0x30
 	jmp $
 
-lblHello db 'Hello world',0
-lblHello1 db 'this is a test with xcall',0
-lblHello2 db 'This was a number',0
+	
+beginProc subMethod,f,t
+	var x
+	for x,[f],[t],1,f1
+	
+		xcall consoleWrite,lblTest
+		xcall consoleWriteNumber,[x],10
+		xcall consoleNewLine
+		
+		ifg [x],15,if1
+			throw 25
+		endif if1
+	next x,f1
+endProc 2
+		
+string	lblHello ,	'Hello world'
+string	lblHello1,	'this should not append'
+string	lblHello2,	'Exception caught : '
+string	lblTest,	'Test :'
 
-_argv rb 1024
-IMAGE_END:
+errNo		dd 0x0
+string	lblMultiply,'*'
+string	lblAdd,		'+'
+string	lblSub,		'-'
+string	lblEqual,	'='
+
+endProgram

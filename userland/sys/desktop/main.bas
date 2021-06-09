@@ -99,7 +99,6 @@ end sub
 
 sub GuiLoop(p as any ptr)
     do
-        'GetMouseInfo(@MouseX,@MouseY,@MouseB)
         if (MOUSE_UPDATED = 1 or KBD_UPDATED = 1 or GDI_UPDATED=1) then
             SpinLock()
             if (MOUSE_UPDATED = 1) then MOUSE_UPDATED = 0

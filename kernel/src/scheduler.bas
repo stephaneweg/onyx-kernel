@@ -5,6 +5,17 @@ constructor ThreadQueue()
 end constructor
 
 
+sub ThreadQueue.EnqueueNow(t as Thread ptr)
+    
+    t->NextThreadQueue = this.FirstThread
+    this.FirstThread = t
+    if (this.LastThread=0) then
+        this.LastThread = t
+    end if
+    this.Count += 1
+    
+end sub
+
 sub ThreadQueue.Enqueue(t as Thread ptr)
     if (this.FirstThread<>0) then
         this.LastThread->NextThreadQueue = t
@@ -149,6 +160,15 @@ end sub
 
 
 
+sub ThreadScheduler.SetThreadReadyNow(t as Thread ptr)
+    if (t->State=ThreadState.Ready) then exit sub
+    
+    PriorityQueue(0).EnqueueNow(t)
+    
+    t->Priority = 0
+    t->State=ThreadState.Ready
+end sub
+
 sub ThreadScheduler.SetThreadReady(t as Thread ptr,priority as unsigned integer)
     if (t->State=ThreadState.Ready) then exit sub
     if (priority>MaxPriority) then priority = MaxPriority
@@ -195,6 +215,8 @@ function ThreadScheduler.ThreadCount() as unsigned integer
     result+=RTCQueue.Count
     return result
 end function
+
+
 
 function ThreadScheduler.Schedule() as Thread ptr
 

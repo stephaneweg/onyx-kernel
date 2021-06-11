@@ -11,7 +11,7 @@ LOAD obj/start.o
 LOAD obj/main.o
                 0x00100000                . = 0x100000
 
-.text           0x00100000     0x8f24
+.text           0x00100000     0x8bc4
                 0x00100000                _KERNEL_START = .
  *(.text)
  .text          0x00100000      0x424 obj/Interrupts.o
@@ -22,16 +22,15 @@ LOAD obj/main.o
                 0x00100428                Mboot
                 0x001005f3                _realmode_end
  *fill*         0x001005f3        0x1 00
- .text          0x001005f4     0x8930 obj/main.o
-                0x00107744                __ZN15THREADSCHEDULER17SETTHREADREALTIMEEP6THREADm@12
+ .text          0x001005f4     0x85d0 obj/main.o
+                0x00107634                __ZN15THREADSCHEDULER17SETTHREADREALTIMEEP6THREADm@12
                 0x00101854                _GET_RTC_UPDATE_IN_PROGRESS_FLAG@0
                 0x00101f24                __ZN11VIRTCONSOLE8ACTIVATEEv@4
                 0x001017d4                _PIC_INIT@0
-                0x001073c4                __ZN11THREADQUEUE10RTCDEQUEUEEv@4
-                0x00108d44                __ZN14USERMODEDEVICE4FINDEPh@4
+                0x00107344                __ZN11THREADQUEUE10RTCDEQUEUEEv@4
+                0x00108a24                __ZN14USERMODEDEVICE4FINDEPh@4
                 0x00102e34                _STRLASTINDEXOF@8
                 0x00102ba4                _STRTRIM@4
-                0x00107844                __ZN15THREADSCHEDULER13RESETPRIORITYEP6THREAD@8
                 0x00105564                _IRQ_ENABLE@4
                 0x00104d04                _KALLOC@4
                 0x00103474                _STRCAT@8
@@ -39,21 +38,21 @@ LOAD obj/main.o
                 0x00105534                _IRQ_WAIT@4
                 0x00100f54                _VMM_KERNEL_AUTOMAP@12
                 0x00105e24                __ZN7PROCESSD1Ev
-                0x00106cd4                _KERNEL_IDLE@4
-                0x00106b94                __ZN6THREAD11INITMANAGEREv@0
+                0x00106cb4                _KERNEL_IDLE@4
+                0x00106b74                __ZN6THREAD11INITMANAGEREv@0
                 0x00102ac4                _STRLEN@4
                 0x001060d4                __ZN7PROCESS9DOLOADELFEv@4
                 0x00102b04                _STRWLEN@4
-                0x00106684                __ZN7PROCESS15REQUESTLOADUSEREP17EXECUTABLE_HEADERmPh@12
-                0x00106c04                __ZN6THREAD5READYEv@0
-                0x00108814                _XAPPSIGNAL2PARAMETERS@16
+                0x00106674                __ZN7PROCESS15REQUESTLOADUSEREP17EXECUTABLE_HEADERmPh@12
+                0x00106be4                __ZN6THREAD5READYEv@0
+                0x001084f4                _XAPPSIGNAL2PARAMETERS@16
                 0x00102004                __ZN11VIRTCONSOLE7PRINTOKEv@4
                 0x00102f04                _STRNCMP@12
                 0x00105f34                __ZN7PROCESS13CREATECONSOLEEv@4
                 0x00102b54                _STRDLEN@4
                 0x00102474                __ZN11VIRTCONSOLE9WRITELINEEPh@8
-                0x00108894                _XAPPSIGNAL6PARAMETERS@32
-                0x00106b44                _THREADMANAGERLOCK@0
+                0x00108574                _XAPPSIGNAL6PARAMETERS@32
+                0x00106b24                _THREADMANAGERLOCK@0
                 0x00100ca4                _GDT_CREATE_SEG@16
                 0x00104654                _PMM_STRIPE@8
                 0x00100b04                _GDT_DELETE@4
@@ -61,51 +60,50 @@ LOAD obj/main.o
                 0x001046a4                _PMM_ALLOCPAGE@4
                 0x001027b4                _CONSOLEWRITESIGNED@4
                 0x00102a74                _FSIN@8
-                0x00108b14                __ZN9SEMAPHORED1Ev
+                0x001087f4                __ZN9SEMAPHORED1Ev
                 0x00105644                _IRQ_ATTACH_HANDLER@8
                 0x00104124                _ATOF@4
                 0x001044f4                _PMM_GET_FREEPAGES_COUNT@0
-                0x00107284                __ZN11THREADQUEUE10ENQUEUENOWEP6THREAD@8
                 0x001008c4                _DOREALMODEACTIONREG@32
-                0x00106e24                __ZN6THREAD9CREATESYSEPFvPvEm@8
+                0x00106e04                __ZN6THREAD9CREATESYSEPFvPvEm@8
                 0x00103a34                _ULONGTOSTR@8
-                0x00108ca4                _UDEV_INIT@0
+                0x00108984                _UDEV_INIT@0
                 0x00105ed4                __ZN7PROCESS18CREATEADDRESSSPACEEm@8
                 0x00103004                _STRWCMP@8
                 0x001010a4                __ZN10VMMCONTEXT10INITIALIZEEv@4
                 0x00105cb4                __ZN7PROCESSC1Ev
                 0x00102d54                _STRINDEXOF@8
                 0x00101f44                __ZN11VIRTCONSOLE7PUTCHAREa@8
-                0x001079c4                __ZN15THREADSCHEDULER8SCHEDULEEv@4
+                0x00107744                __ZN15THREADSCHEDULER8SCHEDULEEv@4
                 0x00101e44                _CONSOLEINIT@0
                 0x00102a24                _FCOS@8
                 0x001026c4                _CONSOLEWRITETEXTANDHEX@12
-                0x001075a4                __ZN15THREADSCHEDULER12REMOVETHREADEP6THREAD@8
+                0x001074e4                __ZN15THREADSCHEDULER12REMOVETHREADEP6THREAD@8
                 0x001014d4                __ZN10VMMCONTEXT8MAP_PAGEEPvS0_m@16
                 0x001012d4                __ZN10VMMCONTEXT14FREE_PAGETABLEEPm@8
-                0x00107cd4                _SYSCALL30HANDLER@4
+                0x001079b4                _SYSCALL30HANDLER@4
                 0x00102684                _CONSOLESETBACKGROUND@4
+                0x001076d4                __ZN15THREADSCHEDULER14SETTHREADREADYEP6THREAD@8
                 0x001048c4                _SLABINIT@0
-                0x00106af4                _ENTERCRITICAL@0
+                0x00106ad4                _ENTERCRITICAL@0
                 0x00100ed4                _VMM_EXIT@0
                 0x00101894                _GET_RTC_REGISTER@4
                 0x001043e4                _ATOLHEX@4
-                0x001072c4                __ZN11THREADQUEUE7ENQUEUEEP6THREAD@8
                 0x00103c14                _UINTTOSTR@8
                 0x001026a4                _CONSOLEWRITELINE@4
                 0x00105514                _DEFAULTIRQHANDLER@4
                 0x00104ce4                _PAGEFREE@4
-                0x00106d54                __ZN6THREADD1Ev
-                0x00106b34                _THREADSLEEP@0
+                0x00106d34                __ZN6THREADD1Ev
+                0x00106b14                _THREADSLEEP@0
                 0x001059d4                _VESAPROBE@0
                 0x00105934                _VESAGETMODEINFO@4
-                0x001067b4                __ZN7PROCESS9TERMINATEEPS_Pv@8
+                0x00106794                __ZN7PROCESS9TERMINATEEPS_Pv@8
                 0x001044c4                _ABSOLUTE@4
                 0x00100794                _DOREALMODEACTION@4
                 0x00101654                __ZN10VMMCONTEXT10UNMAP_PAGEEPv@8
                 0x001005f4                _MAIN@4
                 0x00103df4                _STRCPY@8
-                0x00106824                __ZN7PROCESS12TERMINATENOWEPS_@4
+                0x00106804                __ZN7PROCESS12TERMINATENOWEPS_@4
                 0x00100dd4                _VMM_INIT@0
                 0x00100f94                _VMM_KERNEL_UNMAP@8
                 0x00102f74                _STRCMP@8
@@ -113,12 +111,12 @@ LOAD obj/main.o
                 0x001028c4                _CONSOLEUPDATECURSOR@0
                 0x00103f94                _memset
                 0x00104224                _ATOIHEX@4
-                0x00107314                __ZN11THREADQUEUE12ENQUEUERANGEEP6THREADS1_m@16
-                0x00106cf4                _INT20HANDLER@4
+                0x00106cd4                _INT20HANDLER@4
                 0x001006e4                _KERNEL_ERROR@8
                 0x00105b44                _VESASETMODE@4
                 0x001027f4                _CONSOLEWRITEUNUMBER@8
                 0x00104854                _GETSMALLESTPOWEROFTWOO@4
+                0x00107294                __ZN11THREADQUEUE11ENQUEUETAILEP6THREAD@8
                 0x00101674                __ZN10VMMCONTEXT11UNMAP_RANGEEPvm@12
                 0x00105704                __ZN18IRQ_THREAD_HANDLER7ENQUEUEEP15IRQ_THREAD_POOL@8
                 0x00105024                _INT_HANDLER@4
@@ -127,7 +125,7 @@ LOAD obj/main.o
                 0x00101434                __ZN10VMMCONTEXT7AUTOMAPEPvmmmm@24
                 0x00100d24                _LDT_SET_GATE@20
                 0x00101214                __ZN10VMMCONTEXT13GET_PAGETABLEEm@8
-                0x00107234                __ZN11THREADQUEUEC1Ev
+                0x00107204                __ZN11THREADQUEUEC1Ev
                 0x00104c44                __ZN4SLAB4FREEEPv@8
                 0x001055d4                _IRQ_DISABLE@4
                 0x00101304                __ZN10VMMCONTEXT15FIND_FREE_PAGESEmmm@16
@@ -139,36 +137,35 @@ LOAD obj/main.o
                 0x00103134                _STRTOUPPER@4
                 0x00105664                _IRQ_DETACH_HANDLER@4
                 0x00103ff4                _ATOI@4
-                0x00107194                __ZN6THREAD6DOWAITEP9IRQ_STACK@8
+                0x00107164                __ZN6THREAD6DOWAITEP9IRQ_STACK@8
                 0x00102854                _CONSOLEPRINTOK@0
-                0x001065a4                __ZN7PROCESS14REQUESTLOADMEMEP17EXECUTABLE_HEADERmmPh@16
-                0x00106a54                __ZN17ADDRESSSPACEENTRY8COPYFROMEPvm@12
-                0x001074e4                __ZN15THREADSCHEDULERC1Ev
+                0x00106594                __ZN7PROCESS14REQUESTLOADMEMEP17EXECUTABLE_HEADERmmPh@16
+                0x00106a34                __ZN17ADDRESSSPACEENTRY8COPYFROMEPvm@12
+                0x00107464                __ZN15THREADSCHEDULERC1Ev
                 0x001015e4                __ZN10VMMCONTEXT9MAP_RANGEEPvS0_S0_m@20
-                0x00107964                __ZN15THREADSCHEDULER11THREADCOUNTEv@4
+                0x00107714                __ZN15THREADSCHEDULER11THREADCOUNTEv@4
                 0x001028d4                _MODULES_INIT@4
                 0x00100744                _REALMODE_INIT@0
                 0x00103544                _FTOA@12
                 0x00100f34                _VMM_GET_CURRENT_CONTEXT@0
-                0x001066e4                __ZN7PROCESS9ADDTHREADEPv@8
+                0x001066d4                __ZN7PROCESS9ADDTHREADEPv@8
                 0x00104924                __ZN12SLABMETADATA6KALLOCEm@8
-                0x00108714                _SYSCALL31HANDLER@4
-                0x00108c34                __ZN9SEMAPHORE9SEMUNLOCKEP6THREAD@8
+                0x001083f4                _SYSCALL31HANDLER@4
+                0x00108914                __ZN9SEMAPHORE9SEMUNLOCKEP6THREAD@8
                 0x00103754                _FLOATTOSTR@4
-                0x001069a4                __ZN17ADDRESSSPACEENTRYD1Ev
+                0x00106984                __ZN17ADDRESSSPACEENTRYD1Ev
                 0x001019f4                _GETTIMEBCD@0
-                0x001077f4                __ZN15THREADSCHEDULER14SETTHREADREADYEP6THREADm@12
                 0x00103284                _STRTOLOWER@4
                 0x00101ef4                __ZN11VIRTCONSOLED1Ev
                 0x00104aa4                __ZN4SLAB4INITEt@8
                 0x001038c4                _DOUBLETOSTR@8
-                0x00108954                _XAPPIRQRECEIVED@8
+                0x00108634                _XAPPIRQRECEIVED@8
                 0x001026f4                _CONSOLEWRITETEXTANDDEC@12
                 0x00103344                _SUBSTRING@12
                 0x00101764                _SET_TIMER_FREQ@4
                 0x00102664                _CONSOLESETFOREGROUND@4
                 0x00103fb4                _MEMSET16@12
-                0x00107364                __ZN11THREADQUEUE7DEQUEUEEv@4
+                0x001072e4                __ZN11THREADQUEUE7DEQUEUEEv@4
                 0x00101174                __ZN10VMMCONTEXT4SYNCEv@4
                 0x00102864                _CONSOLEPRINTFAIL@0
                 0x00103414                _STRENDSWITH@8
@@ -178,8 +175,8 @@ LOAD obj/main.o
                 0x001018d4                _GETDATEBCD@0
                 0x00103cf4                _INTTOSTR@8
                 0x00100a34                _GDT_FIND_FREE@0
-                0x00106304                __ZN7PROCESS14PARSEARGUMENTSEv@4
-                0x00108cb4                __ZN14USERMODEDEVICE6CREATEEPhP6THREADmm@16
+                0x001062f4                __ZN7PROCESS14PARSEARGUMENTSEv@4
+                0x00108994                __ZN14USERMODEDEVICE6CREATEEPhP6THREADmm@16
                 0x001021f4                __ZN11VIRTCONSOLE9PRINTFAILEv@4
                 0x001031f4                _STRTOLOWERFIX@4
                 0x00102584                __ZN11VIRTCONSOLE7NEWLINEEv@4
@@ -188,42 +185,42 @@ LOAD obj/main.o
                 0x00103f14                _MEMCPY64@12
                 0x001056a4                _IRQ_SET_THREAD_HANDLER@16
                 0x00102814                _CONSOLEWRITENUMBER@8
-                0x00106b14                _EXITCRITICAL@0
-                0x00108b74                __ZN9SEMAPHORE7SEMLOCKEP6THREAD@8
+                0x00106af4                _EXITCRITICAL@0
+                0x00108854                __ZN9SEMAPHORE7SEMLOCKEP6THREAD@8
                 0x00105fc4                __ZN7PROCESS11FREECONSOLEEv@4
-                0x00107614                __ZN15THREADSCHEDULER6SWITCHEP9IRQ_STACKP6THREAD@12
+                0x00107524                __ZN15THREADSCHEDULER6SWITCHEP9IRQ_STACKP6THREAD@12
                 0x001028a4                _CONSOLENEWLINE@0
                 0x00102834                _CONSOLEPUTCHAR@4
                 0x00104304                _ATOL@4
-                0x00108da4                __ZN14USERMODEDEVICE6INVOKEEmP6THREADmmmm@24
-                0x00107434                __ZN11THREADQUEUE6REMOVEEP6THREAD@8
+                0x00108a84                __ZN14USERMODEDEVICE6INVOKEEmP6THREADmmmm@24
+                0x001073b4                __ZN11THREADQUEUE6REMOVEEP6THREAD@8
+                0x00107254                __ZN11THREADQUEUE11ENQUEUEHEADEP6THREAD@8
                 0x001023f4                __ZN11VIRTCONSOLE9BACKSPACEEv@4
                 0x00102874                _CONSOLEBACKSPACE@0
-                0x00106b84                _THREADMANAGERUNLOCK@0
-                0x00106714                __ZN7PROCESS23REQUESTTERMINATEPROCESSEPS_@4
-                0x00107894                __ZN15THREADSCHEDULER16INCREASEPRIORITYEm@8
-                0x00108a94                __ZN9SEMAPHOREC1Ev
-                0x00107b84                _NEXTRANDOMNUMBER@8
+                0x00106b64                _THREADMANAGERUNLOCK@0
+                0x00106704                __ZN7PROCESS23REQUESTTERMINATEPROCESSEPS_@4
+                0x00108774                __ZN9SEMAPHOREC1Ev
+                0x00107864                _NEXTRANDOMNUMBER@8
                 0x001061f4                __ZN7PROCESS6DOLOADEv@4
                 0x001025b4                __ZN11VIRTCONSOLE6SCROLLEv@4
                 0x00103b14                _LONGTOSTR@8
                 0x00102724                _CONSOLEWRITETEXTANDSIZE@12
-                0x00106c24                _PROCESS_MANAGER@4
+                0x00106c04                _PROCESS_MANAGER@4
                 0x00102614                __ZN11VIRTCONSOLE5CLEAREv@4
                 0x001058c4                _VESAGETINFO@0
                 0x001057b4                _IRQ_THREAD_TERMINATED@4
                 0x00103eb4                _MEMCPY512@12
-                0x001077b4                __ZN15THREADSCHEDULER17SETTHREADREADYNOWEP6THREAD@8
+                0x00107694                __ZN15THREADSCHEDULER17SETTHREADREADYNOWEP6THREAD@8
                 0x001047a4                _PMM_FREEPAGE@4
                 0x00103e94                _MEMCPY32@12
-                0x00107154                __ZN6THREAD9ADDTOLISTEv@4
+                0x00107134                __ZN6THREAD9ADDTOLISTEv@4
                 0x00100b54                _GDT_INIT@0
                 0x001016c4                __ZN10VMMCONTEXT7RESOLVEEPv@8
                 0x00104cb4                _PAGEALLOC@4
                 0x00105c64                _VESARESETSCREEN@0
                 0x00102494                __ZN11VIRTCONSOLE5WRITEEPh@8
                 0x00100fc4                _VMM_INIT_LOCAL@0
-                0x001068a4                __ZN17ADDRESSSPACEENTRY4SBRKEm@8
+                0x00106884                __ZN17ADDRESSSPACEENTRY4SBRKEm@8
                 0x00101dc4                _PIC_IS_SPURIOUS@4
                 0x00101834                _MASK_IRQ@0
                 0x00101814                _UNMASK_IRQ@0
@@ -235,7 +232,7 @@ LOAD obj/main.o
                 0x00106074                __ZN7PROCESS10DOLOADFLATEv@4
                 0x00105754                __ZN18IRQ_THREAD_HANDLER7DEQUEUEEv@4
                 0x00101ad4                _READ_RTC@0
-                0x00106fc4                __ZN6THREAD6CREATEEP7PROCESSmm@12
+                0x00106fa4                __ZN6THREAD6CREATEEP7PROCESSmm@12
                 0x00102d34                _STRCONTAINS@8
 
 .rodata
@@ -251,15 +248,15 @@ LOAD obj/main.o
 .dtors          0x001096b0        0x4
  .dtors         0x001096b0        0x4 obj/main.o
 
-.bss            0x001096b4   0x502738
+.bss            0x001096b4   0x5026c0
                 0x001096b4                SBSS = .
  *(COMMON)
  *(.bss)
  .bss           0x001096b4   0x100000 obj/start.o
- .bss           0x002096b4   0x402738 obj/main.o
-                0x0060bdec                EBSS = .
-                0x0060bdec                _KERNEL_END = .
+ .bss           0x002096b4   0x4026c0 obj/main.o
+                0x0060bd74                EBSS = .
+                0x0060bd74                _KERNEL_END = .
 OUTPUT(bin/kernel.elf elf32-i386)
 
-.rel.dyn        0x0060bdec        0x0
+.rel.dyn        0x0060bd74        0x0
  .rel.text      0x00000000        0x0 obj/Interrupts.o

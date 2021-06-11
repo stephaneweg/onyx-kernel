@@ -145,22 +145,16 @@ sub Process.DoLoadElf()
 end sub
 
 sub Process.DoLoad()
-    
     IRQ_DISABLE(0)
-	
-    
+	    
 	VMM_Context.Initialize()
     VMM_Context.map_page(VIRT_CONSOLE->VIRT,VIRT_CONSOLE->PHYS, VMM_FLAGS_USER_DATA)
 	
-    
-    
     dim entry as unsigned integer = 0
     if (image->Magic = &hAADDBBFF) then
         DoLoadFlat()
-        entry = image->Init
     elseif(image->MAGIC = ELF_MAGIC) then
         DoLoadELF()
-        entry = Cptr(ELF_HEADER ptr,image)->ENTRY_POINT
     end if
     
 	HeapAddressSpace = this.CreateAddressSpace(ProcessHeapAddress)
@@ -169,14 +163,13 @@ sub Process.DoLoad()
     if ShouldFreeMem then
         KFree(image)
 	end if
-    Image =  cptr(EXECUTABLE_HEADER ptr,ProcessAddress)
-	
+    Image =  cptr(EXECUTABLE_HEADER ptr,ProcessAddress)	
     
     asm cli
     var ctx = current_context
     VMM_Context.Activate()
 	ParseArguments()
-	Thread.Create(@this,entry,5)
+	Thread.Create(@this,image->Init,5)
     ctx->Activate()
     asm sti
     
@@ -284,7 +277,7 @@ function Process.RequestLoadMem(image as EXECUTABLE_HEADER ptr,fsize as unsigned
     
     
     if (PROCESS_MANAGER_THREAD<>0) then
-        if (PROCESS_MANAGER_THREAD->State = ThreadState.waiting) then Scheduler.SetThreadReady(PROCESS_MANAGER_THREAD,0)
+        if (PROCESS_MANAGER_THREAD->State = ThreadState.waiting) then Scheduler.SetThreadReady(PROCESS_MANAGER_THREAD)
     end if
     return result
 end function
@@ -327,7 +320,7 @@ sub Process.RequestTerminateProcess(app as Process ptr)
     ProcessesToTerminate = app
     
     if (PROCESS_MANAGER_THREAD<>0) then
-        if (PROCESS_MANAGER_THREAD->State = ThreadState.waiting) then Scheduler.SetThreadReady(PROCESS_MANAGER_THREAD,0)
+        if (PROCESS_MANAGER_THREAD->State = ThreadState.waiting) then Scheduler.SetThreadReady(PROCESS_MANAGER_THREAD)
     end if
 end sub
     

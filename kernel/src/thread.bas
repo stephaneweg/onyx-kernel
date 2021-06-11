@@ -56,7 +56,7 @@ sub Thread.InitManager()
         Scheduler.Constructor()
     
     
-        IDLE_Thread = Thread.CreateSys(@KERNEL_IDLE,MaxPriority)
+        IDLE_Thread = Thread.CreateSys(@KERNEL_IDLE,0)
         PROCESS_MANAGER_THREAD = Thread.CreateSys(@PROCESS_MANAGER,0)
 end sub
 
@@ -237,7 +237,7 @@ end function
 
 sub Thread.AddToList()
     
-    Scheduler.SetThreadReady(@this,this.BasePriority)
+    Scheduler.SetThreadReady(@this)
     
     if (this.Owner<>0) then
         this.Owner->AddThread(@this)

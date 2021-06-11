@@ -5,18 +5,18 @@ constructor ThreadQueue()
 end constructor
 
 
-sub ThreadQueue.EnqueueNow(t as Thread ptr)
-    
+'enqueue at the begining of the queue
+sub ThreadQueue.EnqueueHead(t as Thread ptr)
     t->NextThreadQueue = this.FirstThread
     this.FirstThread = t
     if (this.LastThread=0) then
         this.LastThread = t
     end if
     this.Count += 1
-    
 end sub
 
-sub ThreadQueue.Enqueue(t as Thread ptr)
+'enqueue at the end of the queue
+sub ThreadQueue.EnqueueTail(t as Thread ptr)
     if (this.FirstThread<>0) then
         this.LastThread->NextThreadQueue = t
     else
@@ -25,17 +25,6 @@ sub ThreadQueue.Enqueue(t as Thread ptr)
     this.LastThread = t
     this.Count += 1
     t->NextThreadQueue = 0
-end sub
-
-sub ThreadQueue.EnqueueRange(tFirst as Thread ptr,tLast as Thread ptr,cnt as unsigned integer)
-    if (this.FirstThread<>0) then
-        this.LastThread->NextThreadQueue =tFirst
-    else
-        this.FirstThread = tFirst
-    end if
-    this.Count+=cnt
-    this.LastThread = tLast
-    tLast->NextThreadQueue = 0
 end sub
 
 function ThreadQueue.Dequeue() as Thread ptr
@@ -89,10 +78,7 @@ sub ThreadQueue.Remove(t as Thread ptr)
 end sub
 
 constructor ThreadScheduler()
-    dim i as unsigned integer
-    for i = 0 to MaxPriority
-        PriorityQueue(i).Constructor()
-    next
+    NormalQueue.Constructor()
     RTCQueue.Constructor()
     CurrentRuningThread = 0
 	RemovedThread = 0
@@ -100,10 +86,7 @@ end constructor
 
 
 sub ThreadScheduler.RemoveThread(t as Thread ptr)
-    dim i as unsigned integer
-	for i=0 to MaxPriority
-		PriorityQueue(i).Remove(t)
-	next i
+    NormalQueue.Remove(t)
     RTCQueue.Remove(t)
 	if (CurrentRuningThread=t) then
 		RemovedThread = t
@@ -149,11 +132,11 @@ end function
 sub ThreadScheduler.SetThreadRealTime(t as Thread ptr,delay as unsigned integer)
     if (t->State=ThreadState.Ready) then exit sub
     if (delay=0) then 
-        SetThreadReady(t,t->BasePriority)
+        SetThreadReady(t)
         exit sub
     end if
     t->RTCDelay = TotalEllapsed+delay
-    RTCQueue.Enqueue(t)
+    RTCQueue.EnqueueTail(t)
     t->Priority= t->BasePriority
     t->State=ThreadState.Ready
 end sub
@@ -163,57 +146,24 @@ end sub
 sub ThreadScheduler.SetThreadReadyNow(t as Thread ptr)
     if (t->State=ThreadState.Ready) then exit sub
     
-    PriorityQueue(0).EnqueueNow(t)
+    NormalQueue.EnqueueHead(t)
     
     t->Priority = 0
     t->State=ThreadState.Ready
 end sub
 
-sub ThreadScheduler.SetThreadReady(t as Thread ptr,priority as unsigned integer)
+sub ThreadScheduler.SetThreadReady(t as Thread ptr)
     if (t->State=ThreadState.Ready) then exit sub
-    if (priority>MaxPriority) then priority = MaxPriority
     
-    PriorityQueue(priority).Enqueue(t)
+    NormalQueue.EnqueueTail(t)
     
-    t->Priority = priority
+    t->Priority = 0
     t->State=ThreadState.Ready
-end sub
-
-sub ThreadScheduler.ResetPriority(t as thread ptr)
-    if (t->Priority = t->BasePriority) then return
-    
-    PriorityQueue(t->Priority).Remove(t)
-    t->State = ThreadState.Runing
-    SetThreadReady(t,t->BasePriority)
-end sub
-
-sub ThreadScheduler.IncreasePriority(i as unsigned integer)
-    if (i>0) then
-        if (PriorityQueue(i).FirstThread <> 0) then
-            'enqueue all process in this priority queue to the superior priority
-            PriorityQUeue(i-1).EnqueueRange(PriorityQueue(i).FirstThread,PriorityQueue(i).LastThread,PriorityQueue(i).Count)
-            'set the priority values
-            dim th as Thread ptr = PriorityQueue(i).FirstThread
-            while th<>0 
-                th->Priority = i-1
-                th=th->NextThreadQueue
-            wend
-            'clear this queue
-            PrioRityQueue(i).FirstThread = 0
-            PrioRityQueue(i).LastThread = 0
-            PrioRityQueue(i).Count=0
-        end if
-    end if
 end sub
 
 
 function ThreadScheduler.ThreadCount() as unsigned integer
-    dim result as unsigned integer
-    for i as unsigned integer = 0 to MaxPriority
-        result+=PriorityQueue(i).Count
-    next
-    result+=RTCQueue.Count
-    return result
+    return NormalQueue.Count+RTCQueue.Count
 end function
 
 
@@ -233,11 +183,7 @@ function ThreadScheduler.Schedule() as Thread ptr
     if (CurrentRuningThread<> RemovedThread) then
 			if (CurrentRuningThread<>0 and CurrentRuningThread<>IDLE_Thread) then
 				if (CurrentRuningThread->State = ThreadState.Runing) then
-					'diminue its priority
-					dim nextPrio as unsigned integer = CurrentRuningTHread->Priority+1'BasePriority'
-					if (nextPrio > CurrentRuningTHread->BasePriority) then nextPrio = CurrentRuningTHread->BasePriority
-					if (nextPrio > MaxPriority) then nextPrio = MaxPriority
-					SetThreadReady(CurrentRuningThread,nextPrio)'+1)
+					SetThreadReady(CurrentRuningThread)
 				end if
 			end if
     else
@@ -245,16 +191,8 @@ function ThreadScheduler.Schedule() as Thread ptr
     end if
 	
     th = RTCQueue.RTCDequeue()
-    if (th=0) then
-        for i=0 to MaxPriority
-            th = PriorityQueue(i).Dequeue()
-            if (th<>0) then
-                for j = i+1 to MaxPriority
-                    IncreasePriority(j)
-                next
-                exit for
-            end if
-        next
+    if (th=0) then 
+        th=NormalQueue.Dequeue()
     end if
     
 	

@@ -12,8 +12,8 @@ IMAGE_START:
 		dd 0xAADDBBFF
 		dd _init	 ;init method
 _argc:	dd 0x0
-	dd _argv
-    dd IMAGE_END
+		dd _argv
+		dd IMAGE_END
 	
 	
 _init:

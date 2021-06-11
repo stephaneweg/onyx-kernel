@@ -270,7 +270,6 @@ end function
 sub FAT_FS_RESSOURCE.Read_ROOT(dst as FAT_ENTRY ptr)
 	if (this.Fat_Type<>32) then
         this.Disk->Read(this.Disk,this.reserved_sectors+this.fat_sectors,this.root_dir_sectors,cptr(byte ptr,dst))
-		'this.Disk->Read(this.Disk,this.reserved_sectors+this.fat_sectors,this.root_dir_sectors,cptr(byte ptr,dst))
 	else
 		this.Read(this.root_cluster,cptr(byte ptr,dst))
 	end if
@@ -279,7 +278,6 @@ end sub
 sub FAT_FS_RESSOURCE.WRITE_ROOT(dst as FAT_ENTRY ptr)
 	if (this.Fat_Type<>32) then
         this.Disk->Write(this.Disk,this.reserved_sectors+this.fat_sectors,this.root_dir_sectors,cptr(byte ptr,dst))
-		this.Disk->Write(this.Disk,this.reserved_sectors+this.fat_sectors,this.root_dir_sectors,cptr(byte ptr,dst))
 	else
 		this.Write(this.root_cluster,cptr(byte ptr,dst))
 	end if
@@ -300,7 +298,6 @@ sub FAT_FS_RESSOURCE.READ(clusternum as unsigned integer, dst as unsigned byte p
     cpt = 0
     while(nxt<this.fat_limit)
         this.Disk->Read(this.Disk,this.Absolute_sector(nxt)-1,this.sector_per_cluster,buf)
-        'this.Disk->Read(this.Disk,this.Absolute_sector(nxt)-1,this.sector_per_cluster,buf)
         nxt	=find_fatentry(nxt)
         buf +=(this.sector_per_cluster*this.bytes_per_sector)
         cpt+=1
@@ -322,7 +319,6 @@ sub FAT_FS_RESSOURCE.WRITE(clusternum as unsigned integer,buffer as unsigned byt
     while(_next<this.fat_limit)
         'ConsoleWrite(@"Writing sector :" )
         'ConsoleWriteNumber(_next,10)
-        this.Disk->Write(this.Disk,this.Absolute_sector(_next)-1,this.sector_per_cluster,_buff)
         this.Disk->Write(this.Disk,this.Absolute_sector(_next)-1,this.sector_per_cluster,_buff)
         'FatFS_WriteSectors(this.Disk,this.Absolute_sector(_next)-1,this.sector_per_cluster,_buff)
         
@@ -407,12 +403,7 @@ sub FAT_FS_RESSOURCE.Set_Cluster(N as unsigned integer, value as unsigned intege
         end if
         *cptr(unsigned short ptr,@this.fat_table[fatentoffset])=aecrire
 		*cptr(unsigned short ptr,@this.fat_table[fatoffset2])=aecrire
-        
-		'*(unsigned short *)&fat_table[fatentoffset]=aecrire;
-		'*(unsigned short *)&fat_table[fatoffset2]=aecrire; //writing value in the 2nd fat
 	end if
-    '//	fat_disk->ioctl(fat_disk,1,fat_secnum,1,fat_table);
-    'this.disk->Write(this.disk,this.first_fat_sector,this.fat_sectors,this.fat_table)
 	this.IsDirty=1
 end sub
 
@@ -553,17 +544,21 @@ function FAT_WRITEFILE(ressource  as FS_RESSOURCE ptr,fichier as unsigned byte p
 		'//on lis le repertoire pour le mettre a jour, et on le reecris
 		newrep=cptr(FAT_ENTRY ptr,FAT_DirectoryBuffer)  '(struct Directory *)malloc(dirsize);'//(sector_per_cluster*bytes_per_sector*4);
         theFat->Read(cnum,cptr(unsigned byte ptr,newrep))
-        theFat->Read(cnum,cptr(unsigned byte ptr,newrep))
-		
+		theFat->Read(cnum,cptr(unsigned byte ptr,newrep))
+        
         newrep[entnum].clusternum_high=cast(unsigned short,((clusternum  and &hffff0000) shr 16))
         newrep[entnum].clusternum_low =cast(unsigned short,(clusternum and &hffff))
         
 		newrep[entnum].size=taille
         
         theFat->Write(cnum,cptr(unsigned byte ptr,newrep))
-		theFat->Write(cnum,cptr(unsigned byte ptr,newrep))
+        WaitN(1)
+        theFat->Write(cnum,cptr(unsigned byte ptr,newrep))
+        WaitN(1)
         theFat->Write(clusternum,buffer)
+        WaitN(1)
         theFat->Write(clusternum,buffer)
+        WaitN(1)
         'Free(newrep)
         Free(tmpname)
         Free(acreer)
@@ -714,7 +709,7 @@ function fat_loadfile(ressource  as FS_RESSOURCE ptr,fichier as unsigned byte pt
 		buffer=MAlloc(nbrclust*theFat->sector_per_cluster*theFat->bytes_per_sector)
 		
 		theFat->read(clusternum,buffer)
-		'theFat->read(clusternum,buffer)
+		theFat->read(clusternum,buffer)
 		
 		return buffer
 	else
@@ -822,7 +817,6 @@ sub FatFS_WriteSectors(disk as BlockDevice ptr,lba as unsigned integer,nbrBlocs 
     dim j as unsigned integer
     for i=0 to nbrBlocs-1
         disk->Write(disk,lba+i,1,buffer+(i*512))
-        for j=0 to 500000:next
     next i
 end sub
 
@@ -831,6 +825,5 @@ sub FatFS_ReadSectors(disk as BlockDevice ptr,lba as unsigned integer,nbrBlocs a
     dim j as unsigned integer
     for i=0 to nbrBlocs-1
         disk->Read(disk,lba+i,1,buffer+(i*512))
-        'for j=0 to 500000:next
     next i
 end sub

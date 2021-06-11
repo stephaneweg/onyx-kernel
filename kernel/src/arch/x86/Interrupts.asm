@@ -7,7 +7,7 @@ macro int_elem_err mylabel,intno
 {
 	align 4
     label mylabel
-    cli
+    ;cli
 		push intno
 	jmp irq_common
 }
@@ -15,7 +15,7 @@ macro int_elem mylabel,intno
 {
 	align 4
     label mylabel
-    cli
+    ;cli
 		push dword 0
 		push intno
 	jmp irq_common
@@ -78,7 +78,7 @@ irq_common:
 	mov esp,eax
 	restore_context
 	add esp,8 ; skip error code and int number
-	sti
+	;sti
 iret
 
 int_elem int00,0x00

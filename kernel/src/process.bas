@@ -7,7 +7,8 @@ sub Process.InitEngine()
 end sub
 
 constructor Process()
-    Image  = 0
+    Image        = 0
+    AddressSpace = 0
     
     if (LastProcessList<>0) then
         LastProcessList->NextProcessList = @this
@@ -30,11 +31,16 @@ constructor Process()
     
     NextProcess = 0
     Threads = 0
-    PagesCount = 0
 end constructor
 
 
 destructor Process()
+    if (AddressSpace<>0) then
+        AddressSpace->Destructor()
+        KFree(AddressSpace)
+        AddressSpace = 0
+    end if
+    
     if (NextProcessList<>0) then
         NextProcessList->PrevProcessList = PrevProcessList
     else
@@ -50,13 +56,21 @@ destructor Process()
     NextProcessList= 0
     PrevProcessList= 0
 
-	for i as unsigned integer = 0 to this.PagesCount -1
-        var phys = this.VMM_Context.Resolve(cptr(any ptr,(i shl 12)+ProcessAddress))
-        PMM_FREEPAGE(phys)
-    next i
     
     FreeConsole()
 end destructor
+
+function Process.CreateAddressSpace(virt as unsigned integer) as AddressSpaceEntry ptr
+    var address_space = cptr(AddressSpaceEntry ptr,KAlloc(sizeof(AddressSpaceEntry)))
+    address_space->NextEntry    = AddressSpace
+    address_space->VMM_Context  = @VMM_Context
+    address_space->VirtAddr     = virt
+    AddressSpace = address_space
+    
+    return address_space
+end function
+    
+    
 
 sub Process.CreateConsole()
     FreeConsole()
@@ -97,43 +111,72 @@ sub Process.FreeConsole()
 end sub
 
 
+sub Process.DoLoadFlat()
+    dim neededPages as unsigned integer = ((image->ImageEnd - ProcessAddress) shr 12)+2
+    CodeAddressSpace = this.CreateAddressSpace(ProcessAddress)
+    CodeAddressSpace->SBRK(neededPages)
+    CodeAddressSpace->CopyFrom(image,ImageSize)
+end sub
+
+sub Process.DoLoadElf()
+    var elfHeader = cptr(ELF_HEADER ptr,image)
+    dim program_header as ELF_PROG_HEADER_ENTRY ptr = cast(ELF_PROG_HEADER_ENTRY ptr, cuint(elfHeader) + elfHeader->ProgHeaderTable)
+    
+    for counter as uinteger = 0 to elfHeader->ProgEntryCount-1
+        dim start as unsigned integer       = program_header[counter].Segment_V_ADDR and VMM_PAGE_MASK
+        dim real_size as unsigned integer   = program_header[counter].SegmentFSize + (program_header[counter].Segment_V_ADDR - start)
+		dim real_mem_size as uinteger       = program_header[counter].SegmentMSize + (program_header[counter].Segment_V_ADDR - start)
+        
+        dim addr as uinteger = start
+		dim end_addr as uinteger = start + real_size
+		dim end_addr_mem as uinteger = start + real_mem_size
+        
+        var area = this.CreateAddressSpace(addr)
+        var neededPages = (real_mem_size shr 12)
+        if (neededPages shl 12)<real_mem_size then neededPages+=1
+        area->SBRK(neededPages)
+        
+        if program_header[counter].SegmentType<>ELF_SEGMENT_TYPE_LOAD then
+            'zone reserved
+        else
+            area->CopyFrom(cptr(any ptr,cuint(elfHeader)+ cuint(program_header[counter].Segment_P_ADDR)),real_size)
+        end if
+    next
+end sub
+
 sub Process.DoLoad()
     
     IRQ_DISABLE(0)
-	dim neededPages as unsigned integer = ((image->ImageEnd - ProcessAddress) shr 12)+2
+	
     
 	VMM_Context.Initialize()
     VMM_Context.map_page(VIRT_CONSOLE->VIRT,VIRT_CONSOLE->PHYS, VMM_FLAGS_USER_DATA)
-	SBRK(neededPages)
 	
     
-	dim remaining as unsigned integer = ImageSize
-    dim addr as unsigned integer = ProcessAddress
-    dim src as unsigned integer = cuint(image)
-    while remaining>0
-        dim chunkSize as unsigned integer = iif(remaining>PAGE_SIZE,PAGE_SIZE,remaining)
-        dim phys as any ptr = VMM_CONTEXT.Resolve(cptr(any ptr,addr))
-        
-        dim dst as any ptr = VMM_KERNEL_AUTOMAP(phys,PAGE_SIZE,VMM_FLAGS_KERNEL_DATA)
-        memcpy(dst,cptr(any ptr,src),chunkSize)
-        VMM_KERNEL_UNMAP(dst,PAGE_SIZE)
-        
-        addr+=chunkSize
-        src+=chunkSize
-        remaining-=chunkSize
-    wend
     
+    dim entry as unsigned integer = 0
+    if (image->Magic = &hAADDBBFF) then
+        DoLoadFlat()
+        entry = image->Init
+    elseif(image->MAGIC = ELF_MAGIC) then
+        DoLoadELF()
+        entry = Cptr(ELF_HEADER ptr,image)->ENTRY_POINT
+    end if
     
-    asm cli
-    var ctx = current_context
-    VMM_Context.Activate()
+	HeapAddressSpace = this.CreateAddressSpace(ProcessHeapAddress)
+    StackAddressSpace = this.CreateAddressSpace(ProcessStackAddress)
+    
     if ShouldFreeMem then
         KFree(image)
 	end if
     Image =  cptr(EXECUTABLE_HEADER ptr,ProcessAddress)
-	Image->ArgsCount = 0
+	
+    
+    asm cli
+    var ctx = current_context
+    VMM_Context.Activate()
 	ParseArguments()
-	Thread.Create(@this,Image->Init,5)
+	Thread.Create(@this,entry,5)
     ctx->Activate()
     asm sti
     
@@ -141,7 +184,7 @@ sub Process.DoLoad()
 end sub
 
 sub Process.ParseArguments()
-    
+    Image->ArgsCount = 0
     if TmpArgs<>0 then
         if (strlen(strtrim(TmpArgs))>0) then
             if(Image->ArgsValues<>0) then
@@ -223,7 +266,7 @@ function Process.RequestLoadMem(image as EXECUTABLE_HEADER ptr,fsize as unsigned
     dim result as Process ptr = 0
     result = cptr(Process ptr,KAlloc(sizeof(Process)))
     result->Constructor()
-	
+    
     result->Image = image
 	result->Image->ArgsCount = 0'argsCount
 	'to do: copy data of arguments
@@ -258,18 +301,6 @@ function Process.RequestLoadUser(image as EXECUTABLE_HEADER ptr,fsize as unsigne
     return 0
 end function
 
-function Process.SBRK(pagesToAdd as unsigned integer) as unsigned integer
-    var retval = this.PagesCount
-    for i as unsigned integer=0 to pagesToAdd-1
-        'var vaddr = PageAlloc(1)
-        'var paddr = current_context->Resolve(vaddr)
-        var paddr = PMM_ALLOCPAGE(1)
-		if (paddr = 0) then return 0
-        this.VMM_Context.MAP_PAGE(cptr(any ptr,(this.PagesCount shl 12) + ProcessAddress),paddr,VMM_FLAGS_USER_DATA)
-        this.PagesCount+=1
-    next i
-    return retval
-end function
 
 sub Process.AddThread(t as any ptr)
     dim th as Thread ptr = cptr(Thread ptr,t)    

@@ -62,7 +62,7 @@ sub Semaphore.SemUnlock(th as Thread ptr)
             CurrentThread = this.ThreadQueue
             if (CurrentThread<>0) then
                 this.ThreadQueue = CurrentThread->NextThreadQueue
-                Scheduler.SetThreadReady(CurrentThread,1)
+                Scheduler.SetThreadReadyNow(CurrentThread)
             end if
         end if
     end if

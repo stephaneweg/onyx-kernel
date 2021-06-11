@@ -46,6 +46,7 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
     SlabINIT()
     FontManager.Init()
     TextBuffer = MAlloc(1024*1024*5)
+    
 	MainWin = GDIWindowCreate(600,440,@"Simple Text Editor")
 	GDISetVisible(MainWin,0)
     drawable = cptr(GImage ptr,MAlloc(sizeof(GImage)))
@@ -104,7 +105,7 @@ end sub
 
 sub btnSaveClick(btn as unsigned integer,parm as unsigned integer)
     GDITextBoxGetText(txtFileName,strline)
-    if (strlen(strLine)>0) then
+    if (strlen(strLine)>0 and TextSize>0) then
         var f = FileCreate(strLine)
         FileWrite(f,TextSize,TextBuffer)
         FileClose(f,1)

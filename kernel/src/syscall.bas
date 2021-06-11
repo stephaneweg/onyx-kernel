@@ -12,8 +12,9 @@ sub XappSignal2Parameters(th as Thread ptr,callback as unsigned integer,p1 as un
         st->ESP = st->ESP-8
         *cptr(unsigned integer ptr, st->ESP+4) =cast(unsigned integer, p1)
         *cptr(unsigned integer ptr, st->ESP+8) =cast(unsigned integer, p2)
-        Scheduler.SetThreadReady(th,0)
-      
+        'Scheduler.SetThreadReady(th,0)
+        Scheduler.SetThreadReadyNow(th)
+            
         currentContext->Activate()
       
     end if
@@ -35,8 +36,9 @@ sub XappSignal6Parameters(th as Thread ptr,callback as unsigned integer,p1 as un
         *cptr(unsigned integer ptr, st->ESP+20) =cast(unsigned integer, p5)
         *cptr(unsigned integer ptr, st->ESP+24) =cast(unsigned integer, p6)
         'force the thread to be sheduled next time because it's used by UDEV
-        Scheduler.SetThreadReady(th,0)
-      
+        'Scheduler.SetThreadReady(th,0)
+        Scheduler.SetThreadReadyNow(th)
+            
         currentContext->Activate()
       
     end if
@@ -65,11 +67,11 @@ sub XappIRQReceived(intno as unsigned integer,p as IRQ_THREAD_POOL ptr)
             *cptr(unsigned integer ptr, st->ESP+36) =p->EDI      
             *cptr(unsigned integer ptr, st->ESP+40) =p->EBP
             th->ReplyTo = cptr(Thread ptr,p->Sender)
-            if (intno<&h30) then
+            'if (intno<&h30) then
                 Scheduler.SetThreadReadyNow(th)
-            else
-                Scheduler.SetThreadReady(th,0)
-            end if
+            'else
+            '    Scheduler.SetThreadReady(th,0)
+            'end if
             currentContext->Activate()
         end if
     end if

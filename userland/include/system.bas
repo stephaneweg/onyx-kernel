@@ -174,6 +174,15 @@ function MapBufferToCaller(src as any ptr,size as unsigned integer) as any ptr
     end asm
 end function
 
+function GetParentProcess(p as unsigned integer) as unsigned integer
+    asm
+        mov eax,&h15
+        mov ebx,[p]
+        int 0x30
+        mov [function],eax
+    end asm
+end function
+
 sub WaitN(delay as unsigned integer)
     asm
         mov eax,&hE0

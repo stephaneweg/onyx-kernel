@@ -8,7 +8,7 @@ declare function CreateThread(fn as any ptr,prio as unsigned integer) as unsigne
 declare sub ThreadYield()
 declare sub KillProcess(th as unsigned integer)
 declare sub ThreadWakeUP(th as unsigned integer,p1 as unsigned integer,p2 as unsigned integer)
-
+declare function GetParentProcess(p as unsigned integer) as unsigned integer
 declare sub UDevCreate(n as unsigned byte ptr,descriptor as unsigned integer,entry as sub(descr as unsigned integer,sender as unsigned integer,param1 as unsigned integer,param2 as unsigned integer,param3 as unsigned integer,param4 as unsigned integer))
 declare function UDevFind(n as unsigned byte ptr) as unsigned integer
 declare function UDevInvoke(d as unsigned integer,p1 as unsigned integer,p2 as unsigned integer,p3 as unsigned integer,p4 as unsigned integer)  as unsigned integer

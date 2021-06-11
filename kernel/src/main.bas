@@ -13,6 +13,7 @@
 #include once "kmm.bi"
 #include once "interrupt.bi"
 #include once "vesa.bi"
+#include once "address_space.bi"
 #include once "process.bi"
 #include once "thread.bi"
 #include once "scheduler.bi"
@@ -20,7 +21,7 @@
 #include once "syscall.bi"
 #include once "semaphore.bi"
 #include once "kernel.bi"
-
+#include once "elf.bi"
 #include once "udev.bi"
 SUB MAIN (mb_info as multiboot_info ptr)
     asm cli
@@ -102,6 +103,7 @@ end sub
 #include once "interrupt.bas"
 #include once "drivers/vesa.bas"
 #include once "process.bas"
+#include once "address_space.bas"
 #include once "thread.bas"
 #include once "scheduler.bas"
 #include once "rng.bas"

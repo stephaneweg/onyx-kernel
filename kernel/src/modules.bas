@@ -5,7 +5,8 @@ sub MODULES_INIT(mb_info as multiboot_info ptr)
         var image = cptr(EXECUTABLE_HEADER ptr,KAlloc(mod_end-mod_start))
         MemCpy(cptr(any ptr,image),cptr(any ptr,mod_start),mod_end-mod_start)
 		
-		Process.RequestLoadMem(image,mod_end-mod_start,1,mb_info->mods_addr[i].mod_string)
+		var proc = Process.RequestLoadMem(image,mod_end-mod_start,1,mb_info->mods_addr[i].mod_string)
+        proc->Parent = 0
         ConsoleWrite(mb_info->mods_addr[i].mod_string)
         ConsoleWrite(@" - Magic : 0x"):ConsoleWriteUNumber(image->Magic,16):ConsoleNewLine()
     next i

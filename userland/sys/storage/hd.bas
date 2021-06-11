@@ -308,6 +308,7 @@ function HD_READ_SECTOR(drivenum as unsigned byte,alba as unsigned integer,secto
                     rep insw
                 end asm
                 buff+=512
+                
 		next
 		return 1
 	end if

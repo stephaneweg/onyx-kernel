@@ -41,7 +41,7 @@ type Thread field=1
     declare static sub InitManager()
     declare static sub Ready()
     declare static function CreateSys(entryPoint as sub(p as any ptr),prio as unsigned integer) as thread ptr
-    declare static function Create(proc as Process ptr,entryPoint as sub(p as any ptr),prio as unsigned integer) as Thread ptr
+    declare static function Create(proc as Process ptr,entryPoint as unsigned integer,prio as unsigned integer) as Thread ptr
     declare function DoWait(stack as IRQ_Stack ptr) as IRQ_Stack ptr
 end type
 

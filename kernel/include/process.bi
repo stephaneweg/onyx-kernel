@@ -1,6 +1,6 @@
 TYPE EXECUTABLE_Header field =1
     Magic as unsigned integer
-    Init as sub(arg as any ptr)
+    Init  as unsigned integer
     ArgsCount as unsigned integer
     ArgsValues as unsigned byte ptr ptr
     ImageEnd as unsigned integer
@@ -14,18 +14,25 @@ TYPE Process field =1
     ImageSize as unsigned integer
     PrevProcessList as Process ptr
     NextProcessList as Process ptr
-    
+    Parent as Process ptr
     NextProcess as Process ptr
     
     Threads as any ptr
-    
-    PagesCount as integer
     
     VMM_Context as VMMContext
     TmpArgs as unsigned byte ptr
     ShouldFreeMem as integer
     
     VIRT_CONSOLE as VirtConsole ptr
+    
+    
+    AddressSpace as AddressSpaceEntry ptr
+    
+    CodeAddressSpace as AddressSpaceEntry ptr
+    HeapAddressSpace as AddressSpaceEntry ptr
+    StackAddressSpace as AddressSpaceEntry ptr
+    
+    declare function CreateAddressSpace(virt as unsigned integer) as AddressSpaceEntry ptr
     
     declare static sub InitEngine()
     declare static function RequestLoadMem(image as EXECUTABLE_HEADER ptr,size as unsigned integer,shouldFree as unsigned integer,args as unsigned byte ptr) as Process ptr
@@ -37,9 +44,10 @@ TYPE Process field =1
     
     declare constructor()
     declare destructor()
-    declare function SBRK(pagesToAdd as unsigned integer) as unsigned integer
     declare sub AddThread(t as any ptr)
     declare sub DoLoad()
+    declare sub DoLoadFlat()
+    declare sub DoLoadElf()
     declare sub ParseArguments()
     
     declare sub FreeConsole()
@@ -50,7 +58,9 @@ end type
 #define ProcessMapAddress &hA0001000
 #define ProcessConsoleAddress &hA0000000
 'the address where the process are loaded
-#define ProcessAddress &h40000000
+#define ProcessAddress      &h40000000
+#define ProcessHeapAddress  &h50000000
+#define ProcessStackAddress &h60000000
 dim shared FirstProcessList as Process ptr
 dim shared LastProcessList as Process ptr
 dim shared ProcessesToTerminate as Process ptr

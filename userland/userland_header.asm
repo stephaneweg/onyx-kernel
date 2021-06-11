@@ -2,6 +2,7 @@ format elf
 use32
 
 public IMAGE_START
+public _init
 extrn IMAGE_END
 extrn _MAIN@8
 extrn _ApplicationTitle

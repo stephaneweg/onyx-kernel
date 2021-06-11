@@ -8,6 +8,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             var p=Process.RequestLoadUser(cptr( EXECUTABLE_HEADER ptr,stack->EBX),stack->ECX,args)
             ctx->Activate()
             if (p<>0) then 
+                    p->Parent = CurrentThread->Owner
                     stack->EAX = 1
                     return Scheduler.Switch(stack, Scheduler.Schedule())
             else
@@ -16,7 +17,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
         case &h02 'create thread
             var prio = stack->ECX
             if (prio<currentThread->BasePriority) then prio = CurrentThread->BasePriority
-            var th = Thread.Create(currentThread->Owner,cptr(sub(p as any ptr),stack->EBX),prio)
+            var th = Thread.Create(currentThread->Owner,stack->EBX,prio)
             stack->EAX = cuint(th)
         
         case &h03 'yield
@@ -34,7 +35,9 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             st->EBX = stack->EDX
             if (th->State=ThreadState.WaitingReply or th->State=ThreadState.Waiting) then
                 'make it ready and run it at the next tick
-                Scheduler.SetThreadReady(th,th->BasePriority)
+                'Scheduler.SetThreadReady(th,th->BasePriority)
+                 Scheduler.SetThreadReadyNow(th)
+                 return Scheduler.Switch(stack, Scheduler.Schedule())
             end if
         case &h07 'UDev create
             UserModeDevice.Create(cptr(unsigned byte ptr,stack->EBX),currentThread,stack->ECX,stack->EDX)
@@ -55,7 +58,8 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
                     var st =cptr(IRQ_Stack ptr, CurrentThread->ReplyTO->SavedESP)
                     st->EAX = stack->EBX
                     'wake the caller and run it directly
-                    Scheduler.SetThreadReady(CurrentThread->ReplyTO,CurrentThread->ReplyTO->BasePriority)
+                    'Scheduler.SetThreadReady(CurrentThread->ReplyTO,CurrentThread->ReplyTO->BasePriority)
+                    Scheduler.SetThreadReadyNow(CurrentThread->ReplyTO)
                 end if
             end if
 			stack->ESP+=36
@@ -82,7 +86,8 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
                     st->EDI = *cptr(unsigned integer ptr,stack->ESP+40)
                     st->EBP = *cptr(unsigned integer ptr,stack->ESP+44)
                     'reply directly from interrupt
-                    Scheduler.SetThreadReady(CurrentThread->ReplyTO,CurrentThread->ReplyTO->BasePriority)
+                    'Scheduler.SetThreadReady(CurrentThread->ReplyTO,CurrentThread->ReplyTO->BasePriority)
+                    Scheduler.SetThreadReadyNow(CurrentThread->ReplyTO)
                 end if
             end if
 			stack->ESP+=44
@@ -90,6 +95,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
         
         case &h0E 'signal trhead
             XappSignal2Parameters(cptr(Thread ptr,stack->EBX),stack->ECX,stack->esi, stack->EDI)
+            return Scheduler.Switch(stack,Scheduler.Schedule()) 
         case &h0F 'kill process
             var pc = cptr(Process ptr,stack->EBX)
 			Process.RequestTerminateProcess(pc)
@@ -157,9 +163,19 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
 					end if
                 end if
             end if	
-			
+        case &h15 'get parent process
+            var proc = cptr(Process ptr,stack->EBX)
+            stack->EAX =cuint( proc->Parent)
+            
         case &hD0 'page alloc
-            stack->EAX = (CurrentThread->Owner->SBRK(stack->EBX) shl 12) + ProcessAddress
+            stack->EAX = 0
+            if (CurrentThread<>0) then
+                if (CurrentThread->Owner<>0) then
+                    if(CurrentThread->Owner->HeapAddressSpace<>0) then
+                        stack->EAX = cuint(CurrentThread->Owner->HeapAddressSpace->SBRK(stack->EBX))
+                    end if
+                end if
+            end if
             
         case &hE0 'Wait N time slice
              Scheduler.SetThreadRealTime(CurrentThread,stack->EBX)

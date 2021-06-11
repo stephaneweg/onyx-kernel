@@ -188,7 +188,7 @@ function Thread.CreateSys(entryPoint as sub(p as any ptr),prio as unsigned integ
     return th
 end function
 
-function Thread.Create(proc as Process ptr,entryPoint as sub(p as any ptr),prio as unsigned integer) as Thread ptr
+function Thread.Create(proc as Process ptr,entryPoint as unsigned integer,prio as unsigned integer) as Thread ptr
     dim th as Thread ptr = cptr(Thread ptr,KAlloc(sizeof(Thread)))
     
     TotalThreadCount+=1
@@ -220,14 +220,14 @@ function Thread.Create(proc as Process ptr,entryPoint as sub(p as any ptr),prio 
     st->EDX = 0
     st->ESI = 0
     st->EDI = 0
-    st->EIP = cuint(entryPoint)
+    st->EIP = entrypoint
     st->cs = &h18 or &h03
     st->ds = &h20 or &h03
     st->es = &h20 or &h03
     st->ss = &h20 or &h03
     st->fs = &h20 or &h03
     st->gs = &h20 or &h03
-    st->ESP = ((proc->SBRK(1)+1) shl 12) + ProcessAddress - 8
+    st->ESP = cuint(proc->StackAddressSpace->SBRK(1)) + PAGE_SIZE - 8
     st->eflags = &h3202
     
     

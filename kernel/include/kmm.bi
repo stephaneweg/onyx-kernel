@@ -1,6 +1,5 @@
-#define MAlloc(s) KAlloc(s)
-#define MFree(s) KFree(s)
-declare function PageAlloc(count as unsigned integer) as any ptr
-declare sub PageFree(addr as any ptr)
+declare function KMM_ALLOCPAGE() as any ptr
+declare sub KMM_FREEPAGE(addr as any ptr)
 declare function KAlloc(size as unsigned integer) as any ptr
 declare sub KFree(addr as any ptr)
+declare sub KMM_INIT()

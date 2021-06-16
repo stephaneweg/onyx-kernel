@@ -1,6 +1,7 @@
 
 #include once "stdlib.bi"
 #include once "multiboot.bi"
+#include once "spinlock.bi"
 #include once "in_out.bi"
 #include once "modules.bi"
 #include once "realmode.bi"
@@ -23,36 +24,43 @@
 #include once "kernel.bi"
 #include once "elf.bi"
 #include once "udev.bi"
+
+#include once "ipc.bi"
 SUB MAIN (mb_info as multiboot_info ptr)
     asm cli
     ConsoleInit()
+    ConsoleWriteLine(@"Test 1")
     
     GDT_INIT()
     InterruptsManager_Init()
     PMM_INIT(mb_info)
     VMM_INIT()
-    
     VMM_INIT_LOCAL()
-    SysConsole.Virt = cptr(unsigned byte ptr, ProcessConsoleAddress)
-    current_context->map_page(SysConsole.VIRT,SysConsole.PHYS, VMM_FLAGS_USER_DATA)
+    MODULES_PRE_INIT(mb_info)
     
     SlabInit()
     UDEV_INIT()
     RealMode_INIT()
     IRQ_DISABLE(0)
 	
+    
+    
     IRQ_ATTACH_HANDLER(&h30,@Syscall30Handler)
     IRQ_ATTACH_HANDLER(&h31,@Syscall31Handler)
+    
     Thread.InitManager()
     Process.InitEngine()
+    
+    IPC_INIT()
+    
     
     MODULES_INIT(mb_info)
     'find the best graphic mode
     VMM_EXIT()
     var mode = VesaProbe()
     vmm_init_local()
-    
     ConsoleNewLine()
+    
     if (mode<>0) then        
         'switch to selected graphic mode
         VMM_EXIT()
@@ -70,18 +78,20 @@ SUB MAIN (mb_info as multiboot_info ptr)
     loop
 end sub
 
-sub KERNEL_ERROR(message as unsigned byte ptr,code as unsigned integer)
+sub KERNEL_ERROR(message as unsigned byte ptr,code as unsigned integer) 
+    asm cli
     VMM_EXIT()
+    CurrentConsole = @SysConsole
     VesaResetScreen()
+    SysConsole.VIRT = cptr(any ptr,&hB8000)
+    
     ConsoleSetBackGround(4)
     ConsoleSetForeground(15)
     ConsoleClear()
     ConsoleWriteLine(@"KERNEL PANIC")
     ConsoleWriteTextAndHex(@"Code : ",code,true)
     ConsoleNewLine()
-    ConsoleWriteLine(@"Message :")
-    ConsoleWriteLine(message)
-
+    do:loop
     asm 
         cli
         .panic_halt:
@@ -94,6 +104,7 @@ end sub
 #include once "arch/x86/gdt.bas"
 #include once "arch/x86/vmm.bas"
 #include once "arch/x86/pic.bas"
+#include once "spinlock.bas"
 #include once "console.bas"
 #include once "modules.bas"
 #include once "stdlib.bas"
@@ -110,3 +121,4 @@ end sub
 #include once "syscall.bas"
 #include once "semaphore.bas"
 #include once "udev.bas"
+#include once "ipc.bas"

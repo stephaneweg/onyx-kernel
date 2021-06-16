@@ -137,7 +137,6 @@ sub ThreadScheduler.SetThreadRealTime(t as Thread ptr,delay as unsigned integer)
     end if
     t->RTCDelay = TotalEllapsed+delay
     RTCQueue.EnqueueTail(t)
-    t->Priority= t->BasePriority
     t->State=ThreadState.Ready
 end sub
 
@@ -145,19 +144,13 @@ end sub
 
 sub ThreadScheduler.SetThreadReadyNow(t as Thread ptr)
     if (t->State=ThreadState.Ready) then exit sub
-    
     NormalQueue.EnqueueHead(t)
-    
-    t->Priority = 0
     t->State=ThreadState.Ready
 end sub
 
 sub ThreadScheduler.SetThreadReady(t as Thread ptr)
     if (t->State=ThreadState.Ready) then exit sub
-    
     NormalQueue.EnqueueTail(t)
-    
-    t->Priority = 0
     t->State=ThreadState.Ready
 end sub
 

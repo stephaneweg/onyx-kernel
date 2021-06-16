@@ -1,3 +1,13 @@
+Type IPCMessageBody field = 1
+	REG0            as unsigned integer    'eax
+    REG1            as unsigned integer    'ebx
+    REG2            as unsigned integer    'ecx
+    REG3            as unsigned integer    'edx
+    REG4            as unsigned integer    'esi
+    REG5            as unsigned integer    'edi
+    REG6            as unsigned integer    'ebp
+    REG7            as unsigned integer    'ebp
+end type
 
 declare function SemaphoreCreate() as unsigned integer
 declare sub SemaphoreLock(s as unsigned integer)
@@ -25,7 +35,9 @@ declare sub XappSignal2Parameters(th as unsigned integer,callback as unsigned in
 
 declare sub WaitForEvent()
 declare sub IRQ_ENABLE(intno as unsigned integer)
-declare sub DefineIRQHandler(intNO as unsigned integer,c as sub(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer),synchronous as unsigned integer)
+declare sub DefineIPCHandler(id as unsigned integer,c as sub(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer,_esp as unsigned integer),synchronous as unsigned integer)
+declare function IPCSend(id as unsigned integer,r0 as unsigned integer,r1 as unsigned integer,r2 as unsigned integer,r3 as unsigned integer,r4 as unsigned integer,r5 as unsigned integer,r6 as unsigned integer,r7 as unsigned integer,result2 as unsigned integer ptr,result3 as unsigned integer ptr)  as unsigned integer
+
 declare sub WaitN(delay as unsigned integer)
 declare function GetTimer() as unsigned long
 declare function NextRandomNumber(_min as unsigned integer,_max as unsigned integer) as unsigned integer
@@ -44,10 +56,10 @@ declare sub SetPriority(p as unsigned integer)
 	do:loop
 #endmacro
 
-#macro EndIRQHandler()
+#macro EndIPCHandler()
 asm
     mov esp,ebp
-    add esp,44
+    add esp,48
     mov eax,0x04
     int 0x30
 end asm
@@ -55,9 +67,9 @@ do:loop
 #endmacro
 
 
-#macro EndIRQHandlerAndSignal()
+#macro EndIPCHandlerAndSignal()
 asm
-    mov eax,0x0D
+    mov eax,0xC1
     int 0x30
 end asm
 do:loop

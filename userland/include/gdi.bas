@@ -1,49 +1,34 @@
+
 function GDICreate(_parent as unsigned integer,x as  integer,y as  integer,w as unsigned integer,h as unsigned  integer) as unsigned integer
-     asm
-        mov eax,&h01
-        mov ebx,[_parent]
-        mov ecx,[w]
-        shl ecx,16
-        or ecx,[h]
-        mov edx,[x]
-        shl edx,16
-        or edx,[y]
-        int 0x35
-        mov [function],eax
-    end asm
+    return IPCSend(&h35,&h01,_parent,cuint(w)*cuint(65536)+cuint(h),cuint(x)*cuint(65536)+cuint(y),0,0,0,0,0,0)
 end function
 
 function GDIWindowCreate(w as unsigned integer,h as unsigned integer, t as any ptr) as unsigned integer 
-    asm
-        mov eax,&h02
-        mov ebx,[w]
-        shl ebx,16
-        or ebx,[h]
-        mov ecx,[t]
-        int 0x35
-        mov [function],eax
-    end asm
+    return IPCSend(&h35,&h2,cuint(w)*cuint(65536)+cuint(h),cuint(t),0,0,0,0,0,0,0)
+   
 end function
 
 function GDIButtonCreate(_parent as unsigned integer,x as integer,y as integer,w as unsigned integer,h as unsigned integer,t as any ptr,c as any ptr, parm as unsigned integer) as unsigned integer
-    asm
-		push ebp
-        mov eax,&h03
-        mov ebx,[_parent]
-        mov ecx,[w]
-        shl ecx,16
-        or ecx,[h]
-        mov edx,[x]
-        shl edx,16
-        or edx,[y]
-        mov esi,[t]
-        mov edi,[c]
-		push [parm]
-		pop ebp
-        int 0x35
-		pop ebp
-        mov [function],eax
-    end asm
+    return IPCSend(&h35,&h3,_parent,cuint(w)*cuint(65536)+cuint(h),cuint(x)*65536+cuint(y),cuint(t),cuint(c),cuint(parm),0,0,0)
+  
+'    asm
+'		push ebp
+'        mov eax,&h03
+'        mov ebx,[_parent]
+'        mov ecx,[w]
+'        shl ecx,16
+'        or ecx,[h]
+'        mov edx,[x]
+'        shl edx,16
+'        or edx,[y]
+'        mov esi,[t]
+'        mov edi,[c]
+'		push [parm]
+'		pop ebp
+'        int 0x35
+'		pop ebp
+'        mov [function],eax
+'    end asm
 end function
 
 function GDITextBoxCreate(_parent as unsigned integer,x as integer,y as integer,w as unsigned integer,h as unsigned integer) as unsigned integer

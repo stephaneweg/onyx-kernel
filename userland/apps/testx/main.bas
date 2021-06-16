@@ -17,5 +17,8 @@ dim shared entries(0 to 50) as VFSDirectoryEntry
 sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
 	SlabInit()
     ConsoleWriteLine(@"Test from userland")
-    ExitApp()
+    Do
+		ConsoleWrite(@".")
+	loop
+		
 end sub

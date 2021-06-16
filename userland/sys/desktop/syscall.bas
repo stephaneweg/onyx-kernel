@@ -1,6 +1,6 @@
 
 
-sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
+sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer,_esp as unsigned integer)
     dim signalSender as boolean = true
     select case _EAX
         case &h01 'create generic ui element
@@ -24,16 +24,17 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
                 end if
             end if
             _eax = cast(unsigned integer,gd)
-            
         case &h02 'window create
             dim _w as unsigned integer =_EBX shr 16
             dim _h as unsigned integer = _EBX and &hFFFF
-            dim _x as integer = (XRES - _w) shr 1
-            dim _y as integer = (YRES - _h) shr 1
+            
+           
 			GetStringFromCaller(TmpString,_ECX)
            
             NewObj(win,TWindow)
             win->SetSize(_w + win->_paddingLeft + win->_paddingRight,_h+win->_paddingTop+win->_paddingBottom)
+            dim _x as integer = NextRandomNumber(0,XRES-win->_width)' (XRES - _w) shr 1
+            dim _y as integer = NextRandomNumber(0,YRes-win->_height)' (YRES - _h) shr 1
             win->SetPosition(_x,_y)
             win->Owner = _senderproc
             win->OwnerThread = _sender
@@ -394,11 +395,13 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
         case &hFF
             _EAX = XRES
             _EBX = YRES
+		case &hFFFFFF 'process terminated
+			TerminatedProc = _ebx
     end select
     if (signalSender) then
-        EndIRQHandlerAndSignal()
+        EndIPCHandlerAndSignal()
     else
-        EndIRQHandler()
+        EndIPCHandler()
     end if
     do:loop
 end sub

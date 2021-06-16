@@ -2,7 +2,6 @@
 dim shared TotalThreadCount as unsigned integer
 dim shared ThreadIDS as unsigned integer
 dim shared CriticalCount as unsigned integer
-dim shared ThreadSpinLock as unsigned integer
 
 sub EnterCritical()
     if (Scheduler.CurrentRuningThread<>0) then
@@ -24,30 +23,8 @@ sub ThreadSleep()
 end sub
 
 
-sub ThreadManagerLock()
-    dim slock as unsigned integer ptr= @ThreadSpinLock
-    asm
-        mov ecx,[slock]
-        .acquire:
-            lock bts dword ptr [ecx],0
-            jnc .acquired
-        .retest:
-            pause
-            test dword ptr [ecx],1
-            je .retest
-            
-            lock bts dword ptr [ecx],0
-            jc .retest
-        .acquired:
-    end asm
-end sub
-        
-sub ThreadManagerUnLock()
-    ThreadSpinLock = 0
-end sub
 
 sub Thread.InitManager()
-        ThreadSpinLock=0
         TotalEllapsed = 0
         CriticalCount = 0
         TotalThreadCount = 0
@@ -56,8 +33,8 @@ sub Thread.InitManager()
         Scheduler.Constructor()
     
     
-        IDLE_Thread = Thread.CreateSys(@KERNEL_IDLE,0)
-        PROCESS_MANAGER_THREAD = Thread.CreateSys(@PROCESS_MANAGER,0)
+        IDLE_Thread = Thread.CreateSys(@KERNEL_IDLE)
+        PROCESS_MANAGER_THREAD = Thread.CreateSys(@PROCESS_MANAGER)
 end sub
 
 sub Thread.Ready()
@@ -77,19 +54,9 @@ sub PROCESS_MANAGER(p as any ptr)
                 ProcessesToTerminate = proc->NextProcess
                 Process.Terminate(proc,0)
             wend
-            
-            
         end if
         
-        if (ProcessesToLoad<>0) then
-            while (ProcessesToLoad<>0)
-                var proc = ProcessesToLoad
-                ProcessesToLoad = proc->NextProcess
-                proc->NextProcess = 0
-                proc->DoLoad()
-            wend
-        end if
-        if (ProcessesToLoad=0 and ProcessesToTerminate=0) then
+        if (ProcessesToTerminate=0) then
             ThreadSleep()
         end if
     loop
@@ -117,7 +84,7 @@ function int20Handler(stack as irq_stack ptr) as irq_stack ptr
 end function
 
 destructor Thread()
-	if (IsSys=1) then PageFree(cptr(any ptr,stackAddr))
+	if (IsSys=1) then KMM_FREEPAGE(cptr(any ptr,stackAddr))
     ReplyTo = 0
 	IsSys = 0
 	StackAddr = 0
@@ -129,17 +96,15 @@ destructor Thread()
 	NextThreadQueue = 0
 	NextThreadProc = 0
 	SavedESP = 0
-    PageFree(cptr(any ptr,KernelStackBase))
+    KMM_FREEPAGE(cptr(any ptr,KernelStackBase))
 	
 	KernelStackBase = 0
 	KernelStackLimit = 0
-    Priority=0
-    BasePriority=0
-    HasModalVisible =0
+    
 	TotalThreadCount-=1
 end destructor
 
-function Thread.CreateSys(entryPoint as sub(p as any ptr),prio as unsigned integer) as Thread ptr
+function Thread.CreateSys(entryPoint as sub(p as any ptr)) as Thread ptr
     dim th as Thread ptr = cptr(Thread ptr,KAlloc(sizeof(Thread)))
     
     TotalThreadCount+=1
@@ -149,7 +114,7 @@ function Thread.CreateSys(entryPoint as sub(p as any ptr),prio as unsigned integ
     th->ReplyTo = 0
 	th->InCritical = 0
     th->RTCDelay = 0
-    th->StackAddr = cuint(PageAlloc(1))
+    th->StackAddr = cuint(KMM_ALLOCPAGE())
     th->ID = ThreadIDS
     th->Owner = 0
     th->VMM_Context = @kernel_context
@@ -157,12 +122,10 @@ function Thread.CreateSys(entryPoint as sub(p as any ptr),prio as unsigned integ
     th->NextThreadQueue = 0
     th->NextThreadProc = 0
     
-    th->KernelStackBase = cuint(PageAlloc(1))
+    th->KernelStackBase = cuint(KMM_ALLOCPAGE())
     th->KernelStackLimit = th->KernelStackBase + (1 shl 12)-4
     th->SavedESP = th->KernelStackLimit - sizeof(irq_stack)
     
-    th->BasePriority = prio
-    th->HasModalVisible = 0
     th->RTCDelay = 0
     
     'configure the process's context
@@ -185,10 +148,11 @@ function Thread.CreateSys(entryPoint as sub(p as any ptr),prio as unsigned integ
     
     
     th->AddToList()
+    Scheduler.SetThreadReady(th)
     return th
 end function
 
-function Thread.Create(proc as Process ptr,entryPoint as unsigned integer,prio as unsigned integer) as Thread ptr
+function Thread.Create(proc as Process ptr,entryPoint as unsigned integer) as Thread ptr
     dim th as Thread ptr = cptr(Thread ptr,KAlloc(sizeof(Thread)))
     
     TotalThreadCount+=1
@@ -205,12 +169,10 @@ function Thread.Create(proc as Process ptr,entryPoint as unsigned integer,prio a
     th->NextThreadQueue = 0
     th->NextThreadProc = 0
     
-    th->KernelStackBase = cuint(PageAlloc(1))
+    th->KernelStackBase = cuint(KMM_ALLOCPAGE())
     th->KernelStackLimit = th->KernelStackBase + (1 shl 12)-4
     th->SavedESP = th->KernelStackLimit - sizeof(irq_stack) 
     
-    th->BasePriority = prio
-    th->HasModalVisible = 0
     
     'configure the process's context
     var st = cptr(irq_stack ptr,th->SavedESP)
@@ -237,7 +199,6 @@ end function
 
 sub Thread.AddToList()
     
-    Scheduler.SetThreadReady(@this)
     
     if (this.Owner<>0) then
         this.Owner->AddThread(@this)
@@ -246,18 +207,16 @@ end sub
 
 function Thread.DoWait(stack as IRQ_Stack ptr) as IRQ_Stack ptr
     this.State=ThreadState.waiting
-    'this.ReplyTo = 0
-    dim i as integer
-    for i = 0 to &h40
-        if (IRQ_THREAD_HANDLERS(i).Owner= @this)then
-            var pool = IRQ_THREAD_HANDLERS(i).Dequeue()
-            if (pool<>0) then
-                XappIRQReceived(i,pool)
-                KFree(pool)
-                exit for
-            end if
+    
+    var ep = FirstIPCEndPoint
+    while ep<>0
+        if (ep->Owner = @this) then
+            ep->ProcessReceive()
         end if
-    next
+        ep=ep->NextEndPoint
+    wend
+    
+    
     
     return Scheduler.Switch(stack,Scheduler.Schedule()) 
 end function

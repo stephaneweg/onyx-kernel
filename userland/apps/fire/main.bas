@@ -56,7 +56,9 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
 	MainWin = GDIWindowCreate(320,240,@"Fire demo")
 	GDISetVisible(MainWin,0)
     drawable = cptr(GImage ptr,MAlloc(sizeof(GImage)))
+    
     drawable->Constructor(MainWin,0,0,320,200)
+    
     
     GDIButtonCreate(MainWin,0,205,80,30,@"Color",@btnClick,0)
     

@@ -1,31 +1,24 @@
-function PageAlloc(count as unsigned integer) as any ptr
-    'var addr = find_free_pages(@kernel_context,1,cuint(KEND),VMM_PAGETABLES_VIRT_START)
-    'if (addr=0) then
-    '    KERNEL_ERROR(@"Cannot allocate page",0)
-    'end if
-    var paddr = PMM_ALLOCPAGE(count)
-    'if its above the identity mapping: map and return the virtual address
-    'if (cuint(paddr)>=VMM_IDENTITY_MEMORY_END) then
-    '    return vmm_kernel_automap(paddr,PAGE_SIZE*count,VMM_FLAGS_KERNEL_DATA)
-    'else
-    'map to kernel address space
-    '
-      return paddr
-    'end if
+
+
+'allocate a #count number of physical page, and map them in a contigous number of pages
+function KMM_ALLOCPAGE() as any ptr
+    var paddr = PMM_ALLOCPAGE()
+    if (paddr<>0) then
+        return vmm_kernel_automap(paddr, PAGE_SIZE,VMM_FLAGS_KERNEL_DATA)
+    end if
+    return 0
 end function
 
-sub PageFree(addr as any ptr)
-    'if it's above the identity mapping
-    'resolve, free and unmap
-    'if (cuint(addr)>=VMM_IDENTITY_MEMORY_END) then
-    '    var paddr = current_context->resolve(addr)
-    '    var count = PMM_FREE(paddr)
-     '   vmm_kernel_unmap(addr,PAGE_SIZE*count)
-    'else
-        PMM_FREEPAGE(addr)
-    'end if
+sub KMM_FREEPAGE(vaddr as any ptr)
+    var paddrx = current_context->Resolve(cptr(any ptr,vaddr))
+    if (paddrx<>0) then
+            current_context->unmap_page(cptr(any ptr,vaddr))
+            PMM_FREEPAGE(paddrx)
+    else
+        KERNEL_ERROR(@"The page is not used",cuint(vaddr))
+    end if
 end sub
-
+    
 
 function KAlloc(size as unsigned integer) as any ptr
     return SlabMeta.KAlloc(size)

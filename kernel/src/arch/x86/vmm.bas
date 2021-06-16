@@ -12,23 +12,17 @@
 sub VMM_INIT()
     ConsoleWrite(@"Initializing Virtual Memory Management")
     paging_active = 0
-    kernel_context.p_dir = PMM_ALLOCPAGE(1)
+    kernel_context.p_dir = PMM_ALLOCPAGE()
     memset32(kernel_context.p_dir,0,PAGE_SIZE_DWORD)
     kernel_context.v_dir = kernel_context.p_dir
     current_context = @kernel_context
     
     kernel_context.p_dir[VMM_PAGETABLES_VIRT_START shr 22] = cuint(kernel_context.p_dir) or VMM_FLAG_PRESENT or VMM_FLAG_WRITEABLE
     
-    'map kernel 1:1
-    'kernel_context.map_range(0, 0, KEND, VMM_FLAGS_KERNEL_DATA)
-    
     'map from 0 to memory end 
-    kernel_context.map_range(cptr(any ptr,0), cptr(any ptr,0),cptr(any ptr,min(cuint( MemoryEnd),ProcessAddress)), VMM_FLAGS_KERNEL_DATA)
-    'kernel_context.map_range(KSTART, KSTART, VMM_IDENTITY_MEMORY_END, VMM_FLAGS_KERNEL_DATA)
+    kernel_context.map_range(KSTART, KSTART, KEND, VMM_FLAGS_KERNEL_DATA)
     
-    'map first meg 1:1
-    'kernel_context.map_range(0,0,1024*1024,VMM_FLAGS_KERNEL_DATA)
-    
+  
     'map video memory 1:1
     kernel_context.map_page(cptr(any ptr, &hB8000), cptr(any ptr, &hB8000), VMM_FLAGS_USER_DATA)
     kernel_context.v_dir = cptr(uinteger ptr, (VMM_PAGETABLES_VIRT_START shr 22)*4096*1024 + (VMM_PAGETABLES_VIRT_START shr 22)*4096)
@@ -46,7 +40,6 @@ end sub
 
 sub VMM_EXIT()
     
-    ConsoleWrite(@"Disabling paging")
     asm
         mov ebx,cr4
         and ebx, &hFFFFFF7F
@@ -56,11 +49,8 @@ sub VMM_EXIT()
         and ebx, &h7FFFFFFF
         mov cr0,ebx
     end asm
-    SysConsole.VIRT = SysConsole.PHYS
-    CurrentConsole = @SysConsole
+    SysConsole.VIRT = cptr(any ptr, &hB8000)
     paging_active = 0
-    ConsolePrintOK()
-    ConsoleNewLine()
 end sub
 
 function vmm_get_current_context () as VMMContext ptr
@@ -69,7 +59,7 @@ end function
 
 
 function vmm_kernel_automap (p_start as any ptr, size as unsigned integer, flags as unsigned integer ) as any ptr
-	return vmm_get_current_context()->automap(p_start, size, PAGE_SIZE, ProcessAddress, flags)
+	return vmm_get_current_context()->automap(p_start, size, ((cuint(KEND) shr 12) +1) shl 12, ProcessAddress, flags)
 end function
 
 
@@ -97,11 +87,12 @@ sub vmm_init_local ()
 		mov cr4, ebx
 	end asm
     KTSS.cr3 = cuint(pagedir)
+	paging_active = 1
     
+    current_context->unmap_page(SysConsole.VIRT)
     SysConsole.Virt = cptr(unsigned byte ptr, ProcessConsoleAddress)
     current_context->map_page(SysConsole.VIRT,SysConsole.PHYS, VMM_FLAGS_USER_DATA)
     
-	paging_active = 1
     ConsolePrintOK()
     ConsoleNewLine()
 end sub
@@ -109,12 +100,15 @@ end sub
 destructor VMMContext()
     for i as unsigned integer = 256 to 1023
         if (( this.v_dir[i] and VMM_FLAG_PRESENT) = VMM_FLAG_PRESENT) then
-            dim pt as unsigned integer ptr = this.get_pagetable(i)
+            dim pt as unsigned integer ptr = cptr(unsigned integer ptr,(cuint(this.v_dir[i]) and VMM_PAGE_MASK))
+            
             if (pt<>0) then
                     PMM_FREEPAGE(pt)
             end if
         end if
+        
     next i
+    current_context->unmap_page(this.v_dir)
     PMM_FREEPAGE(this.P_dir)
 end destructor
 
@@ -122,7 +116,7 @@ end destructor
 sub VMMContext.Initialize ()
     this.version    = 0
     FirstVMMPage = ((cuint(KEND) shr 22)+1) shl 22
-	this.p_dir  = PMM_ALLOCPAGE(1)
+	this.p_dir  = PMM_ALLOCPAGE()
 	this.v_dir  = vmm_kernel_automap(this.p_dir, PAGE_SIZE,VMM_FLAGS_KERNEL_DATA)
 	memset32(this.v_dir, 0, PAGE_SIZE_DWORD)
     
@@ -265,7 +259,7 @@ function VMMContext.MAP_PAGE(virt as any ptr,phys as any ptr, flags as unsigned 
    
    if ((*pdir_entry and VMM_FLAG_PRESENT) <> VMM_FLAG_PRESENT) then
 		'' reserve memory
-		dim pagetable as any ptr = PMM_ALLOCPAGE(1)
+		dim pagetable as any ptr = PMM_ALLOCPAGE()
 
 		'' insert the new pagetable into the pagedir
 		*pdir_entry = cuint(pagetable) or (VMM_FLAG_PRESENT or VMM_FLAG_WRITEABLE or VMM_FLAG_USER)

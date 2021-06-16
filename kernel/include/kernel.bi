@@ -5,8 +5,7 @@ extern KERNEL_END   alias "KERNEL_END"   as byte
 
 #define KSTART @KERNEL_START
 #define KEND @KERNEL_END
+#define xkend cptr(any ptr,(((cuint(@KERNEL_END) shr 12)+1) shl 12))
 #define cbyteptr(x) cptr(unsigned byte ptr,x)
 
-declare sub GuiLoop(p as any ptr)
 declare sub EnterGraphicMode(mode as unsigned integer)
-dim shared GuiThread as Thread ptr

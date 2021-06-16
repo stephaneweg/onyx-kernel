@@ -28,13 +28,13 @@ sub InterruptsManager_Init()
         IRQ_ATTACH_HANDLER(i,@DefaultIrqHandler)
 	next
 	
-	for i=&h30 to &h40
+	for i=&h30 to &h8F
 		set_idt(i,cptr(unsigned integer ptr, @interrupt_tab)[i],&hEE)'_ring3_int_gate equ 11101110b 
 		IRQ_ATTACH_HANDLER(i,@DefaultIrqHandler)
 	next
 	
 	IDT_POINTER.IDT_BASE = cast(unsigned integer , @IDT_SEGMENT(0))
-	IDT_POINTER.IDT_LIMIT = (sizeof(IDT_ENTRY) * &h41) -1
+	IDT_POINTER.IDT_LIMIT = (sizeof(IDT_ENTRY) * &h90) -1
 	IDT_POINTER.ALWAYS0 = &h0
 	
 	ASM lidt [IDT_POINTER]
@@ -55,48 +55,28 @@ sub set_idt(intno as unsigned integer, irqhandler as unsigned integer,flag as un
 end sub
 
 
-
 function int_handler(stack as irq_stack ptr) as irq_stack ptr
     dim returnStack as IRQ_Stack ptr =stack
 	dim intno as unsigned integer = returnStack->intno
 	
     
-    if (IRQ_THREAD_HANDLERS(intno).Owner<>0) then
+    var endPoint = IPCEndPoint.FindBYId(intno)
+    if (endPoint<>0) then
         
-        var th =cptr(Thread ptr, IRQ_THREAD_HANDLERS(intno).Owner)
-        
-        var shouldShedule = 0
-        
-        var pool = cptr(IRQ_THREAD_POOL ptr,KAlloc(sizeof(IRQ_THREAD_POOL)))
-        pool->SENDER = cuint(Scheduler.CurrentRuningThread)
-        pool->SENDERPROCESS = cuint(Scheduler.CurrentRuningThread->Owner)
-        pool->EAX = stack->EAX
-        pool->EBX = stack->EBX
-        pool->ECX = stack->ECX
-        pool->EDX = stack->EDX
-        pool->ESI = stack->ESI
-        pool->EDI = stack->EDI
-        pool->EBP = stack->EBP
-        IRQ_THREAD_HANDLERS(intno).Enqueue(pool)
-        
-        if (th->State=THreadState.Waiting) then
-            var pool = IRQ_THREAD_HANDLERS(intno).Dequeue()
-            if (pool<>0) then
-                XappIRQReceived(intno,pool)
-                KFree(pool)
-                shouldShedule = 1
+        var ipcSendResult = IPCSend(intno,Scheduler.CurrentRuningThread,stack->EAX,stack->EBX,stack->ECX,stack->EDX,stack->ESI,stack->EDI,stack->EBP,stack->ESP)
+       
+        if (ipcSendResult<>0) then
+            'caller must wait
+            if (endPoint->Synchronous = 1) then
+                stack->EAX = &hFF
+                Scheduler.CurrentRuningThread->State=ThreadState.WaitingReply
+                Scheduler.CurrentRuningThread->ReplyFrom=endPoint->Owner
+                returnStack = Scheduler.Switch(stack,Scheduler.Schedule()) 
+            elseif (ipcSendResult = 2) then 'received is waked up
+                returnStack = Scheduler.Switch(stack,Scheduler.Schedule()) 
             end if
         end if
-        
-        'if its a synchronous interrupt, make the caller "waiting for reply from "
-        if (IRQ_THREAD_HANDLERS(intno).Synchronous = 1) then
-            stack->EAX = &hFF
-            Scheduler.CurrentRuningThread->State=ThreadState.WaitingReply
-            Scheduler.CurrentRuningThread->ReplyFrom=th
-            returnStack = Scheduler.Switch(stack,Scheduler.Schedule()) 
-        elseif shouldShedule=1 then
-            returnStack = Scheduler.Switch(stack,Scheduler.Schedule()) 
-        end if
+   
         
     else
     
@@ -105,49 +85,115 @@ function int_handler(stack as irq_stack ptr) as irq_stack ptr
         handler=IRQ_HANDLERS(intno)
         if (handler <>@DefaultIrqHandler) then
             returnStack = handler(stack)
+            
         else
             select case intno
             case &h0
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    ConsoleWrite(@"Killing process due to Divide by zero")
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"Divide by zero")
-                    asm cli
                     do:loop
+                end if
             case &h1
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Debug exception")
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"DEBUG")
-                    asm cli
                     do:loop
+                end if
             case &h2
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to NON Maskable interupt exception")
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"NON Maskable interupt")
-                    asm cli
                     do:loop
+                end if
             case &h3
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Break point exception")
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"Break point")
-                    asm cli
                     do:loop
+                end if
             case &h4
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to OverFlow exception")
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"OverFlow")
-                    asm cli
                     do:loop
+                end if
             case &h5
-                    VMM_EXIT()
-                    VesaResetScreen()
-                    ConsoleWrite(@"Bound range exceeded")
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Bound range exceeded exception")
+                else
                     asm cli
+                    VMM_EXIT()
+                    CurrentConsole = @SysConsole
+                    VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
+                    ConsoleWrite(@"Bound range exceeded")
                     do:loop
+                end if
             case &h6
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Invalid IPCode exception")
+                else
+                    asm cli
+                    VMM_EXIT()
+                    CurrentConsole = @SysConsole
+                    VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     'kernel_context.ACTIVATE()
                     '
-                    VMM_EXIT()
-                    VesaResetScreen()
+                    'VMM_EXIT()
+                   ' VesaResetScreen()
                     'VMM_INIT_Local()
                     ''var nstack = cptr(IRQ_STACK ptr,kernel_context.resolve(stack))
                     'ConsoleSetBackGround(4)
@@ -158,104 +204,235 @@ function int_handler(stack as irq_stack ptr) as irq_stack ptr
                     'ConsoleWriteTextAndHex(@"Current Thread ID : ",SCheduler.CurrentRuningThread->ID,true)
                     'stack->DUMP()
                     'KERNEL_ERROR(@"INVALID OPCODE",0)
-                    asm cli
                     do:loop
+                end if
             case &h7
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Device not available exception")
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"Device not available")
-                    asm cli
                     do:loop
+                end if
             case &h8
-                    VMM_EXIT()
-                    VesaResetScreen()
-                    ConsoleWrite(@"Double fault")
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Double fault exception")
+                else
                     asm cli
-                    do:loop
-            case &hA
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
+                    ConsoleWrite(@"Double fault")
+                    do:loop
+                end if
+            case &hA
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Invalid TSS exception")
+                else
+                    asm cli
+                    VMM_EXIT()
+                    CurrentConsole = @SysConsole
+                    VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"Invalid TSS")
                     asm cli
                     do:loop
+                end if
             case &hB
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Segment not present exception")
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"Segment not present")
-                    asm cli
                     do:loop
+                end if
             case &hC
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Stack segment fault exception")
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"Stack segment fault")
-                    asm cli
                     do:loop
+                end if
             case &hD
-                    VMM_EXIT()
-                    VesaResetScreen()
-                    ConsoleWrite(@"General Protection fault")
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to General Protection fault exception")
+                else
                     asm cli
+                    VMM_EXIT()
+                    CurrentConsole = @SysConsole
+                    VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
+                    ConsoleWrite(@"General Protection fault")
                     do:loop
+                end if
             case &hE
+                var pc = Scheduler.CurrentRuningThread->Owner
                     dim acr2 as unsigned integer
+                if (pc<>0) then
+                    asm cli
+                    asm
+                        mov ebx,cr2
+                        mov [acr2],ebx
+                    end asm
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Page fault exception")
+                    ConsoleWriteTextAndDec(@"   Code : ",stack->errCode,true)                        
+                    ConsoleWriteTextAndHex(@"   CR2 : ",acr2,true)                      
+                    ConsoleWriteTextAndHex(@"   EIP : ",stack->EIP,true)
+                    ConsoleWriteTextAndHex(@"   PHYS : ",cuint(current_context->RESOLVE(cptr(any ptr,acr2 ))),true)
+                    ConsoleWriteTextAndHex(@"   Current Thread ID : ",SCheduler.CurrentRuningThread->ID,true)
+                    stack->DUMP
+                    asm sti
+                else
+                    asm cli
                     asm
                         mov ebx,cr2
                         mov [acr2],ebx
                     end asm
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleSetBackGround(4)
                     ConsoleSetForeground(15)
                     ConsoleClear()
                     
                     ConsoleWriteLine(@"Page fault")                       
                     ConsoleWriteTextAndDec(@"   Code : ",stack->errCode,true)                        
-                    ConsoleWriteTextAndHex(@"   CR2 : ",acr2,true)
+                    ConsoleWriteTextAndHex(@"   CR2 : ",acr2,true)                      
+                    ConsoleWriteTextAndHex(@"   EIP : ",stack->EIP,true)
                     ConsoleWriteTextAndHex(@"   PHYS : ",cuint(current_context->RESOLVE(cptr(any ptr,acr2 ))),true)
                     ConsoleWriteTextAndHex(@"   Current Thread ID : ",SCheduler.CurrentRuningThread->ID,true)
-                    asm cli
                     do:loop
+                end if
             case &h10
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Floating point exception")
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"Floating point exception")
-                    asm cli
                     do:loop
+                end if
             case &h11
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Alignment check exception")
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"Alignment check")
-                    asm cli
                     do:loop
+                end if
             case &h12
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Machine check exception")
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"Machine check")
-                    asm cli
                     do:loop
+                end if
             case &h13
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to SIMD Floating-point exception")
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"SIMD Floating-point exception")
-                    asm cli
                     do:loop
+                end if
             case &h14
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Virtualization exception")
+                else
+                    asm cli
                     VMM_EXIT()
+                    CurrentConsole = @SysConsole
                     VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
                     ConsoleWrite(@"Virtualization exception")
-                    asm cli
                     do:loop
+                end if
             case &h1E
-                    VMM_EXIT()
-                    VesaResetScreen()
-                    ConsoleWrite(@"Security exception")
+                var pc = Scheduler.CurrentRuningThread->Owner
+                if (pc<>0) then
+                    Process.RequestTerminateProcess(pc)
+                    returnStack = Scheduler.Switch(stack, Scheduler.Schedule())
+                    ConsoleWrite(@"Killing process due to Security exception")
+                else
                     asm cli
+                    VMM_EXIT()
+                    CurrentConsole = @SysConsole
+                    VesaResetScreen()
+                    SysConsole.VIRT = cptr(any ptr,&hB8000)
+                    ConsoleWrite(@"Security exception")
                     do:loop
+                end if
             end select
         end if
     end if
-	ReceivedInt=intno
 	IRQ_SEND_ACK(intno)
+    
     return returnStack
 end function
 
@@ -263,13 +440,6 @@ function DefaultIrqHandler(stack as irq_stack ptr) as irq_stack ptr
     return stack
 end function
 
-sub Irq_Wait(intno as unsigned integer)
-	ASM STI
-	do
-	loop while ReceivedInt<> intno
-	ASM CLI
-	ReceivedInt=-1
-end sub
 
 
 
@@ -325,70 +495,23 @@ sub IRQ_SEND_ACK(intno as unsigned integer)
 	END ASM
 end sub
 
-sub IRQ_SET_THREAD_HANDLER(intno as unsigned integer,th as any ptr,e as unsigned integer,isSynchronous as unsigned integer)
-    if (IRQ_THREAD_HANDLERS(intno).Owner = 0) then
-        IRQ_THREAD_HANDLERS(intno).Owner = th
-        IRQ_THREAD_HANDLERS(intno).Synchronous = isSynchronous
-        IRQ_THREAD_HANDLERS(intno).EntryPoint = e
-        IRQ_THREAD_HANDLERS(intno).Counter = 0
-        'IRQ_THREAD_HANDLERS(intno).FirstPool = 0
-        'IRQ_THREAD_HANDLERS(intno).LastPool = 0
-    end if
-end sub
-
-sub IRQ_THREAD_HANDLER.Enqueue(p as IRQ_THREAD_POOL ptr)
-    this.Counter += 1
-    if (this.LastPool<>0)  then
-        this.LastPool->NextPool = p
-    else
-        this.FirstPool = p
-    end if
-    this.LastPool = p
-    p->NextPool = 0
-end sub
-
-function IRQ_THREAD_HANDLER.Dequeue() as IRQ_THREAD_POOL ptr
-    if (this.FirstPool<>0) then
-        var ret = this.FirstPool
-        this.FirstPool = this.FirstPool->NextPool
-        if (this.FirstPool=0) then this.LastPool = 0
-        return ret
-    end if
-    return 0
-end function
 
 
 sub IRQ_THREAD_TERMINATED(t as unsigned integer)
     var th = cptr(Thread ptr,t)
-    for i as unsigned integer = 0 to &h40
-        if IRQ_THREAD_HANDLERS(i).Owner<>0 then
-            var p = IRQ_THREAD_HANDLERS(i).FirstPool
-            while p<>0
-                if (p->Sender = t) then
-                    var n = p->NextPool
-                    IRQ_THREAD_HANDLERS(i).FirstPool = n
-                    KFree(p)
-                    p = n
-                else
-                    exit while
-                end if
-            wend
-            
-            
-            while p<>0
-                var pnext = p->NextPool
-                if (pnext<>0) then
-                    if (pnext->Sender = t) then
-                        p->NextPool = pnext->NextPool
-                        KFree(pnext)
-                    end if
-                end if
-                p = p->NextPool
-            wend
-            if (IRQ_THREAD_HANDLERS(i).FirstPool=0) then IRQ_THREAD_HANDLERS(i).LastPool = 0
-            if cptr(Thread ptr,IRQ_THREAD_HANDLERS(i).Owner)->ReplyTo = th then
-                cptr(Thread ptr,IRQ_THREAD_HANDLERS(i).Owner)->ReplyTo = 0
-            end if
+    
+    var ep = FirstIPCEndPoint
+    while ep<>0
+        var n = ep->NextEndPoint
+        if ep->Owner->ReplyTo = th then
+            ep->Owner->ReplyTo = 0
         end if
-    next i
+        
+        if (ep->Owner = th) then
+            ep->destructor()
+            KFree(ep)
+        end if
+        ep=n
+    wend
+    
 end sub

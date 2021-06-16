@@ -1,10 +1,11 @@
-sub int33Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
-  
+sub int33Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer,_esp as unsigned integer)
+
     select case _EAX
         'concern files
         case &h01 'load file
             GetStringFromCaller(TmpString,_ESI)
             var fname = TmpString
+        
             dim fsize as unsigned integer  = 0
             var buff = VFS_LOAD_FILE(fname,@fsize)
             _ECX = fsize
@@ -124,5 +125,5 @@ sub int33Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
             _EAX = VFS_LIST_DIR(path,attrib,dst,skip,cpt )
             UnMapBuffer(dst,sizeof(VFSDirectoryEntry)*cpt)
     end select
-    EndIRQHandlerAndSignal()
+    EndIPCHandlerAndSignal()
 end sub

@@ -36,7 +36,7 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
 	SlabInit()
     FontManager.Init()
     
-	MainWin = GDIWindowCreate(645,545,@"FASM Front end")
+	MainWin = GDIWindowCreate(645,550,@"FASM Front end")
 	GDISetVisible(MainWin,0)
     GDITextBlockCreate(MainWin,0,7,@"Input file : ",&hFF000000)
 	txtInputFile = GDITextBoxCreate(MainWin,140,0,190,30)

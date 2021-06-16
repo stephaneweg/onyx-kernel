@@ -1,9 +1,7 @@
 sub Process.InitEngine()
         FirstProcessList = 0
         LastProcessList = 0
-        
         ProcessesToTerminate = 0
-        ProcessesToLoad = 0
 end sub
 
 constructor Process()
@@ -28,6 +26,8 @@ constructor Process()
     else
         VIRT_CONSOLE = @SYSCONSOLE
     end if
+    ServerChannels = 0
+    ClientChannels = 0
     
     NextProcess = 0
     Threads = 0
@@ -36,6 +36,7 @@ end constructor
 
 destructor Process()
     if (AddressSpace<>0) then
+        
         AddressSpace->Destructor()
         KFree(AddressSpace)
         AddressSpace = 0
@@ -79,7 +80,7 @@ sub Process.CreateConsole()
     console->CursorY = 0
     console->Foreground = 7
     console->Background = 0
-    console->PHYS = PMM_ALLOCPAGE(1)
+    console->PHYS = PMM_ALLOCPAGE()
     console->VIRT =cptr(unsigned byte ptr, ProcessConsoleAddress)'cptr(unsigned byte ptr,&HB8000)
     
     current_context->map_page(console->VIRT,console->PHYS, VMM_FLAGS_USER_DATA)
@@ -105,23 +106,23 @@ sub Process.FreeConsole()
         wend
         if (not used) then
             VIRT_CONSOLE->Destructor()
-            MFree(VIRT_CONSOLE)
+            KFREE(VIRT_CONSOLE)
         end if
     end if
 end sub
 
 
-sub Process.DoLoadFlat()
+function Process.DoLoadFlat() as unsigned integer
     dim neededPages as unsigned integer = ((image->ImageEnd - ProcessAddress) shr 12)+2
     CodeAddressSpace = this.CreateAddressSpace(ProcessAddress)
     CodeAddressSpace->SBRK(neededPages)
     CodeAddressSpace->CopyFrom(image,ImageSize)
-end sub
+    return image->Init
+end function
 
-sub Process.DoLoadElf()
+function Process.DoLoadElf() as unsigned integer
     var elfHeader = cptr(ELF_HEADER ptr,image)
     dim program_header as ELF_PROG_HEADER_ENTRY ptr = cast(ELF_PROG_HEADER_ENTRY ptr, cuint(elfHeader) + elfHeader->ProgHeaderTable)
-    
     for counter as uinteger = 0 to elfHeader->ProgEntryCount-1
         dim start as unsigned integer       = program_header[counter].Segment_V_ADDR and VMM_PAGE_MASK
         dim real_size as unsigned integer   = program_header[counter].SegmentFSize + (program_header[counter].Segment_V_ADDR - start)
@@ -134,6 +135,8 @@ sub Process.DoLoadElf()
         var area = this.CreateAddressSpace(addr)
         var neededPages = (real_mem_size shr 12)
         if (neededPages shl 12)<real_mem_size then neededPages+=1
+        
+        
         area->SBRK(neededPages)
         
         if program_header[counter].SegmentType<>ELF_SEGMENT_TYPE_LOAD then
@@ -142,38 +145,35 @@ sub Process.DoLoadElf()
             area->CopyFrom(cptr(any ptr,cuint(elfHeader)+ cuint(program_header[counter].Segment_P_ADDR)),real_size)
         end if
     next
-end sub
+    return elfHeader->ENTRY_POINT
+end function
 
 sub Process.DoLoad()
-    IRQ_DISABLE(0)
 	    
 	VMM_Context.Initialize()
     VMM_Context.map_page(VIRT_CONSOLE->VIRT,VIRT_CONSOLE->PHYS, VMM_FLAGS_USER_DATA)
 	
     dim entry as unsigned integer = 0
     if (image->Magic = &hAADDBBFF) then
-        DoLoadFlat()
+        entry = DoLoadFlat()
     elseif(image->MAGIC = ELF_MAGIC) then
-        DoLoadELF()
+        entry = DoLoadELF()
     end if
     
 	HeapAddressSpace = this.CreateAddressSpace(ProcessHeapAddress)
     StackAddressSpace = this.CreateAddressSpace(ProcessStackAddress)
     
-    if ShouldFreeMem then
-        KFree(image)
-	end if
     Image =  cptr(EXECUTABLE_HEADER ptr,ProcessAddress)	
     
-    asm cli
+    IRQ_DISABLE(0)
     var ctx = current_context
     VMM_Context.Activate()
 	ParseArguments()
-	Thread.Create(@this,image->Init,5)
     ctx->Activate()
-    asm sti
-    
     IRQ_ENABLE(0)
+    
+	var th = Thread.Create(@this,entry)
+    Scheduler.SetThreadReady(th)
 end sub
 
 sub Process.ParseArguments()
@@ -181,7 +181,7 @@ sub Process.ParseArguments()
     if TmpArgs<>0 then
         if (strlen(strtrim(TmpArgs))>0) then
             if(Image->ArgsValues<>0) then
-                dim tmpBuffer as unsigned byte ptr =Malloc(strlen(TmpArgs)+1)
+                dim tmpBuffer as unsigned byte ptr =KAlloc(strlen(TmpArgs)+1)
                 var slen = strlen(TmpArgs)
                 dim prev as unsigned integer = 0
                 dim dst as unsigned byte ptr = tmpBuffer
@@ -247,15 +247,15 @@ sub Process.ParseArguments()
                 next i
                 
                 
-                MFree(tmpBuffer)
+                KFree(tmpBuffer)
             end if
         
-            MFree(TmpArgs)
+            KFree(TmpArgs)
 		end if
 	end if
 end sub
 
-function Process.RequestLoadMem(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,shouldFree as unsigned integer,args as unsigned byte ptr) as Process ptr
+function Process.Create(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,args as unsigned byte ptr) as Process ptr
     dim result as Process ptr = 0
     result = cptr(Process ptr,KAlloc(sizeof(Process)))
     result->Constructor()
@@ -264,35 +264,17 @@ function Process.RequestLoadMem(image as EXECUTABLE_HEADER ptr,fsize as unsigned
 	result->Image->ArgsCount = 0'argsCount
 	'to do: copy data of arguments
 	if (args<>0) then
-		result->TmpArgs = Malloc(strlen(args))
+		result->TmpArgs = KAlloc(strlen(args)+1)
 		memcpy(result->TmpArgs,args,strlen(args)+1)
 	else
 		result->TmpArgs = 0
 	end if
     result->ImageSize = fsize
-    result->ShouldFreeMem = shouldFree
     
-    result->NextProcess = ProcessesToLoad
-    ProcessesToLoad = result
-    
-    
-    if (PROCESS_MANAGER_THREAD<>0) then
-        if (PROCESS_MANAGER_THREAD->State = ThreadState.waiting) then Scheduler.SetThreadReady(PROCESS_MANAGER_THREAD)
-    end if
+    result->DoLoad()
     return result
 end function
 
-function Process.RequestLoadUser(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,args as unsigned byte ptr) as Process ptr
-	
-	if (fsize<>0) then
-		dim newImg as EXECUTABLE_HEADER ptr = MAlloc(fsize)
-		if (newImg<>0) then
-			memcpy(cptr(unsigned byte ptr,newImg),cptr(unsigned byte ptr,image),fsize)
-			return Process.RequestLoadMem(newImg,fsize,1,args)
-		end if
-	end if
-    return 0
-end function
 
 
 sub Process.AddThread(t as any ptr)
@@ -304,17 +286,16 @@ end sub
 
 
 sub Process.RequestTerminateProcess(app as Process ptr)
-    
+    IRQ_DISABLE(0)
+    IPCSend(&h35,0,&hFFFFFF,cuint(app),0,0,0,0,0,0)
     var th=cptr(Thread ptr,app->Threads)
     
-    IRQ_DISABLE(0)
     while(th<>0)
         IRQ_THREAD_TERMINATED(cuint(th))
         th->State = ThreadState.Terminating
         Scheduler.RemoveThread(th)
         th=th->NextThreadProc
     wend
-    IRQ_ENABLE(0)
     
     app->NextProcess = ProcessesToTerminate
     ProcessesToTerminate = app
@@ -322,14 +303,17 @@ sub Process.RequestTerminateProcess(app as Process ptr)
     if (PROCESS_MANAGER_THREAD<>0) then
         if (PROCESS_MANAGER_THREAD->State = ThreadState.waiting) then Scheduler.SetThreadReady(PROCESS_MANAGER_THREAD)
     end if
+    IRQ_ENABLE(0)
 end sub
     
     
     
 
 sub Process.Terminate(app as Process ptr,args as any ptr)
+    
 	'destroy the thread
     IRQ_DISABLE(0)
+    
     var th=cptr(Thread ptr,app->Threads)
     while th<>0
 		var n = th->NextThreadProc
@@ -341,19 +325,21 @@ sub Process.Terminate(app as Process ptr,args as any ptr)
 		
 		th=n
     wend
-    IRQ_ENABLE(0)
-    
 	'destroy the app	
     app->Destructor()
-    
     KFree(app)
+    
+    IRQ_ENABLE(0)
 end sub
 
 
 sub Process.TerminateNow(app as Process ptr)
-  
-    'destroy the thread
     IRQ_DISABLE(0)
+    
+    IPCSend(&h35,0,&hFFFFFF,cuint(app),0,0,0,0,0,0)
+        
+    'destroy the thread
+    
     var th=cptr(Thread ptr,app->Threads)
     while th<>0
 		var n = th->NextThreadProc
@@ -366,11 +352,12 @@ sub Process.TerminateNow(app as Process ptr)
 		
 		th=n
     wend
-    IRQ_ENABLE(0)
     
      'destroy the app	
     app->Destructor()
     
     KFree(app)
+    
+    IRQ_ENABLE(0)
 end sub
 

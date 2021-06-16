@@ -39,34 +39,11 @@ type IRQ_Stack field = 1
 end type
 
 
-type IRQ_THREAD_POOL field = 1
-    SENDER as unsigned integer
-    SENDERPROCESS as unsigned integer
-    EAX as unsigned integer
-    EBX as unsigned integer
-    ECX as unsigned integer
-    EDX as unsigned integer
-    ESI as unsigned integer
-    EDI as unsigned integer
-    EBP as unsigned integer
-    NEXTPool as IRQ_THREAD_POOL ptr
-end type
-
-type IRQ_THREAD_HANDLER field=1
-    Owner as any ptr
-    Synchronous as unsigned integer
-    EntryPoint as unsigned integer
-    Counter as unsigned integer
-    FirstPool as IRQ_THREAD_POOL ptr
-    LastPool as IRQ_THREAD_POOL ptr
-    declare sub Enqueue(p as IRQ_THREAD_POOL ptr)
-    declare function Dequeue() as IRQ_THREAD_POOL ptr
-end type
 
 declare sub InterruptsManager_Init()
 declare sub set_idt(intno as unsigned integer, irqhandler as unsigned integer,flag as unsigned byte)
+ 
 declare function int_handler(stack as irq_stack ptr) as irq_stack ptr
-declare sub Irq_Wait(intno as unsigned integer)
 declare function DefaultIrqHandler(stack as irq_stack ptr) as irq_stack ptr
 
 
@@ -79,13 +56,10 @@ declare sub IRQ_SEND_ACK(intno as unsigned integer)
 
 
 dim shared IDT_POINTER as IDT_PTR
-dim shared IDT_SEGMENT(0 to &h40) as IDT_ENTRY
-dim shared IRQ_HANDLERS(0 to &h40) as function(stack as irq_stack ptr) as irq_stack ptr
+dim shared IDT_SEGMENT(0 to &h8F) as IDT_ENTRY
+dim shared IRQ_HANDLERS(0 to &h8F) as function(stack as irq_stack ptr) as irq_stack ptr
 
 
-dim shared ReceivedInt as integer
 declare sub interrupt_tab()
 
-dim shared IRQ_THREAD_HANDLERS(0 to &h40) as IRQ_THREAD_HANDLER
-declare sub IRQ_SET_THREAD_HANDLER(intno as unsigned integer,th as any ptr,e as unsigned integer,isSynchronous as unsigned integer)
 declare sub IRQ_THREAD_TERMINATED(t as unsigned integer)

@@ -12,6 +12,7 @@
 #include once "drivers/keyboard.bi"
 
 dim shared ProcToTerminate as unsigned integer
+dim shared TerminatedProc as unsigned integer
 
 dim shared LFB as unsigned integer
 dim shared LFBSize as unsigned integer
@@ -23,7 +24,7 @@ dim shared TMPString as unsigned byte ptr
 dim shared TMPString2 as unsigned byte ptr
 
 declare sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
-declare sub INT35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer)
+declare sub INT35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer,_esp as unsigned integer)
 
 declare sub XAppButtonClick(btn as TButton ptr)
 declare sub XAppMouseClick(elem as GDIBase ptr,mx as integer,my as integer)
@@ -82,13 +83,15 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
     FontManager.Init()
     
 	ScreenInit()
-	DefineIRQHandler(&h35,@int35Handler,1)
+	DefineIPCHandler(&h35,@int35Handler,1)
+    
     
     GUIThread = CreateThread(@GuiLoop,0)
     
     INIT_KBD()
     INIT_MOUSE()
     ProcToTerminate = 0
+	TerminatedProc = 0
 	GDI_UPDATED=1
 	ExecApp(@"SYS:/SYS/PIN.BIN",0)
     WaitForEvent()
@@ -108,21 +111,26 @@ sub GuiLoop(p as any ptr)
             
             ScreenLoop()
         end if
-        if (ProcToTerminate<>0) then
-            KillProcess(ProcToTerminate)
-             'remove the from the gui
+		
+		if (ProcToTerminate<>0 or TerminatedProc<>0) then
+			
+			if (ProcToTerminate<>0) then
+				KillProcess(ProcToTerminate)
+			end if
+			'remove the from the gui
             var g = RootScreen->FirstChild
             while g<>0
             	var  n = g->NextChild
-            	if (g->Owner = ProcToTerminate) then
+            	if (g->Owner<>0) and ((g->Owner = ProcToTerminate) or (g->Owner=TerminatedProc)) then
             		RootScreen->RemoveChild(g)
             		DestroyObj(g)
             	end if
             	g = n
             wend
+			TerminatedProc = 0
             ProcToTerminate = 0
         end if
-        ThreadYield()
+        WaitN(1)
     loop
 end sub
 

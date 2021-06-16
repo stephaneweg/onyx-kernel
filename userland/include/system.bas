@@ -78,15 +78,6 @@ function UDevInvoke(d as unsigned integer,p1 as unsigned integer,p2 as unsigned 
 end function
         
 
-sub DefineIRQHandler(intNO as unsigned integer,c as sub(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer),synchronous as unsigned integer)
-    asm
-        mov eax,&h0B
-        mov ebx,[intNO]
-        mov ecx,[c]
-        mov edx,[synchronous]
-        int 0x30
-    end asm
-end sub
 
 
 sub IRQ_ENABLE(intno as unsigned integer)
@@ -290,3 +281,43 @@ sub SetPriority(p as unsigned integer)
         int 0x30
     end asm
 end sub
+
+
+sub DefineIPCHandler(id as unsigned integer,c as sub(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer,_esp as unsigned integer),synchronous as unsigned integer)
+    asm
+        mov eax,&hC0
+        mov ebx,[id]
+        mov ecx,[c]
+        mov edx,[synchronous]
+        int 0x30
+    end asm
+end sub
+
+
+function IPCSend(id as unsigned integer,r0 as unsigned integer,r1 as unsigned integer,r2 as unsigned integer,r3 as unsigned integer,r4 as unsigned integer,r5 as unsigned integer,r6 as unsigned integer,r7 as unsigned integer,result2 as unsigned integer ptr,result3 as unsigned integer ptr) as unsigned integer
+    dim res1 as unsigned integer
+    dim res2 as unsigned integer
+    dim res3 as unsigned integer
+    dim body as IPCMessageBody
+    body.REG0 = r0
+    body.REG1 = r1
+    body.REG2 = r2
+    body.REG3 = r3
+    body.REG4 = r4
+    body.REG5 = r5
+    body.REG6 = r6
+    body.REG7 = r7
+    var b= @body
+    asm
+        mov eax,&hC2
+        mov ebx,[id]
+        mov ecx,[b]
+        int 0x30
+        mov [res1],eax
+        mov [res2],ebx
+        mov [res3],ecx
+    end asm
+    if (result2<>0) then *result2 = res2
+    if (result3<>0) then *result3 = res3
+    return res1
+end function

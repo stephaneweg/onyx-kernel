@@ -21,10 +21,11 @@ TYPE Process field =1
     
     VMM_Context as VMMContext
     TmpArgs as unsigned byte ptr
-    ShouldFreeMem as integer
     
     VIRT_CONSOLE as VirtConsole ptr
     
+    ServerChannels as any ptr
+    ClientChannels as any ptr
     
     AddressSpace as AddressSpaceEntry ptr
     
@@ -35,8 +36,7 @@ TYPE Process field =1
     declare function CreateAddressSpace(virt as unsigned integer) as AddressSpaceEntry ptr
     
     declare static sub InitEngine()
-    declare static function RequestLoadMem(image as EXECUTABLE_HEADER ptr,size as unsigned integer,shouldFree as unsigned integer,args as unsigned byte ptr) as Process ptr
-    declare static function RequestLoadUser(mem as EXECUTABLE_HEADER ptr,fsize as unsigned integer,args as unsigned byte ptr) as Process ptr
+    declare static function Create(image as EXECUTABLE_HEADER ptr,size as unsigned integer,args as unsigned byte ptr) as Process ptr
     
     declare static sub TerminateNow(app as Process ptr)
     declare static sub RequestTerminateProcess(app as Process ptr)
@@ -46,8 +46,8 @@ TYPE Process field =1
     declare destructor()
     declare sub AddThread(t as any ptr)
     declare sub DoLoad()
-    declare sub DoLoadFlat()
-    declare sub DoLoadElf()
+    declare function DoLoadFlat() as unsigned integer
+    declare function DoLoadElf() as unsigned integer
     declare sub ParseArguments()
     
     declare sub FreeConsole()
@@ -64,4 +64,3 @@ end type
 dim shared FirstProcessList as Process ptr
 dim shared LastProcessList as Process ptr
 dim shared ProcessesToTerminate as Process ptr
-dim shared ProcessesToLoad as Process ptr

@@ -43,7 +43,7 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
     FAT_INIT()
 	mountSys(argc,argv)
     'mountRamdisk()
-    DefineIRQHandler(&h33,@int33Handler,1)
+    DefineIPCHandler(&h33,@int33Handler,1)
     
     UDevCreate(@"VFS",1,0)
     WaitForEvent()

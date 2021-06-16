@@ -34,7 +34,6 @@ function Semaphore.SemLock(th as thread ptr) as unsigned integer
     Value+=1
     if (Value=1) then
         CurrentThread = th
-        CurrentThread->Priority = 1
         return 1
     
     else
@@ -56,7 +55,6 @@ end function
 sub Semaphore.SemUnlock(th as Thread ptr)
     if (CurrentThread=th) then
         if (value>0) then
-            CurrentThread->Priority = CurrentThread->BasePriority
             Value-=1
             
             CurrentThread = this.ThreadQueue

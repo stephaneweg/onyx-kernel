@@ -3,12 +3,17 @@
 #include once "console.bi"
 
 dim shared PageBitmap(0 to &hFFFFF) as unsigned integer
+
+
+dim shared PMM_SpinLock as SpinLock
+
 function PMM_GET_FREEPAGES_COUNT() as unsigned integer
     return TotalPagesCount
 end function
 
 sub PMM_INIT(mb_info as multiboot_info ptr)
     ConsoleWrite(@"Physical pages allocator initializing ...")
+    PMM_SpinLock.Init()
     MemoryEnd = cptr(any ptr,mb_info->mem_upper * 1024)
     FirstPage = (cuint(KEND) shr 12)+1
     LastPage = (mb_info->mem_upper shr 2)
@@ -23,7 +28,9 @@ sub PMM_INIT(mb_info as multiboot_info ptr)
         var mod_start   = mb_info->mods_addr[i].mod_start
         var mod_end     = mb_info->mods_addr[i].mod_end
         PMM_STRIPE(mod_start,mod_end)
+        PMM_STRIPE(cuint(mb_info->mods_addr[i].mod_string),cuint(mb_info->mods_addr[i].mod_string)+strlen(mb_info->mods_addr[i].mod_string)+1)
     next i
+    
     
     TotalPagesCount = 0
     for i as unsigned integer = 0 to &hFFFFF
@@ -37,6 +44,7 @@ sub PMM_INIT(mb_info as multiboot_info ptr)
 end sub
 
 sub PMM_STRIPE(start_addr as unsigned integer,end_addr as unsigned integer)
+    'PMM_SpinLock.Acquire()
     dim startPage as unsigned integer = start_addr shr 12
     dim endPage as unsigned integer = end_addr shr 12
     
@@ -44,57 +52,26 @@ sub PMM_STRIPE(start_addr as unsigned integer,end_addr as unsigned integer)
         PageBitmap(i) = &hFFFFFFFF
         TotalPagesCount-=1
     next
+    'PMM_SpinLock.Release()
 end sub
 
 'allocate a contigous number of pages
 'it will mark the bitmap cells as used, and put the count in the first cell
 'so it can free all pages when freeing the pages
-function PMM_ALLOCPAGE(pagesCount as unsigned integer) as any ptr
-   
+function PMM_ALLOCPAGE() as any ptr
+    PMM_SpinLock.Acquire()
+    
     dim i as unsigned integer
-    dim obase as unsigned integer = FirstPage
-    dim cptFree as unsigned integer = 0
-    'for i = FirstPage to LastPage
-    '    if (PageBitmap(i)= 0) then 
-    '        cptFree+=1
-    '        if (cptFree=pagesCount) then
-    '            for i = obase to obase+pagesCount-1
-    '                PageBitmap(i) = 1
-    '            next i
-    '            PageBitmap(obase) = pagesCount
-    '            TotalPagesCount-=pagesCount
-    '            return cptr(any ptr,obase shl 12)
-    '        end if
-    '    else
-    '        cptFree=0
-    '        obase = i+1
-    '    end if
-    'next i
     i = FirstPage
     while i < LastPage
-        if (PageBitmap(i)= 0) then 
-            cptFree+=1
-            if (cptFree=pagesCount) then
-                for i = obase to obase+pagesCount-1
-                    PageBitmap(i) = 1
-                next i
-                PageBitmap(obase) = pagesCount
-                TotalPagesCount-=pagesCount
-                return cptr(any ptr,obase shl 12)
-            end if
-            i+=1
-        else
-            cptFree=0
-            if (PageBitmap(i)=&hFFFFFFFF) then
-                i+=1
-            else
-                i+=PageBitmap(i)
-            end if
-            obase = i
+        if (PageBitmap(i)= 0) then
+            PageBitmap(i)=1
+            PMM_SpinLock.Release()
+            return cptr(any ptr,i shl 12)
         end if
+        i+=1
     wend
-    
-    KERNEL_ERROR(@"Cannot find enought free page",0)
+    PMM_SpinLock.Release()
     return 0
 end function
 
@@ -103,21 +80,18 @@ end function
 'the parameter is the address of the first page
 'in the bitmap , the value is the count of contigous pages allocated
 function PMM_FREEPAGE(addr as any ptr) as unsigned integer
-    dim obase as unsigned integer = cast(unsigned integer,addr) shr 12
-    dim pagesCount as unsigned integer = PageBitmap(obase)
     
-	if (pagesCount>0) then
-		dim i as unsigned integer
-		for i = obase to obase+pagesCount-1
-			if (PageBitmap(i)=0) then
-				KERNEL_ERROR(@"Page is already free",0)
-			end if
-			PageBitmap(i) = 0
-		next i
-        TotalPagesCount+=pagesCount
-        return pagesCount
-	else
-		KERNEL_ERROR(@"Cannot free aloready freed page",0)
-	end if
+    if (addr<>0) then
+        var idx = cuint(addr) shr 12
+        PMM_SpinLock.Acquire()
+        if (PageBitmap(idx)=1) then
+            PageBitmap(idx)=0
+            PMM_SpinLock.Release()
+            return 1
+        else
+            KERNEL_ERROR(@"Physical page is not used",cuint(addr))
+        end if
+        PMM_SpinLock.Release()
+    end if
     return 0
 end function

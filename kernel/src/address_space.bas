@@ -2,7 +2,7 @@ function AddressSpaceEntry.SBRK(n as unsigned integer) as any ptr
     var retval = this.PagesCount
     if (n>0) then
         for i as unsigned integer=0 to n-1
-            var paddr = PMM_ALLOCPAGE(1)
+            var paddr = PMM_ALLOCPAGE()
             var vaddr = this.VirtAddr+(this.PagesCount shl 12)
             
             'if unable to allocate
@@ -12,6 +12,7 @@ function AddressSpaceEntry.SBRK(n as unsigned integer) as any ptr
                     for j as unsigned integer = 0 to i-1
                         var vaddrx = this.VirtAddr+((retval+j) shl 12)
                         var paddrx = this.VMM_CONTEXT->Resolve(cptr(any ptr,vaddrx))
+                        this.VMM_CONTEXT->unmap_page(cptr(any ptr,vaddrx))
                         if (paddrx<>0) then
                             PMM_FREEPAGE(paddrx)
                         end if
@@ -33,11 +34,11 @@ destructor AddressSpaceEntry()
         KFree(this.NextEntry)
         this.NextEntry = 0
     end if
-    
     if (this.PagesCount>0) then
         for i as unsigned integer = 0 to this.PagesCount -1
             var vaddrx = this.VirtAddr+(i shl 12)
             var paddrx = this.VMM_CONTEXT->Resolve(cptr(any ptr,vaddrx))
+            this.VMM_CONTEXT->unmap_page(cptr(any ptr,vaddrx))
             if (paddrx<>0) then
                 PMM_FREEPAGE(paddrx)
             end if

@@ -4,8 +4,8 @@ end sub
 
 
 sub UserModeDevice.Create(n as unsigned byte ptr,th as Thread ptr,descr as unsigned integer, entryPoint as unsigned integer)
-    dim dev as UserModeDevice ptr= Malloc(sizeof(UserModeDevice))
-    dev->Name = Malloc(strlen(n)+1):strcpy(dev->Name,n)
+    dim dev as UserModeDevice ptr= kalloc(sizeof(UserModeDevice))
+    dev->Name = kalloc(strlen(n)+1):strcpy(dev->Name,n)
     dev->OwnerThread = th
     dev->Descriptor = descr
     dev->Entry = entryPoint

@@ -1,5 +1,8 @@
 #define minSize 64
 
+
+
+
 function GetSmallestPowerOfTwoo(value as unsigned integer) as unsigned integer
     dim pwr as unsigned integer = 0
     dim v as unsigned integer = value
@@ -14,6 +17,7 @@ function GetSmallestPowerOfTwoo(value as unsigned integer) as unsigned integer
 end function
 
 sub SlabInit()
+     
     SlabMeta.SlabEntry.init(sizeof(slab))
     SlabMeta.FirstSlab = 0
     var didAlloc = SlabMeta.SlabEntry.Alloc(sizeof(slab))>0
@@ -23,16 +27,11 @@ sub SlabInit()
     ConsoleWriteLine(@"Slab allocator initialized")
 end sub
 
+
 function SlabMetaData.KAlloc(size as unsigned integer) as any ptr
     dim s as unsigned integer = GetSmallestPowerOfTwoo(size)
     if (s>=&h1000) then
-        dim  requiredPages as unsigned integer = s shr 12
-        if (requiredPages shl 12)<s then requiredPages+=1
-        var p= PageAlloc(requiredPages)
-        if (p<>0) then
-            memset32(p,0,requiredPages shl 10)
-        end if
-        return p
+        KERNEL_ERROR(@"Size too big to be allocated",size)
     end if
     
     var current = FirstSlab
@@ -71,13 +70,18 @@ sub SlabMetaData.KFree(addr as any ptr)
         if (current->Free(addr)) = 1 then return
         current=>Current->NextSlab
     wend
-    dim xaddr as unsigned integer=cast(unsigned integer, addr)
-    if ((xaddr shr 12) shl 12) = xaddr then
-        PageFree(addr)
-        return
-    end if
     KERNEL_ERROR(@"The address is not part of a slab",0)
 end sub
+        
+function SlabMetaData.IsValidAddr(addr as any ptr) as unsigned integer
+    
+    var current = FirstSlab
+    while current<>0
+        if (current->IsValidAddr(addr)) = 1 then return 1
+        current=>Current->NextSlab
+    wend
+    return 0
+end function
         
 sub Slab.Init(isize as unsigned short)
     
@@ -87,11 +91,11 @@ sub Slab.Init(isize as unsigned short)
     this.IsFull = 0
     this.ItemSize = isize
     this.NextSlab = 0
-    this.SlabStart = cast(unsigned integer,PageAlloc(4))
+    this.SlabStart = cast(unsigned integer,KMM_ALLOCPAGE())
   
-	memset32(cptr(any ptr,this.slabStart),0,&h1000)
+	memset32(cptr(any ptr,this.slabStart),0,&h400)
     
-    dim numEntries as unsigned integer = (&h4000/this.ItemSize)-1
+    dim numEntries as unsigned integer = (&h1000/this.ItemSize)-1
     this.FreeList = cptr(SlabENtry ptr,this.SlabStart)
     dim current as SlabEntry ptr = this.FreeList
     
@@ -128,6 +132,14 @@ function Slab.Free(addr as any ptr) as unsigned byte
     newEntry->NextEntry = this.FreeList
     this.FreeList = newEntry
     this.IsFull = 0
+    return 1
+end function
+
+function Slab.IsValidAddr(addr as any ptr) as unsigned integer
+     
+    if (addr < this.SlabStart) or (addr>=this.SlabStart+&h4000) then
+        return 0
+    end if
     return 1
 end function
 

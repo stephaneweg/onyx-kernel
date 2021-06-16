@@ -29,18 +29,6 @@ for /d %%j in (userland\apps\*.*) do (
 )
 
 
-echo compile system binaries
-for /d %%j in (userland\sys\*.*) do (
-	if exist userland\sys\%%~nj\main.bas echo %COMPILER% %CFLAGS%  userland/sys/%%~nj/main.bas -o obj/%%~nj.o
-	if exist userland\sys\%%~nj\main.bas %COMPILER% %CFLAGS%  userland/sys/%%~nj/main.bas -o obj/%%~nj.o
-	if exist userland\sys\%%~nj\main.bas echo %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/sys/%%~nj.bin
-	if exist userland\sys\%%~nj\main.bas %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/sys/%%~nj.bin
-	
-	if exist userland\sys\%%~nj/main.asm echo %ASSEMBLER% userland/sys/%%~nj/main.asm bin/sys/%%~nj.bin
-	if exist userland\sys\%%~nj/main.asm %ASSEMBLER% userland/sys/%%~nj/main.asm bin/sys/%%~nj.bin
-	
-)
-
 echo building FASM
 %ASSEMBLER% userland/FASM/main.asm bin/fasm.bin
 pause

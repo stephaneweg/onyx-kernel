@@ -8,8 +8,9 @@ sub ScreenInit()
     rootScreen->OnRedrawFront = @ScreenDrawFront
 	AssignNewObj(ScreenBGR,GImage)
     ScreenBGR->SetSize(XRes,YRes)
-    ScreenBGR->Clear(&hFF884422)
-    GenBackground()
+	'beos blue &h3060a0
+    ScreenBGR->Clear(&hFF3060A0)'&hFF224488)
+    'GenBackground()
 	
    
     

@@ -81,6 +81,7 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
 	xPos = 0
     
     panel = GDICreate(0,xPos,yPos,panelWidth,panelHeight)
+    GDISetShadow(panel,-1)
 	GDISetVisible(panel,0)
 	GDIClear(panel,&hFF000000)
     GDISetTransparent(panel,-1)
@@ -127,6 +128,7 @@ sub CreateAppPanel()
     currentPanelXPos = minPanelXPos
 	
     panelApps = GDICreate(0,currentPanelXPos,panelYPos,490,scrollViewHeight)
+    GDISetShadow(panelApps,-1)
 	GDISetVisible(panelApps,0)
     GDIClear(panelApps,&hFF141D24)
     

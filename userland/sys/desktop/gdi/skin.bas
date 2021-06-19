@@ -78,9 +78,9 @@ sub Skin.DrawOn(target as GImage ptr,num as unsigned integer,x as integer,y as i
         dim cptx as integer = oWidth  / middleWidth
         for i = 0 to cptx
             dim tx as integer = i*middleWidth + x+ this.leftWidth
-            target->PutOtherPart(this.Image,tx,y               ,this.LeftWidth,sourceY               ,middleWidth,this.TopHeight,transparent)
+            target->PutOtherPart(this.Image,tx,y                    ,this.LeftWidth,sourceY               ,middleWidth,this.TopHeight,transparent)
             if (middleHeight>0 and middleWidth>0) then
-            target->PutOtherPart(this.Image,tx,y+this.TopHeight,this.LeftWidth,sourceY+this.TopHeight,middleWidth,middleHeight,transparent)
+                target->PutOtherPart(this.Image,tx,y+this.TopHeight,this.LeftWidth,sourceY+this.TopHeight,middleWidth,middleHeight,transparent)
             end if
             target->PutOtherPart(this.Image,tx,y+h-this.BottomHeight,this.LeftWidth,this.SkinHeight+sourceY-this.BottomHeight,middleWidth,this.BottomHeight,transparent)
         next i

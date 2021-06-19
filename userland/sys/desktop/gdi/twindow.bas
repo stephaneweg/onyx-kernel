@@ -13,7 +13,7 @@ constructor TWindow()
     this._paddingTop = WindowSkin->TopHeight+2
     this._paddingRight = WindowSkin->RightWidth+2
     this._paddingBottom = WindowSkin->BottomHeight-2
-    this.Shadow  = 0
+    this.Shadow  = 1
     this.CanMove = -1
 	
 	this.OnSizeChanged = @TWindowSizeChanged
@@ -110,6 +110,7 @@ function TWindowHandleMouse(elem as TWindow ptr,_mx as integer,_my as integer,_m
             end if            
             if (elem->Parent<>0 and elem->Parent->LastChild<>elem) then
                 elem->BringToFront()
+                if (elem->Owner<>0) then ProcessActivate(elem->Owner)
             end if
         else
             elem->SetPosition(elem->_left + mousex-elem->px,elem->_top+mousey-elem->py)

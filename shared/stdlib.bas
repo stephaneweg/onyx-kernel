@@ -16,7 +16,7 @@ function sqrt(d as double) as double
 	return result
 end function
 
-function fcos(d as double) as double
+function dcos(d as double) as double
 	dim result as double = d
     dim i as integer
 	asm
@@ -29,7 +29,33 @@ function fcos(d as double) as double
 	return result
 end function
 
-function fsin(d as double) as double
+function dsin(d as double) as double
+	dim result as double = d
+    dim i as integer
+	asm
+  
+        fld qword ptr [result]
+        fsin
+        fst qword ptr [result]
+        
+    end asm
+	return result
+end function
+
+function fcos(d as single) as single
+	dim result as double = d
+    dim i as integer
+	asm
+  
+        fld qword ptr [result]
+        fcos
+        fst qword ptr [result]
+        
+    end asm
+	return result
+end function
+
+function fsin(d as single) as single
 	dim result as double = d
     dim i as integer
 	asm

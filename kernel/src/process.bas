@@ -1,7 +1,7 @@
 sub Process.InitEngine()
-        FirstProcessList = 0
-        LastProcessList = 0
-        ProcessesToTerminate = 0
+        FirstProcessList    = 0
+        LastProcessList     = 0
+        ProcessToTerminate  = 0
 end sub
 
 constructor Process()
@@ -285,79 +285,31 @@ end sub
 
 
 
-sub Process.RequestTerminateProcess(app as Process ptr)
-    IRQ_DISABLE(0)
-    IPCSend(&h35,0,&hFFFFFF,cuint(app),0,0,0,0,0,0)
-    var th=cptr(Thread ptr,app->Threads)
-    
-    while(th<>0)
-        IRQ_THREAD_TERMINATED(cuint(th))
-        th->State = ThreadState.Terminating
-        Scheduler.RemoveThread(th)
-        th=th->NextThreadProc
-    wend
-    
-    app->NextProcess = ProcessesToTerminate
-    ProcessesToTerminate = app
-    
-    if (PROCESS_MANAGER_THREAD<>0) then
-        if (PROCESS_MANAGER_THREAD->State = ThreadState.waiting) then Scheduler.SetThreadReady(PROCESS_MANAGER_THREAD)
-    end if
-    IRQ_ENABLE(0)
-end sub
-    
-    
-    
-
-sub Process.Terminate(app as Process ptr,args as any ptr)
-    
-	'destroy the thread
-    IRQ_DISABLE(0)
-    
+sub Process.RequestTerminate(app as Process ptr)
     var th=cptr(Thread ptr,app->Threads)
     while th<>0
 		var n = th->NextThreadProc
-		
-		'destroy the thread
-		th->destructor()
-		'free its memory
-		KFree(th)
-		
+        th->State = ThreadState.Terminating
+		Scheduler.RemoveThread(th)
 		th=n
     wend
-	'destroy the app	
-    app->Destructor()
-    KFree(app)
-    
-    IRQ_ENABLE(0)
+    ProcessToTerminate = app
 end sub
 
-
-sub Process.TerminateNow(app as Process ptr)
-    IRQ_DISABLE(0)
-    
+sub Process.Terminate(app as Process ptr)
     IPCSend(&h35,0,&hFFFFFF,cuint(app),0,0,0,0,0,0)
-        
-    'destroy the thread
-    
     var th=cptr(Thread ptr,app->Threads)
     while th<>0
 		var n = th->NextThreadProc
         IRQ_THREAD_TERMINATED(cuint(th))
 		Scheduler.RemoveThread(th)
-		'destroy the thread
 		th->destructor()
-		'free its memory
 		KFree(th)
 		
 		th=n
     wend
-    
-     'destroy the app	
     app->Destructor()
-    
     KFree(app)
-    
-    IRQ_ENABLE(0)
+    ConsoleWriteLine(@"Process terminated")
 end sub
 

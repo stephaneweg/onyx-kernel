@@ -48,4 +48,6 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
         ConsoleSetForeground(7)
     end if
     ExitApp()
+    'WaitForEvent()
+    'do:loop
 end sub

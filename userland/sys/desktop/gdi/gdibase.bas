@@ -301,8 +301,8 @@ sub GDIBase.RedrawChildren()
 			var ty = child->_top+this._paddingTop
 			
 			if (child->Shadow) then
-				this.FillRectangleAlpha(tx+child->_width,ty+2,tx+1+child->_width,ty+1+child->_height,&h88000000)
-				this.FillRectangleAlpha(tx+2,ty+child->_height,tx+child->_width-1,ty+1+child->_height,&h88000000)
+				this.FillRectangleAlpha(tx+child->_width,ty+1,tx+1+child->_width,ty+2+child->_height,&h44000000)
+				this.FillRectangleAlpha(tx+1,ty+child->_height,tx+child->_width-1,ty+2+child->_height,&h44000000)
 			end if
 			child->Redraw()
 			this.PutOther(child,tx,ty,child->_transparent)

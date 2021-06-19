@@ -3,6 +3,8 @@
 ; Copyright (c) 1999-2011, Tomasz Grysztar.
 ; All rights reserved.
 
+lblFileNameMandatory	db 'File name is mandatory',0
+lblOutputFileMandatory	db 'Output file is mandatory',0
 _out_of_memory db 'out of memory',0
 _stack_overflow db 'out of stack space',0
 _main_file_not_found db 'source file not found',0

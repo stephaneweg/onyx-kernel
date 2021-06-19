@@ -52,8 +52,9 @@ declare sub ExitCritical()
 declare sub ThreadSleep()
 
 declare function int20Handler(stack as irq_stack ptr) as irq_stack ptr
+
+dim shared TerminatedProcess as unsigned integer
 dim shared IDLE_THREAD as Thread ptr
-dim shared PROCESS_MANAGER_THREAD as Thread ptr
 dim shared IDLE_THREADRunCount as unsigned integer
 dim shared TotalEllapsed as unsigned long
 

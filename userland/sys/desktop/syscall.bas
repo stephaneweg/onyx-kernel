@@ -33,14 +33,17 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
            
             NewObj(win,TWindow)
             win->SetSize(_w + win->_paddingLeft + win->_paddingRight,_h+win->_paddingTop+win->_paddingBottom)
-            dim _x as integer = NextRandomNumber(0,XRES-win->_width)' (XRES - _w) shr 1
-            dim _y as integer = NextRandomNumber(0,YRes-win->_height)' (YRES - _h) shr 1
+            dim _x as integer = NextRandomNumber(0,(XRES-win->_width)-60)+30' (XRES - _w) shr 1
+            dim _y as integer = NextRandomNumber(0,(YRes-win->_height)-60)+30' (YRES - _h) shr 1
             win->SetPosition(_x,_y)
             win->Owner = _senderproc
             win->OwnerThread = _sender
             win->Title = TmpString
             rootScreen->AddChild(win)
             
+            ProcessRegister(_senderProc,_sender)
+            ProcessSetTitle(_senderProc,win->Title)
+            ProcessActivate(_senderProc)
             _EAX = cast(unsigned integer,win)
             
         case &h03 'button create
@@ -347,6 +350,10 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
                     btn->_Skin->ApplyColor(c,1)
                 end if
             end if
+            
+        case &h1C'set shadow
+            dim g as GDIBase ptr = cptr(GDIBase ptr,_EBX)
+            g->Shadow = (_ECX<>0)
             
         case  &h1F 'bring to front
             dim gd as GDIBase ptr = cptr(GDIBase ptr,_EBX)

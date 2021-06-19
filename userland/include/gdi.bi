@@ -22,6 +22,8 @@ declare function GDIGetBuffer(_gdi as unsigned integer,w as unsigned integer ptr
 declare sub GDIButtonSetSkin(_btn as unsigned integer,skin as unsigned byte ptr)
 declare sub GDIButtonSetIcon(_btn as unsigned integer,icon as unsigned byte ptr,big as unsigned integer)
 declare sub GDIButtonSetSkinColor(_btn as unsigned integer,c as unsigned integer)
+declare sub GDISetShadow(_gdi as unsigned integer,c as unsigned integer)
+
 
 declare sub GDITextBoxGetText(_tb as unsigned integer,dst  as unsigned byte ptr)
 declare sub GDITextBoxSetText(_p as unsigned integer,text as unsigned byte ptr)

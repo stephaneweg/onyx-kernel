@@ -2,7 +2,7 @@
 #include once "pmm.bi"
 #include once "console.bi"
 
-dim shared PageBitmap(0 to &hFFFFF) as unsigned integer
+dim shared PageBitmap(0 to &hFFFFF) as unsigned byte
 
 
 dim shared PMM_SpinLock as SpinLock
@@ -36,6 +36,7 @@ sub PMM_INIT(mb_info as multiboot_info ptr)
     for i as unsigned integer = 0 to &hFFFFF
         if (PageBitmap(i)=0) then TotalPagesCount+=1
     next i
+    TotalFreePages = TotalPagesCount
     ConsolePrintOK()
     ConsoleNewLine()
     
@@ -49,8 +50,9 @@ sub PMM_STRIPE(start_addr as unsigned integer,end_addr as unsigned integer)
     dim endPage as unsigned integer = end_addr shr 12
     
     for i as unsigned integer = startPage to endPage
-        PageBitmap(i) = &hFFFFFFFF
+        PageBitmap(i) = &hFF
         TotalPagesCount-=1
+        TotalFreePages-=1
     next
     'PMM_SpinLock.Release()
 end sub
@@ -66,6 +68,7 @@ function PMM_ALLOCPAGE() as any ptr
     while i < LastPage
         if (PageBitmap(i)= 0) then
             PageBitmap(i)=1
+            TotalFreePages-=1
             PMM_SpinLock.Release()
             return cptr(any ptr,i shl 12)
         end if
@@ -86,9 +89,11 @@ function PMM_FREEPAGE(addr as any ptr) as unsigned integer
         PMM_SpinLock.Acquire()
         if (PageBitmap(idx)=1) then
             PageBitmap(idx)=0
+            TotalFreePages+=1
             PMM_SpinLock.Release()
             return 1
         else
+            PMM_SpinLock.Release()
             KERNEL_ERROR(@"Physical page is not used",cuint(addr))
         end if
         PMM_SpinLock.Release()

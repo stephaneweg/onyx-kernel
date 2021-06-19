@@ -8,3 +8,4 @@ dim shared MemoryEnd as any ptr
 dim shared FirstPage as unsigned integer
 dim shared LastPage as unsigned integer
 dim shared TotalPagesCount as unsigned integer
+dim shared TotalFreePages as unsigned integer

@@ -25,8 +25,10 @@
 #define min(v1,v2) iif(v2<v1,v2,v1)
 #define max(v1,v2) iif(v2>v1,v2,v1)
 declare function sqrt(d as double) as double
-declare function fcos(d as double) as double
-declare function fsin(d as double) as double
+declare function ccos(d as double) as double
+declare function csin(d as double) as double
+declare function fcos(d as single) as single
+declare function fsin(d as single) as single
 
 declare function strlen(s as  unsigned byte ptr) as unsigned integer
 declare function strwlen(s as unsigned short ptr) as unsigned integer

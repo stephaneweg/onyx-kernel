@@ -101,7 +101,7 @@ function ThreadScheduler.Switch(_stack as IRQ_Stack ptr,newThread as Thread ptr)
 	if (CurrentRuningThread<>0 and CurrentRuningThread<>RemovedThread) then
 		CurrentRuningThread->SavedESP = cast(unsigned integer,_stack) 
 	end if
-	
+	RemovedThread = 0
 	CurrentRuningThread  = newThread
 
 	CurrentRuningThread->State = ThreadState.Runing
@@ -124,6 +124,7 @@ function ThreadScheduler.Switch(_stack as IRQ_Stack ptr,newThread as Thread ptr)
     else
         SysConsole.Activate()
     end if
+    
     
 	return nstack
 end function
@@ -173,14 +174,12 @@ function ThreadScheduler.Schedule() as Thread ptr
         end if
     end if
 	
-    if (CurrentRuningThread<> RemovedThread) then
-			if (CurrentRuningThread<>0 and CurrentRuningThread<>IDLE_Thread) then
-				if (CurrentRuningThread->State = ThreadState.Runing) then
-					SetThreadReady(CurrentRuningThread)
-				end if
-			end if
-    else
-        RemovedThread = 0
+    if (CurrentRuningThread <> RemovedThread) then
+        if (CurrentRuningThread<>0 and CurrentRuningThread<>IDLE_Thread) then
+            if (CurrentRuningThread->State = ThreadState.Runing) then
+                SetThreadReady(CurrentRuningThread)
+            end if
+        end if
     end if
 	
     th = RTCQueue.RTCDequeue()

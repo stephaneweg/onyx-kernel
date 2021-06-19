@@ -14,14 +14,6 @@ _argc	dd 0x0
 	
 
 
-lblInputFile	db 'Input file :',0
-lblOutputFile	db 'Output file : ',0
-lblArguments	db 'Arguments :',0
-lblAssemble		db 'Assemble',0
-lblInfo			db 'Info',0
-lblFileNameMandatory	db 'File name is mandatory',0
-lblOutputFileMandatory	db 'Output file is mandatory',0
-
 
 macro consolePutChar c{
 	pusha
@@ -355,7 +347,7 @@ include 'system.inc'
 
 include 'version.inc'
 
-_copyright db 'Copyright (c) 1999-2012, Tomasz Grysztar',13,10,0
+_copyright db 'Copyright (c) 1999-2012, Tomasz Grysztar',10,0
 
 _logo db 'flat assembler version ',VERSION_STRING,' - port for Onyx',0
 _usage db 'usage: fasm <source> [output]',10
@@ -364,11 +356,11 @@ _usage db 'usage: fasm <source> [output]',10
        db ' -p <limit>    set the maximum allowed number of passes',10
        db ' -s <file>     dump symbolic information for debugging',10
        db 0
-_memory_prefix db '  (',0
-_memory_suffix db ' kilobytes memory)',13,10,0
-_passes_suffix db ' passes, ',0
+_memory_prefix	db '  (',0
+_memory_suffix	db ' kilobytes memory)',10,0
+_passes_suffix	db ' passes, ',0
 _seconds_suffix db ' seconds, ',0
-_bytes_suffix db ' bytes.',13,10,0
+_bytes_suffix	db ' bytes.',10,0
 
 include 'errors.inc'
 include 'symbdump.inc'
@@ -389,13 +381,12 @@ align 4
 filebufferPos	dd 0x0
 fileHandleNum   dd 0x0
 
-include 'variable.inc'
 
+BEGIN_OF_RESERVED:
+include 'variable.inc'
 inputFileBuff	rb 256
 outputFileBuff	rb 256
 argumentsBuff	rb 256
-
-BEGIN_OF_RESERVED:
 return dd ?
 command_line dd ?
 memory_setting dd ?

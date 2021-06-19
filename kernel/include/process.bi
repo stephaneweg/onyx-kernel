@@ -38,9 +38,8 @@ TYPE Process field =1
     declare static sub InitEngine()
     declare static function Create(image as EXECUTABLE_HEADER ptr,size as unsigned integer,args as unsigned byte ptr) as Process ptr
     
-    declare static sub TerminateNow(app as Process ptr)
-    declare static sub RequestTerminateProcess(app as Process ptr)
-    declare static sub Terminate(app as Process ptr,args as any ptr)
+    declare static sub Terminate(app as Process ptr)
+    declare static sub RequestTerminate(app as Process ptr)
     
     declare constructor()
     declare destructor()
@@ -63,4 +62,4 @@ end type
 #define ProcessStackAddress &h60000000
 dim shared FirstProcessList as Process ptr
 dim shared LastProcessList as Process ptr
-dim shared ProcessesToTerminate as Process ptr
+dim shared ProcessToTerminate as Process ptr

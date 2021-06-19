@@ -26,6 +26,7 @@ macro interrupt intno
 {
 	align 4
 	label int#intno
+	;cli
 		push dword 0
 		push 0x#intno
 	jmp irq_common
@@ -151,11 +152,12 @@ int_elem int1f,0x1f
 
 interrupt16 2
 interrupt16 3
-interrupt16 4
-interrupt16 5
-interrupt16 6
-interrupt16 7
-interrupt16 8
+int_elem int40,0x40
+;interrupt16 4
+;interrupt16 5
+;interrupt16 6
+;interrupt16 7
+;interrupt16 8
 ;int_elem int20,0x20
 ;int_elem int21,0x21
 ;int_elem int22,0x22
@@ -209,18 +211,18 @@ interrupt16 8
 
 align 4
 _INTERRUPT_TAB@0:
-inttab 0
-inttab 1
-inttab 2
-inttab 3
-inttab 4
-inttab 5
-inttab 6
-inttab 7
-inttab 8
-dd 0x0
-;dd int00,int01,int02,int03,int04,int05,int06,int07,int08,int09,int0a,int0b,int0c,int0d,int0e,int0f
-;dd int10,int11,int12,int13,int14,int15,int16,int17,int18,int19,int1a,int1b,int1c,int1d,int1e,int1f
-;dd int20,int21,int22,int23,int24,int25,int26,int27,int28,int29,int3a,int2b,int2c,int2d,int2e,int2f
-;dd int30,int31,int32,int33,int34,int35,int36,int37,int38,int39,int3a,int3b,int3c,int3d,int3e,int3f
-;dd int40
+;inttab 0
+;inttab 1
+;inttab 2
+;inttab 3
+;inttab 4
+;inttab 5
+;inttab 6
+;inttab 7
+;inttab 8
+;dd 0x0
+dd int00,int01,int02,int03,int04,int05,int06,int07,int08,int09,int0a,int0b,int0c,int0d,int0e,int0f
+dd int10,int11,int12,int13,int14,int15,int16,int17,int18,int19,int1a,int1b,int1c,int1d,int1e,int1f
+dd int20,int21,int22,int23,int24,int25,int26,int27,int28,int29,int3a,int2b,int2c,int2d,int2e,int2f
+dd int30,int31,int32,int33,int34,int35,int36,int37,int38,int39,int3a,int3b,int3c,int3d,int3e,int3f
+dd int40

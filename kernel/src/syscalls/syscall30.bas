@@ -29,7 +29,10 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
         case &h04
 			return currentThread->DoWait(stack)
         case &h05
-			Process.RequestTerminateProcess(currentThread->Owner)
+            IRQ_DISABLE(0)
+			Process.RequestTerminate(currentThread->Owner)
+            Scheduler.CurrentRuningThread=0
+            IRQ_ENABLE(0)
             return Scheduler.Switch(stack, Scheduler.Schedule())
         case &h06 ' thread wake up
             if (SlabMeta.IsValidAddr(cptr(any ptr,stack->ebx))=1) then
@@ -81,9 +84,9 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
                 return Scheduler.Switch(stack,Scheduler.Schedule()) 
             end if
         case &h0F 'kill process
-            if (SlabMeta.IsValidAddr(cptr(any ptr,stack->ebx))=1) then
+            if (SlabMeta.IsValidAddr(cptr(any ptr,stack->ebx))=1) then 
                 var pc = cptr(Process ptr,stack->EBX)
-                Process.RequestTerminateProcess(pc)
+                Process.Terminate(pc)              
                 if (CurrentThread->Owner=pc) then return Scheduler.Switch(stack, Scheduler.Schedule())
             end if
         case &h10 'get string
@@ -268,6 +271,9 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
 			stack->EBX = BPP
 			stack->ECX = LFBSize
 			stack->EDI = LFB
+        case &hF4 'mem info
+            stack->EAX = TotalPagesCount
+            stack->EBX = TotalFreePages
     end select
     return stack
 end function

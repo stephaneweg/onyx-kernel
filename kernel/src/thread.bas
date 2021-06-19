@@ -34,35 +34,13 @@ sub Thread.InitManager()
     
     
         IDLE_Thread = Thread.CreateSys(@KERNEL_IDLE)
-        PROCESS_MANAGER_THREAD = Thread.CreateSys(@PROCESS_MANAGER)
 end sub
 
 sub Thread.Ready()
-   
     IRQ_ATTACH_HANDLER(&h20,@Int20Handler)
     set_timer_freq(500)
-    IRQ_ENABLE(0)
-    
+    IRQ_ENABLE(0)    
 end sub
-
-
-sub PROCESS_MANAGER(p as any ptr)
-    do
-        if (ProcessesToTerminate<>0) then
-            while (ProcessesToTerminate<>0)
-                var proc = ProcessesToTerminate
-                ProcessesToTerminate = proc->NextProcess
-                Process.Terminate(proc,0)
-            wend
-        end if
-        
-        if (ProcessesToTerminate=0) then
-            ThreadSleep()
-        end if
-    loop
-end sub
-
-
 
 sub KERNEL_IDLE(p as any ptr) 
     do
@@ -72,6 +50,10 @@ end sub
 
 function int20Handler(stack as irq_stack ptr) as irq_stack ptr
 	TotalEllapsed+=2
+    if (ProcessToTerminate) then
+        Process.Terminate(ProcessToTerminate)
+        ProcessToTerminate = 0
+    end if
     dim nextThread as Thread ptr = 0
      nextThread = Scheduler.Schedule()
     

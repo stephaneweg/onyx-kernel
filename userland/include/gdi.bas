@@ -326,6 +326,15 @@ sub GDIButtonSetSkinColor(_btn as unsigned integer,c as unsigned integer)
     end asm
 end sub
 
+sub GDISetShadow(_gdi as unsigned integer,c as unsigned integer)
+    asm
+        mov eax,&h1C
+        mov ebx,[_gdi]
+        mov ecx,[c]
+        int 0x35
+    end asm
+end sub
+
 sub GDIOnKeyPress(_elem as unsigned integer,callback as any ptr)
     asm
         mov eax,&h60

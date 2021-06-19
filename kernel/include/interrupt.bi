@@ -56,8 +56,8 @@ declare sub IRQ_SEND_ACK(intno as unsigned integer)
 
 
 dim shared IDT_POINTER as IDT_PTR
-dim shared IDT_SEGMENT(0 to &h8F) as IDT_ENTRY
-dim shared IRQ_HANDLERS(0 to &h8F) as function(stack as irq_stack ptr) as irq_stack ptr
+dim shared IDT_SEGMENT(0 to &h40) as IDT_ENTRY
+dim shared IRQ_HANDLERS(0 to &h40) as function(stack as irq_stack ptr) as irq_stack ptr
 
 
 declare sub interrupt_tab()

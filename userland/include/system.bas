@@ -272,7 +272,18 @@ sub GetScreenInfo(_xres as unsigned integer ptr,_yres as unsigned integer ptr,_b
 	*_yres = (resolution) and &hFFFF
 end sub
 
-
+sub GetMemInfo(totalPages as unsigned integer ptr,freePages as unsigned integer ptr)
+        dim tp as unsigned integer
+        dim fp as unsigned integer
+        asm
+            mov eax,&hF4
+            int 0x30
+            mov [tp],eax
+            mov [fp],ebx
+        end asm
+        *totalPages = tp
+        *freePages  = fp
+end sub
 
 sub SetPriority(p as unsigned integer)
     asm

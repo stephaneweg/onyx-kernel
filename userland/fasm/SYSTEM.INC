@@ -81,7 +81,6 @@ read:
 
 BufferAA dd 0
 
-msg_Write db 'Write file',0
 ; ebx file handle
 ; ecx count of bytes to write
 ; edx pointer to buffer
@@ -389,14 +388,14 @@ Next_line:
 ; space.                                             ;
 ;====================================================; 
 space:
-	consoleWrite(space1)
+	consolePutChar 32
 	ret   
 
 ;====================================================;
 ; tab.                                               ;
 ;====================================================; 
 tab:
-	consoleWrite(tab1)
+	consolePutChar 9
 	ret
 ;====================================================;
 ; Just in case no fat module loaded                  ;
@@ -422,9 +421,9 @@ ErrorCode	  		db 0
 filesize	  		dd 0x0
 FileNameVar	  		dd 0
 error_prefix	  	db 'error: ',0
-error_suffix	  	db '.',13,10,0
-line_data_start   	db ':',13,10,0
-cr_lf		  		db 13,10,0
+error_suffix	  	db '.',10,0
+line_data_start   	db ':',10,0
+cr_lf		  		db 10,0
 line_number_start 	db ' [',0
 space1		  		db ' ',0
 tab1		  		db '      ',0

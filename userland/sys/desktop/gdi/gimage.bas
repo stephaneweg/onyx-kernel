@@ -50,9 +50,9 @@ function GImage.LoadFromRaw(path as unsigned byte ptr,_w as unsigned integer,_h 
 	return 0
 end function
 
-Function GImage.LoadFromBitmap(path as unsigned byte ptr) as GImage ptr
-    dim fsize as integer
-    dim header as BMPHeader ptr = cptr(BMPHeader ptr,VFS_LOAD_FILE(path,@fsize))
+
+Function GImage.LoadFromBitmapBuffer(buffer as unsigned byte ptr,fsize as unsigned integer) as GImage ptr
+    dim header as BMPHeader ptr = cptr(BMPHeader ptr,buffer)
     if (header<>0 and fsize<>0) then
         dim buff as RGBType ptr = cptr(RGBType ptr,cast(unsigned integer,header)+header->dataOffset)
         dim buff32 as unsigned integer ptr = cptr(unsigned integer ptr,cast(unsigned integer,header)+header->dataOffset)
@@ -84,7 +84,18 @@ Function GImage.LoadFromBitmap(path as unsigned byte ptr) as GImage ptr
         next ty
         
     
-        Free(header)
+        return result
+    end if
+	
+	return 0
+end function
+
+Function GImage.LoadFromBitmap(path as unsigned byte ptr) as GImage ptr
+    dim fsize as integer
+    dim buffer as unsigned byte ptr = VFS_LOAD_FILE(path,@fsize)
+    if (buffer<>0 and fsize<>0) then
+        var result = GImage.LoadFromBitmapBuffer(buffer,fsize)
+        Free(buffer)
         return result
     end if
 	

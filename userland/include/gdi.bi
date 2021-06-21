@@ -20,6 +20,7 @@ declare function GDIGetBuffer(_gdi as unsigned integer,w as unsigned integer ptr
 
 
 declare sub GDIButtonSetSkin(_btn as unsigned integer,skin as unsigned byte ptr)
+declare sub GDIButtonSetSkinFromBuffer(_btn as unsigned integer,buffer as unsigned byte ptr,buffersize as unsigned integer)
 declare sub GDIButtonSetIcon(_btn as unsigned integer,icon as unsigned byte ptr,big as unsigned integer)
 declare sub GDIButtonSetSkinColor(_btn as unsigned integer,c as unsigned integer)
 declare sub GDISetShadow(_gdi as unsigned integer,c as unsigned integer)

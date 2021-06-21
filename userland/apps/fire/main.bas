@@ -44,6 +44,7 @@ dim shared fpm as unsigned integer
 
 dim shared totalPages as unsigned integer
 dim shared freepages as unsigned integer
+dim shared slabCount as unsigned integer
 
 sub btnClick(btn as unsigned integer,parm as unsigned integer)
     fcolor = (fcolor+1) mod 3  
@@ -81,7 +82,7 @@ sub FPSCounter()
 
    
     do
-        GetMemInfo(@totalPages,@freepages)
+        GetMemInfo(@totalPages,@freepages,@slabCount)
         FPS = FrameCount
 		FrameCount = 0
         WaitN(1000)
@@ -262,6 +263,9 @@ sub FireThread()
     
     drawable->DrawText(@"Free pages : ",5,45,&hFFFFFF,FontManager.ML,1)
     drawable->DrawText(IntToStr(FreePages,10),150,45,&hFFFFFF,FontManager.ML,1)
+    
+    drawable->DrawText(@"Slabs count : ",5,65,&hFFFFFF,FontManager.ML,1)
+    drawable->DrawText(IntToStr(slabCount,10),150,65,&hFFFFFF,FontManager.ML,1)
     drawable->Flush()
     'ThreadYield()
     

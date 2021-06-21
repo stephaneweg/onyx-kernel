@@ -1,26 +1,11 @@
-macro outportb port,val
-{
-	mov al,val
-	out port,al
-}
-macro int_elem_err mylabel,intno
+macro exception intno
 {
 	align 4
-    label mylabel
-    ;cli
-		push intno
+	label int#intno
+	;cli
+		push 0x#intno
 	jmp irq_common
 }
-macro int_elem mylabel,intno
-{
-	align 4
-    label mylabel
-    ;cli
-		push dword 0
-		push intno
-	jmp irq_common
-}
-
 
 macro interrupt intno
 {
@@ -32,7 +17,7 @@ macro interrupt intno
 	jmp irq_common
 }
 
-macro interrupt16 n{
+macro interrupts16 n{
 	interrupt n#0
 	interrupt n#1
 	interrupt n#2
@@ -116,113 +101,70 @@ irq_common:
 	;sti
 iret
 
-int_elem int00,0x00
-int_elem int01,0x01
-int_elem int02,0x02
-int_elem int03,0x03
-int_elem int04,0x04
-int_elem int05,0x05
-int_elem int06,0x06
-int_elem int07,0x07
-int_elem_err int08,0x08
-int_elem int09,0x09
-int_elem_err int0a,0x0a
-int_elem_err int0b,0x0b
-int_elem_err int0c,0x0c
-int_elem_err int0d,0x0d
-int_elem_err int0e,0x0e
-int_elem int0f,0x0f
+interrupt 00
+interrupt 01
+interrupt 02
+interrupt 03
+interrupt 04
+interrupt 05
+interrupt 06
+interrupt 07
+exception 08
+interrupt 09
+exception 0a
+exception 0b
+exception 0c
+exception 0d
+exception 0e
+interrupt 0f
 
-int_elem int10,0x10
-int_elem_err int11,0x11
-int_elem int12,0x12
-int_elem int13,0x13
-int_elem int14,0x14
-int_elem_err int15,0x15
-int_elem int16,0x16
-int_elem int17,0x17
-int_elem int18,0x18
-int_elem int19,0x19
-int_elem int1a,0x1a
-int_elem int1b,0x1b
-int_elem int1c,0x1c
-int_elem int1d,0x1d
-int_elem int1e,0x1e
-int_elem int1f,0x1f
+interrupt 10
+exception 11
+interrupt 12
+interrupt 13
+interrupt 14
+exception 15
+interrupt 16
+interrupt 17
+interrupt 18
+interrupt 19
+interrupt 1a
+interrupt 1b
+interrupt 1c
+interrupt 1d
+interrupt 1e
+interrupt 1f
 
-interrupt16 2
-interrupt16 3
-int_elem int40,0x40
-;interrupt16 4
-;interrupt16 5
-;interrupt16 6
-;interrupt16 7
-;interrupt16 8
-;int_elem int20,0x20
-;int_elem int21,0x21
-;int_elem int22,0x22
-;int_elem int23,0x23
-;int_elem int24,0x24
-;int_elem int25,0x25
-;int_elem int26,0x26
-;int_elem int27,0x27
-;int_elem int28,0x28
-;int_elem int29,0x29
-;int_elem int2a,0x2a
-;int_elem int2b,0x2b
-;int_elem int2c,0x2c
-;int_elem int2d,0x2d
-;int_elem int2e,0x2e
-;int_elem int2f,0x2f
-
-;int_elem int30,0x30
-;int_elem int31,0x31
-;int_elem int32,0x32
-;int_elem int33,0x33
-;int_elem int34,0x34
-;int_elem int35,0x35
-;int_elem int36,0x36
-;int_elem int37,0x37
-;int_elem int38,0x38
-;int_elem int39,0x39
-;int_elem int3a,0x3a
-;int_elem int3b,0x3b
-;int_elem int3c,0x3c
-;int_elem int3d,0x3d
-;int_elem int3e,0x3e
-;int_elem int3f,0x3f
-
-;int_elem int40,0x40
-;int_elem int41,0x41
-;int_elem int42,0x42
-;int_elem int43,0x43
-;int_elem int44,0x44
-;int_elem int45,0x45
-;int_elem int46,0x46
-;int_elem int47,0x47
-;int_elem int48,0x48
-;int_elem int49,0x49
-;int_elem int4a,0x4a
-;int_elem int4b,0x4b
-;int_elem int4c,0x4c
-;int_elem int4d,0x4d
-;int_elem int4e,0x4e
-;int_elem int4f,0x4f
+interrupts16 2
+interrupts16 3
+interrupts16 4
+interrupts16 5
+interrupts16 6
+interrupts16 7
+interrupts16 8
+interrupts16 9
+interrupts16 a
+interrupts16 b
+interrupts16 c
+interrupts16 d
+interrupts16 e
+interrupts16 f
 
 align 4
 _INTERRUPT_TAB@0:
-;inttab 0
-;inttab 1
-;inttab 2
-;inttab 3
-;inttab 4
-;inttab 5
-;inttab 6
-;inttab 7
-;inttab 8
-;dd 0x0
-dd int00,int01,int02,int03,int04,int05,int06,int07,int08,int09,int0a,int0b,int0c,int0d,int0e,int0f
-dd int10,int11,int12,int13,int14,int15,int16,int17,int18,int19,int1a,int1b,int1c,int1d,int1e,int1f
-dd int20,int21,int22,int23,int24,int25,int26,int27,int28,int29,int3a,int2b,int2c,int2d,int2e,int2f
-dd int30,int31,int32,int33,int34,int35,int36,int37,int38,int39,int3a,int3b,int3c,int3d,int3e,int3f
-dd int40
+inttab 0
+inttab 1
+inttab 2
+inttab 3
+inttab 4
+inttab 5
+inttab 6
+inttab 7
+inttab 8
+inttab 9
+inttab a
+inttab b
+inttab c
+inttab d
+inttab e
+inttab f

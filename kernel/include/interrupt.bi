@@ -43,10 +43,7 @@ end type
 declare sub InterruptsManager_Init()
 declare sub set_idt(intno as unsigned integer, irqhandler as unsigned integer,flag as unsigned byte)
  
-declare function int_handler(stack as irq_stack ptr) as irq_stack ptr
-declare function DefaultIrqHandler(stack as irq_stack ptr) as irq_stack ptr
-
-
+declare function int_handler (stack as irq_stack ptr) as irq_stack ptr
 
 declare sub IRQ_ENABLE(numirq as unsigned byte)
 declare sub IRQ_DISABLE(numirq as unsigned byte)
@@ -56,8 +53,8 @@ declare sub IRQ_SEND_ACK(intno as unsigned integer)
 
 
 dim shared IDT_POINTER as IDT_PTR
-dim shared IDT_SEGMENT(0 to &h40) as IDT_ENTRY
-dim shared IRQ_HANDLERS(0 to &h40) as function(stack as irq_stack ptr) as irq_stack ptr
+dim shared IDT_SEGMENT(0 to &hFF) as IDT_ENTRY
+dim shared IRQ_HANDLERS(0 to &hFF) as function(stack as irq_stack ptr) as irq_stack ptr
 
 
 declare sub interrupt_tab()

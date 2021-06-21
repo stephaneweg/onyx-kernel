@@ -267,12 +267,21 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
         case &h12 'ButtonSetSkin
             dim btn as TButton ptr = cptr(TButton ptr,_EBX)
             if (btn->TypeName=TButtonTypeName) then
-                
-                GetStringFromCaller(TmpString,_ECX)
-                var sk = Skin.Create(TmpString,3,12,12,12,12)
-                if (sk<>0) then
-                    btn->_Skin = sk
-                    btn->Invalidate()
+                if (_EDX=0) then
+                    GetStringFromCaller(TmpString,_ECX)
+                    var sk = Skin.Create(TmpString,3,12,12,12,12)
+                    if (sk<>0) then
+                        btn->_Skin = sk
+                        btn->Invalidate()
+                    end if
+                else
+                    var buffer = MapBufferFromCaller(cptr(unsigned byte ptr,_ESI),_ECX)
+                    UnmapBuffer(src,_ECX)
+                    var sk = Skin.CreateFromBuffer(buffer,_ECX,3,12,12,12,12)
+                    if (sk<>0) then
+                        btn->_Skin = sk
+                        btn->Invalidate()
+                    end if
                 end if
             end if
             

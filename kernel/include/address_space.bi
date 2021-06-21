@@ -1,5 +1,7 @@
 TYPE AddressSpaceEntry field =1
     NextEntry   as AddressSpaceEntry ptr
+    PrevEntry   as AddressSpaceEntry ptr
+    
     VirtAddr    as unsigned integer
     PagesCount  as unsigned integer
     VMM_Context as VMMContext ptr

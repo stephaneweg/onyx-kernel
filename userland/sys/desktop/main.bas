@@ -115,7 +115,6 @@ sub GuiLoop(p as any ptr)
         end if
 		
 		if (ProcToTerminate<>0 or TerminatedProc<>0) then
-			
 			if (TerminatedProc<>0) then
 				ProcessUnregister(TerminatedProc)
 			end if
@@ -146,8 +145,8 @@ sub GuiLoop(p as any ptr)
                 end if
                 g=g->PrevChild
             wend
+            WaitN(10)
         end if
-        'WaitN(1)
     loop
 end sub
 

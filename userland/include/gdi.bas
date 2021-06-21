@@ -240,6 +240,18 @@ sub GDIButtonSetSkin(_btn as unsigned integer,skin as unsigned byte ptr)
         mov eax,&h12
         mov ebx,[_btn]
         mov ecx,[skin]
+        mov edx,0
+        int 0x35
+    end asm
+end sub
+
+sub GDIButtonSetSkinFromBuffer(_btn as unsigned integer,buffer as unsigned byte ptr,buffersize as unsigned integer)
+    asm
+        mov eax,&h12
+        mov ebx,[_btn]
+        mov ecx,[buffersize]
+        mov esi,[buffer]
+        mov edx,1
         int 0x35
     end asm
 end sub

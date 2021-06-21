@@ -2,7 +2,6 @@
 Type ThreadQueue field = 1
     FirstThread as Thread Ptr
     LastThread as Thread ptr
-    count as unsigned integer
     
     declare constructor()
     declare sub EnqueueTail(t as Thread ptr)
@@ -17,7 +16,6 @@ Type ThreadScheduler field = 1
     NormalQueue as ThreadQueue
     RTCQueue as ThreadQueue
     
-    declare function ThreadCount() as unsigned integer
     CurrentRuningThread as Thread ptr
     RemovedThread as thread ptr
     

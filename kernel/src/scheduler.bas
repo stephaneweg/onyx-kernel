@@ -1,7 +1,6 @@
 constructor ThreadQueue()
     this.FirstThread = 0
     this.LastThread = 0
-    this.count = 0
 end constructor
 
 
@@ -12,7 +11,6 @@ sub ThreadQueue.EnqueueHead(t as Thread ptr)
     if (this.LastThread=0) then
         this.LastThread = t
     end if
-    this.Count += 1
 end sub
 
 'enqueue at the end of the queue
@@ -23,7 +21,6 @@ sub ThreadQueue.EnqueueTail(t as Thread ptr)
         this.FirstThread = t
     end if
     this.LastThread = t
-    this.Count += 1
     t->NextThreadQueue = 0
 end sub
 
@@ -33,7 +30,6 @@ function ThreadQueue.Dequeue() as Thread ptr
         this.FirstThread = t->NextThreadQueue
         if (this.FirstThread = 0) then this.LastThread = 0
         t->NextThreadQueue = 0
-		this.Count-=1
     end if
     return t
 end function
@@ -71,7 +67,6 @@ sub ThreadQueue.Remove(t as Thread ptr)
         wend
     end if
     if (removed=1) then
-        this.Count-=1
         if (this.FirstThread =0) then this.LastThread = 0
         t->NextThreadQueue = 0
     end if
@@ -154,11 +149,6 @@ sub ThreadScheduler.SetThreadReady(t as Thread ptr)
     NormalQueue.EnqueueTail(t)
     t->State=ThreadState.Ready
 end sub
-
-
-function ThreadScheduler.ThreadCount() as unsigned integer
-    return NormalQueue.Count+RTCQueue.Count
-end function
 
 
 

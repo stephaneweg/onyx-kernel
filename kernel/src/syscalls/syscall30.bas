@@ -2,7 +2,6 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
     dim CurrentThread as Thread ptr = Scheduler.CurrentRuningThread
     select case stack->EAX
     case &h01 'load app from memory
-        
             var ctx = vmm_get_current_context()
             var args = cptr(unsigned byte ptr,stack->ESI)
             if (args<>0) then
@@ -13,7 +12,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             if (p<>0) then 
                     p->Parent = CurrentThread->Owner
                     stack->EAX = 1
-                    return Scheduler.Switch(stack, Scheduler.Schedule())
+            '        return Scheduler.Switch(stack, Scheduler.Schedule())
             else
                 stack->EAX=0
             end if
@@ -163,7 +162,6 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             end if
 'ipc related
         case &hC0 'define IPC handler
-            ConsoleWrite(@"Define IPC Handler for ID : 0x"):ConsoleWriteNumber(Stack->EBX,16):ConsoleNewLIne()
             var ep = IPCEndPoint.CreateID(stack->EBX,CurrentThread,stack->ECX,stack->EDX)
             if (ep<>0) then
                 stack->EAX = ep->ID
@@ -217,11 +215,26 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             stack->EAX = 0
             if (CurrentThread<>0) then
                 if (CurrentThread->Owner<>0) then
-                    if(CurrentThread->Owner->HeapAddressSpace<>0) then
-                        stack->EAX = cuint(CurrentThread->Owner->HeapAddressSpace->SBRK(stack->EBX))
-                    end if
+                    IRQ_DISABLE(0)
+                    var freeAddr = CurrentThread->VMM_Context->find_free_pages(stack->EBX,ProcessHeapAddress,&hFFFFFFFF)
+                    var addressSpace = CurrentThread->Owner->CreateAddressSpace(freeAddr)
+                    addressSpace->SBRK(stack->EBX)
+                    stack->EAX=freeAddr
+                    IRQ_ENABLE(0)
+'                    if(CurrentThread->Owner->HeapAddressSpace<>0) then
+'                        stack->EAX = cuint(CurrentThread->Owner->HeapAddressSpace->SBRK(stack->EBX))
+'                    end if
                 end if
             end if
+        case &hD1 'Page Free
+            if (CurrentThread<>0) then
+                if (CurrentThread->Owner<>0) then
+                    IRQ_DISABLE(0)
+                    CurrentThread->Owner->RemoveAddressSpace(stack->EBX)
+                    IRQ_ENABLE(0)
+                end if
+            end if
+            
         case &hE0 'Wait N time slice
              Scheduler.SetThreadRealTime(CurrentThread,stack->EBX)
              return  Scheduler.Switch(stack,Scheduler.Schedule()) 
@@ -274,6 +287,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
         case &hF4 'mem info
             stack->EAX = TotalPagesCount
             stack->EBX = TotalFreePages
+            stack->ECX = SlabMeta.SlabCount
     end select
     return stack
 end function

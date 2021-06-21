@@ -99,14 +99,9 @@ end sub
 
 destructor VMMContext()
     for i as unsigned integer = 256 to 1023
-        if (( this.v_dir[i] and VMM_FLAG_PRESENT) = VMM_FLAG_PRESENT) then
-            dim pt as unsigned integer ptr = cptr(unsigned integer ptr,(cuint(this.v_dir[i]) and VMM_PAGE_MASK))
-            
-            if (pt<>0) then
-                    PMM_FREEPAGE(pt)
-            end if
+        if (( this.v_dir[i] and VMM_PAGE_MASK) <> 0) then
+            PMM_FREEPAGE(cptr(any ptr,(cuint(this.v_dir[i]) and VMM_PAGE_MASK)))
         end if
-        
     next i
     current_context->unmap_page(this.v_dir)
     PMM_FREEPAGE(this.P_dir)
@@ -258,6 +253,10 @@ function VMMContext.MAP_PAGE(virt as any ptr,phys as any ptr, flags as unsigned 
     if (paging_active=0) then pdir_entry = @(this.p_dir[GET_PAGEDIR_INDEX(virt)])
    
    if ((*pdir_entry and VMM_FLAG_PRESENT) <> VMM_FLAG_PRESENT) then
+       
+       'if the page dir is not present, and if we want to unmap, it is not necessary to create a new pagetable
+       if (phys=0) then return true
+       
 		'' reserve memory
 		dim pagetable as any ptr = PMM_ALLOCPAGE()
 
@@ -282,7 +281,23 @@ function VMMContext.MAP_PAGE(virt as any ptr,phys as any ptr, flags as unsigned 
 	end if
 	'' set address and flags
 	page_table[GET_PAGETABLE_INDEX(virt)] = (cuint(phys) or flags)
-
+    
+    'if we unmap, check if there is still content
+    'if not, we can free the pagetable
+    if (phys=0) then
+        dim hasContent as unsigned integer = 0
+        for i as unsigned integer = 0 to 1023
+            if ((page_table[i] and VMM_FLAG_PRESENT ) = VMM_FLAG_PRESENT) then
+                hasContent = 1
+                exit for
+            end if
+        next i
+        if (hasContent=0) then
+            var pagetable = this.Resolve(page_table)
+            PMM_FREEPAGE(pageTable)
+            *pdir_entry = 0
+        end if
+    end if
 	'' invalidate virtual address
 	asm
 		mov ebx, dword ptr [virt]

@@ -64,6 +64,7 @@ TYPE GImage extends TObject
     declare sub DrawChar(asciicode as unsigned byte,x1 as integer,y1 as integer,c as integer,fdata as FontData ptr,ratio as integer)
 	declare static Function LoadFromRaw(path as unsigned byte ptr,_w as unsigned integer,_h as unsigned integer) as GImage ptr
     declare static Function LoadFromBitmap(path as unsigned byte ptr) as GImage ptr
+    declare static Function LoadFromBitmapBuffer(buffer as unsigned byte ptr,fsize as unsigned integer) as GImage ptr
 end type
 
 

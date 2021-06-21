@@ -9,6 +9,7 @@ end constructor
 
 destructor FileHandle()
     DeleteBuffer()
+    delete this.Path
 end destructor
 
 sub FileHandle.DeleteBuffer()

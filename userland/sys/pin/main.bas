@@ -67,6 +67,8 @@ declare sub Collapse()
 declare sub UnCollapse()
 declare sub btnClick(btn as unsigned integer,parm as unsigned integer)
 declare sub btnCollapseClick(btn as unsigned integer,parm as unsigned integer)
+
+
 sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
 	buttonSize= 64
 	buttonCount = 7
@@ -87,6 +89,8 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
     GDISetTransparent(panel,-1)
     GDISetPosition(panel, xPos,yPos)
 	
+    dim panelBTNSkinSize as unsigned integer = 0
+    var panelBTNSkin =VFS_LOAD_FILE(@"SYS:/RES/PANELBTN.BMP",@panelBTNSkinSize)
 	for i as unsigned integer = 0 to buttonCount-1
 		dim callback as any ptr = @btnClick
 		if (i=buttonCount-1) then callback=@btnCollapseClick
@@ -97,9 +101,14 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
             case 1
                 GDIButtonSetSkin(btn,@"SYS:/RES/VOLBTN.BMP")
             case else
-                GDIButtonSetSkin(btn,@"SYS:/RES/PANELBTN.BMP")
+                if (panelBTNSkinSize<>0 and panelBTNSkin<>0) then
+                    GDIButtonSetSkinFromBUffer(btn,panelBTNSkin,panelBTNSkinSize)
+                end if
         end select
-        if i = buttonCount-1 then
+        
+        if i = 1 then
+              GDIButtonSetIcon(btn,@"SYS:/ICONS/FILEMAN.BMP",0)
+        elseif i = buttonCount-1 then
               GDIButtonSetIcon(btn,@"SYS:/ICONS/APPSX.BMP",0)
         end if
 	next i
@@ -108,11 +117,15 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
 	GDISetVisible(panel,1)
     
     CreateAppPanel()
+    Free(panelBTNSkin)
 	WaitForEvent()
 end sub
 
 sub CreateAppPanel()
 
+    dim appBTNSkinSize as unsigned integer = 0
+    var appBTNSkin =VFS_LOAD_FILE(@"SYS:/RES/APPBTN.BMP",@appBTNSkinSize)
+    
     dim txtArrow(0 to 3) as unsigned byte
     txtArrow(0) = 30
     txtArrow(1) = 0
@@ -166,7 +179,11 @@ sub CreateAppPanel()
                 strcpy(@executablePath(0),strcat(@"SYS:/APPS/",@(DirEntries[i].FileName(0))))
                 strcpy(@executablePath(0),strcat(@executablePath(0),@"/app.bmp"))
                 GDIButtonSetIcon(btn,@executablePath(0),1)
-				GDIButtonSetSkin(btn,@"SYS:/RES/APPBTN.BMP")
+                
+                if (appBTNSkinSize<>0 and appBTNSkin<>0) then
+                    GDIButtonSetSkinFromBUffer(btn,appBTNSkin,appBTNSkinSize)
+                end if
+				'GDIButtonSetSkin(btn,@"SYS:/RES/APPBTN.BMP")
 				GDISetForegroundColor(btn,&hFFFFFFFF)
             end if
     next
@@ -180,7 +197,7 @@ sub CreateAppPanel()
     GDIInvalidate(buttonContainer)
     GDIInvalidate(scrollViewOuter)
     GDIInvalidate(panelApps)
-	
+	Free(appBTNSkin)
 end sub
 
 
@@ -213,7 +230,9 @@ sub AppButtonClick(btn as unsigned integer,num as unsigned integer)
 end sub
 
 sub btnClick(btn as unsigned integer,parm as unsigned integer)
-
+	if (parm=1) then
+		ExecApp(@"SYS:/SYS/fileman.bin",0)
+	end if
 	EndCallBack()
 end sub
 

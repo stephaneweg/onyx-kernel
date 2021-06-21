@@ -30,10 +30,11 @@ TYPE Process field =1
     AddressSpace as AddressSpaceEntry ptr
     
     CodeAddressSpace as AddressSpaceEntry ptr
-    HeapAddressSpace as AddressSpaceEntry ptr
     StackAddressSpace as AddressSpaceEntry ptr
     
     declare function CreateAddressSpace(virt as unsigned integer) as AddressSpaceEntry ptr
+    declare function FindAddressSpace(virt as unsigned integer)  as AddressSpaceEntry ptr
+    declare sub RemoveAddressSpace(virt as unsigned integer)
     
     declare static sub InitEngine()
     declare static function Create(image as EXECUTABLE_HEADER ptr,size as unsigned integer,args as unsigned byte ptr) as Process ptr
@@ -51,6 +52,7 @@ TYPE Process field =1
     
     declare sub FreeConsole()
     declare sub CreateConsole()
+    
 end type
 
 'the address where the service  process can map a buffer from a client

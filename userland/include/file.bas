@@ -4,15 +4,9 @@ function ExecApp(path as unsigned byte ptr,args as unsigned byte ptr) as unsigne
 	dim fsize as unsigned integer = 0
 	dim img as unsigned byte ptr = VFS_LOAD_FILE(path,@fsize)
 	if (img<>0 and fsize<>0) then
-		asm
-			mov eax,&h01
-			mov ebx,[img]
-			mov ecx,[fsize]
-			mov esi,[args]
-			int 0x30
-			mov [function],eax
-		end asm
+		dim retval as unsigned integer= CreateProcess(img,fsize,args)
         Free(img)
+        return retval
 	else
 		return 0
 	end if

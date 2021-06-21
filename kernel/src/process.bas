@@ -63,15 +63,41 @@ end destructor
 
 function Process.CreateAddressSpace(virt as unsigned integer) as AddressSpaceEntry ptr
     var address_space = cptr(AddressSpaceEntry ptr,KAlloc(sizeof(AddressSpaceEntry)))
-    address_space->NextEntry    = AddressSpace
+   
+    
     address_space->VMM_Context  = @VMM_Context
     address_space->VirtAddr     = virt
+    
+    address_space->NextEntry    = AddressSpace
+    address_space->PrevEntry    = 0
+    if (AddressSpace<>0) then AddressSpace->PrevEntry=address_space
+    
     AddressSpace = address_space
     
     return address_space
 end function
     
-    
+function Process.FindAddressSpace(virt as unsigned integer)  as AddressSpaceEntry ptr
+    var address_space = this.AddressSpace
+    while address_space<>0
+        if (address_Space->VirtAddr = virt) then return address_Space
+        address_Space = address_Space->NextEntry
+    wend
+    return 0
+end function
+
+sub Process.RemoveAddressSpace(virt as unsigned integer)
+    var address_space = FindAddressSpace(virt)
+    if (address_space<>0) then
+        if (address_space->PrevEntry<>0) then address_space->PrevEntry->NextEntry   = address_space->NextEntry
+        if (address_space->NextEntry<>0) then address_space->NextEntry->PrevEntry   = address_space->PrevEntry
+        if (this.AddressSpace=address_space) then this.AddressSpace= address_space->NextEntry
+        address_space->NextEntry = 0
+        address_space->PrevEntry = 0
+        address_space->destructor()
+        Kfree(Address_space)
+    end if
+end sub
 
 sub Process.CreateConsole()
     FreeConsole()
@@ -160,7 +186,6 @@ sub Process.DoLoad()
         entry = DoLoadELF()
     end if
     
-	HeapAddressSpace = this.CreateAddressSpace(ProcessHeapAddress)
     StackAddressSpace = this.CreateAddressSpace(ProcessStackAddress)
     
     Image =  cptr(EXECUTABLE_HEADER ptr,ProcessAddress)	

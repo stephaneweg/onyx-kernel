@@ -1,6 +1,15 @@
 
 
-
+function CreateProcess(img as any ptr,fsize as unsigned integer,args as unsigned byte ptr) as unsigned integer
+    asm
+        mov eax,&h01
+        mov ebx,[img]
+        mov ecx,[fsize]
+        mov esi,[args]
+        int 0x30
+        mov [function],eax
+    end asm
+end function
 
 function  CreateThread(fn as any ptr,prio as unsigned integer) as unsigned integer
     asm
@@ -115,6 +124,14 @@ function PAlloc(cnt as unsigned integer) as any ptr
         mov [function],eax
     end asm
 end function
+
+sub PFree(addr as any ptr)
+    asm
+        mov eax,&hD1
+        mov ebx,[addr]
+        int 0x30
+    end asm
+end sub
 
 function GetStringFromCaller(dst as unsigned byte ptr,src as unsigned integer) as unsigned integer
     asm
@@ -272,17 +289,20 @@ sub GetScreenInfo(_xres as unsigned integer ptr,_yres as unsigned integer ptr,_b
 	*_yres = (resolution) and &hFFFF
 end sub
 
-sub GetMemInfo(totalPages as unsigned integer ptr,freePages as unsigned integer ptr)
+sub GetMemInfo(totalPages as unsigned integer ptr,freePages as unsigned integer ptr,slabCount as unsigned integer ptr)
         dim tp as unsigned integer
         dim fp as unsigned integer
+        dim sc as unsigned integer
         asm
             mov eax,&hF4
             int 0x30
             mov [tp],eax
             mov [fp],ebx
+            mov [sc],ecx
         end asm
         *totalPages = tp
         *freePages  = fp
+        *slabCount  = sc
 end sub
 
 sub SetPriority(p as unsigned integer)

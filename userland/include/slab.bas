@@ -45,36 +45,37 @@ sub SlabInit()
 end sub
 
 function SlabMetaData.SlabAllocPage(count as unsigned integer) as any ptr
-        var entry = SlabPagesEntries
-        while entry<>0
-            if (entry->PagesCount=count and entry->IsFree=1) then
-                entry->IsFree = 0
-                return entry->PageAddr
-            end if
-            entry = entry->NextPage
-        wend
+        'var entry = SlabPagesEntries
+        'while entry<>0
+        '    if (entry->PagesCount=count and entry->IsFree=1) then
+        '        entry->IsFree = 0
+        '        return entry->PageAddr
+        '    end if
+        '    entry = entry->NextPage
+        'wend
         
         var p= PAlloc(count)
-        if (p<>0) then
-            entry = MAlloc(sizeof(SlabPageEntry))
-            entry->PageAddr = p
-            entry->PagesCount = count
-            entry->IsFree = 0
-            entry->NextPage = SlabPagesEntries
-            SlabPagesEntries = entry
-        end if
+        'if (p<>0) then
+        '    entry = MAlloc(sizeof(SlabPageEntry))
+        '    entry->PageAddr = p
+        '    entry->PagesCount = count
+        '    entry->IsFree = 0
+        '    entry->NextPage = SlabPagesEntries
+        '    SlabPagesEntries = entry
+        'end if
         return p
 end function
 
 sub SlabMetaData.SlabFreePage(addr as any ptr)
-    var entry = SlabPagesEntries
-    while entry<>0
-        if (entry->PageAddr = addr) then
-            entry->IsFree = 1
-            return
-        end if
-        entry = entry->NextPage
-    wend
+    'var entry = SlabPagesEntries
+    'while entry<>0
+    '    if (entry->PageAddr = addr) then
+    '        entry->IsFree = 1
+    '        return
+    '    end if
+    '    entry = entry->NextPage
+    'wend
+    PFree(addr)
 end sub
 
 function SlabMetaData.SlabPageSize(addr as any ptr) as unsigned integer

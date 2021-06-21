@@ -12,9 +12,8 @@ sub SkinDestroy(sk as skin ptr)
     sk->destructor
 end sub
 
-function Skin.Create(path as unsigned byte ptr,count as unsigned integer,lw as integer,rw as integer,th as integer, bh as integer) as Skin ptr
-    dim img as GImage ptr = GImage.LoadFromBitmap(path)
-    
+
+function Skin.CreateFromImage(img as GImage ptr,count as unsigned integer,lw as integer,rw as integer,th as integer, bh as integer) as Skin ptr
     if img<>0 then
         dim result as Skin Ptr = cptr(Skin ptr,MAlloc(sizeof(Skin)))
         if result<>0 then
@@ -33,6 +32,24 @@ function Skin.Create(path as unsigned byte ptr,count as unsigned integer,lw as i
             return result
         end if
     end if
+end function
+
+function Skin.Create(path as unsigned byte ptr,count as unsigned integer,lw as integer,rw as integer,th as integer, bh as integer) as Skin ptr
+    dim img as GImage ptr = GImage.LoadFromBitmap(path)
+    
+    if img<>0 then
+        return skin.CreateFromImage(img,count,lw,rw,th,bh)
+    end if
+    return 0
+end function
+
+function Skin.CreateFromBuffer(buffer as any ptr,buffersize as unsigned integer,count as unsigned integer,lw as integer,rw as integer,th as integer, bh as integer) as Skin ptr
+    dim img as GImage ptr = GImage.LoadFromBitmapBuffer(buffer,buffersize)
+    
+     if img<>0 then
+        return skin.CreateFromImage(img,count,lw,rw,th,bh)
+    end if
+    
     return 0
 end function
 

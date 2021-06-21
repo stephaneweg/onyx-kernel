@@ -15,6 +15,8 @@ declare sub SemaphoreUnlock(s as unsigned integer)
 declare sub SysEnterCritical()
 declare sub SysExitCritical()
 declare function CreateThread(fn as any ptr,prio as unsigned integer) as unsigned integer
+
+declare function CreateProcess(img as any ptr,fsize as unsigned integer,args as unsigned byte ptr) as unsigned integer
 declare sub ThreadYield()
 declare sub KillProcess(th as unsigned integer)
 declare sub ThreadWakeUP(th as unsigned integer,p1 as unsigned integer,p2 as unsigned integer)
@@ -25,6 +27,8 @@ declare function UDevInvoke(d as unsigned integer,p1 as unsigned integer,p2 as u
 
 
 declare function PAlloc(cnt as unsigned integer) as any ptr
+declare sub PFree(addr as any ptr)
+
 declare function GetStringFromCaller(dst as unsigned byte ptr,src as unsigned integer) as unsigned integer
 declare sub SetStringToCaller(dst as unsigned integer,src as unsigned byte ptr)
 
@@ -43,7 +47,7 @@ declare function GetTimer() as unsigned long
 declare function NextRandomNumber(_min as unsigned integer,_max as unsigned integer) as unsigned integer
 declare function GetTimeBCD() as unsigned integer
 declare sub GetScreenInfo(_xres as unsigned integer ptr,_yres as unsigned integer ptr,_bpp as unsigned integer ptr,_lfb as unsigned integer ptr, _lfbsize as unsigned integer ptr)
-declare sub GetMemInfo(totalPages as unsigned integer ptr,freePages as unsigned integer ptr)
+declare sub GetMemInfo(totalPages as unsigned integer ptr,freePages as unsigned integer ptr,slabCount as unsigned integer ptr)
 declare sub SetPriority(p as unsigned integer)
 #macro EndCallBack()
 	asm

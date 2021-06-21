@@ -20,6 +20,7 @@ sub SlabInit()
      
     SlabMeta.SlabEntry.init(sizeof(slab))
     SlabMeta.FirstSlab = 0
+    SlabMeta.SlabCount = 0
     var didAlloc = SlabMeta.SlabEntry.Alloc(sizeof(slab))>0
     if (not didAlloc) then
         KERNEL_ERROR(@"Could not initalize Slab memory management",0)
@@ -51,6 +52,11 @@ function SlabMetaData.KAlloc(size as unsigned integer) as any ptr
     dim newSlab as Slab ptr =cptr(Slab ptr, this.SlabEntry.Alloc(sizeof(slab)))
     newSlab->init(size)
     newSlab->NextSlab = this.FirstSlab
+    newSlab->PrevSlab = 0
+    this.SlabCount +=1
+    if (this.FirstSlab<>0) then
+        this.FirstSlab->PrevSlab = newSlab
+    end if
     this.FirstSlab = newSlab
     
   
@@ -67,7 +73,17 @@ end function
 sub SlabMetaData.KFree(addr as any ptr)
     var current = FirstSlab
     while current<>0
-        if (current->Free(addr)) = 1 then return
+        if (current->Free(addr)) = 1 then 
+            if (current->IsEmpty = 1) then
+                if (current->NextSlab<>0) then current->NextSlab->PrevSlab = current->PrevSlab
+                if (current->PrevSlab<>0) then current->PrevSlab->NextSlab = current->NextSlab
+                if (current = FirstSlab) then FirstSlab = current->NextSlab
+                current->Destructor()
+                this.SlabEntry.Free(current)
+                this.SlabCount -=1
+            end if
+            return
+        end if
         current=>Current->NextSlab
     wend
     KERNEL_ERROR(@"The address is not part of a slab",0)
@@ -83,12 +99,21 @@ function SlabMetaData.IsValidAddr(addr as any ptr) as unsigned integer
     return 0
 end function
         
+destructor Slab()
+    if (this.SlabStart<>0) then
+        KMM_FreePage(cptr(any ptr,this.SlabStart))
+    end if
+    this.SlabStart = 0
+end destructor
+
 sub Slab.Init(isize as unsigned short)
     
     if (isize<minSize) then isize=minSize
     isize = GetSmallestPowerOfTwoo(isize)
     
     this.IsFull = 0
+    this.IsEmpty  = 1
+    this.ItemsCount = 0
     this.ItemSize = isize
     this.NextSlab = 0
     this.SlabStart = cast(unsigned integer,KMM_ALLOCPAGE())
@@ -121,23 +146,31 @@ function Slab.Alloc(isize as unsigned integer) as any ptr
         if (retval<>0) then
             memset32(retval,0,this.ItemSize shr 2)
         end if
+        this.IsEmpty = 0
+        this.ItemsCount += 1
         return retval
 end function
 
 function Slab.Free(addr as any ptr) as unsigned byte
-    if (addr < this.SlabStart) or (addr>=this.SlabStart+&h4000) then
+    if (addr < this.SlabStart) or (addr>=this.SlabStart+&h1000) then
         return 0
     end if
     dim newEntry as SlabEntry ptr = cptr(SlabEntry ptr, addr)
     newEntry->NextEntry = this.FreeList
     this.FreeList = newEntry
     this.IsFull = 0
+    this.ItemsCount -=1
+    if (this.ItemsCount = 0) then
+        this.IsEmpty = 1
+    else
+        this.IsEmpty = 0
+    end if
     return 1
 end function
 
 function Slab.IsValidAddr(addr as any ptr) as unsigned integer
      
-    if (addr < this.SlabStart) or (addr>=this.SlabStart+&h4000) then
+    if (addr < this.SlabStart) or (addr>=this.SlabStart+&h1000) then
         return 0
     end if
     return 1

@@ -276,7 +276,8 @@ function substring(s as unsigned byte ptr,index as unsigned integer, count as in
 end function
 
 function strendswith(src as unsigned byte ptr,search as unsigned byte ptr) as unsigned integer
-    if (strlastindexof(src,search) = strlen(src)-strlen(search)) then
+    var lindex = strlastindexof(src,search)
+    if (lindex>=0) and (lindex = strlen(src)-strlen(search)) then
         return 1
     else
         return 0

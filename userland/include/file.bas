@@ -120,14 +120,26 @@ function VFS_Load_File(fname as unsigned byte ptr,fsize as unsigned integer ptr)
     dim buffer as unsigned byte ptr = 0
     var f = FileOpen(fname)
     if (f<>0) then
-        *fsize = FileSize(f)
-        if (*fsize)>0 then
-            buffer = MAlloc(*fsize)
-            if (buffer<>0) then
-                FileRead(f,*fsize,buffer)
-            end if
-        end if
-        FileClose(f,0)
+         var _filesize = FileSize(f)    
+         FileClose(f,0)
+         buffer = Malloc(_filesize)
+         asm
+             mov eax,0x1
+             mov esi,[fname]
+             mov edi,[buffer]
+             int 0x33
+         end asm
+         *fsize = _filesize
+         
+         
+        '*fsize = FileSize(f)    
+        'if (*fsize)>0 then
+        '   buffer = MAlloc(*fsize)
+        '    if (buffer<>0) then
+        '        FileRead(f,*fsize,buffer)
+        '    end if
+        'end if
+        'FileClose(f,0)
     end if
 	return buffer
 end function

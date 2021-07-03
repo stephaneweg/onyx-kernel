@@ -218,6 +218,31 @@ sub strrev(s as unsigned byte ptr)
     next i
 end sub
 
+
+
+sub strToUpperFix(s as unsigned byte ptr)
+	dim i as unsigned integer
+    i=0
+    while s[i]<>0
+        if (s[i]>=97 and s[i]<=122) then
+            s[i]=s[i]-32
+        end if
+        i+=1
+    wend
+end sub
+
+sub strToLowerFix(s as unsigned byte ptr)
+    dim i as unsigned integer
+    i=0
+    while s[i]<>0 and i<1022
+        if (s[i]>=65 and s[i]<=90) then
+            s[i]=s[i]+32
+        end if
+        i+=1
+    wend
+    s[i]=0
+end sub
+
 function strtoupper(s as unsigned byte ptr) as unsigned byte ptr
     dim i as unsigned integer
     dim dst as unsigned byte ptr=@(Result(0))
@@ -235,17 +260,6 @@ function strtoupper(s as unsigned byte ptr) as unsigned byte ptr
 end function
 
 
-sub strToLowerFix(s as unsigned byte ptr)
-    dim i as unsigned integer
-    i=0
-    while s[i]<>0 and i<1022
-        if (s[i]>=65 and s[i]<=90) then
-            s[i]=s[i]+32
-        end if
-        i+=1
-    wend
-    s[i]=0
-end sub
 function strtolower(s as unsigned byte ptr) as unsigned byte ptr
     dim i as unsigned integer
     dim dst as unsigned byte ptr=@(Result(0))

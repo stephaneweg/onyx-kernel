@@ -27,7 +27,6 @@ end sub
 
 sub INIT_KBD()
     loadKeys()
-    KBD_UPDATED  = 0
     dim akey as unsigned byte = 0
     do
         inb(&h60,[akey])
@@ -49,10 +48,7 @@ sub KBD_IRQ_Handler(_intno as unsigned integer,_senderproc as unsigned integer,_
     dim akey as unsigned byte
 	inb(&h60,[akey])
     KBD_HANDLER(akey)
-    
-    SpinLock()
-    KBD_UPDATED = 1
-    SpinUnLock()
+    SetEvent()
 	EndIPCHandler()
 end sub
 
@@ -147,7 +143,6 @@ sub KBD_HANDLER(akey as unsigned byte)
                     
                     
                     if (k<>0) then 
-                        'ConsolePutChar(k)
                         KBD_PutChar(k or NextArrow)
                     end if
                 end if

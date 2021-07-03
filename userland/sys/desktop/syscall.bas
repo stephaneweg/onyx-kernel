@@ -2,6 +2,7 @@
 
 sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sender as unsigned integer,_eax as unsigned integer,_ebx as unsigned integer,_ecx as unsigned integer,_edx as unsigned integer,_esi as unsigned integer,_edi as unsigned integer,_ebp as unsigned integer,_esp as unsigned integer)
     dim signalSender as boolean = true
+    
     select case _EAX
         case &h01 'create generic ui element
             dim _parent as GDIBase ptr = cptr(GDIBase ptr,_EBX)
@@ -143,11 +144,7 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
             dim _y2 as unsigned integer = _EDX and &hFFFF
             dim _c as unsigned integer = _ESI
             if (_gd<>0) then _gd->DrawLine(_x1,_y1,_x2,_y2,_c)
-            if (_gd->Parent<>0) then 
-               ' _gd->Parent->Invalidate()
-               ' RootScreen->Redraw()
-            end if
-        
+            
         case &h09 'drawRectangle
             dim _gd as GDIBase ptr = cptr(GDIBase ptr,_EBX)
             dim _x1 as unsigned integer = _ECX shr 16
@@ -156,11 +153,7 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
             dim _y2 as unsigned integer = _EDX and &hFFFF
             dim _c as unsigned integer = _ESI
             if (_gd<>0) then _gd->DrawRectangle(_x1,_y1,_x2,_y2,_c)
-            if (_gd->Parent<>0) then 
-               ' _gd->Parent->Invalidate()
-               ' RootScreen->Redraw()
-            end if
-            
+           
             
         case &h0A 'fillRectangle
             dim _gd as GDIBase ptr = cptr(GDIBase ptr,_EBX)
@@ -178,10 +171,6 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
                     _gd->FillRectangleAlpha(_x1,_y1,_x2,_y2,_c)
                 end if
             end if
-            if (_gd->Parent<>0) then
-              '  _gd->Parent->Invalidate()
-              '  RootScreen->Redraw()
-            end if
         
         
 		case &h0B 'draw text
@@ -192,11 +181,6 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
             dim _y as unsigned integer = _ECX and &hFFFF
 			dim c as unsigned integer = _EDX
 			_gd->DrawText(TmpString,_x,_y,c,FontManager.ML,1)
-            if (_gd->Parent<>0) then
-               ' _gd->Parent->Invalidate()
-            end if
-            
-        
         
         case &h0C 'draw char
 		
@@ -206,10 +190,6 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
             dim _y as unsigned integer = _ECX and &hFFFF
 			dim c as unsigned integer = _EDX
 			_gd->DrawChar(cara,_x,_y,c,FontManager.ML,1)
-            if (_gd->Parent<>0) then
-                '_gd->Parent->Invalidate()
-            end if
-            
         
         case &h0D 'put buffer
             dim _gd as GDIBase ptr = cptr(GDIBase ptr,_EDI)
@@ -236,9 +216,6 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
                 Free(src32)
             else
                 _gd->PutOtherRaw(src,_w,_h,_x,_y)
-            end if
-            if (_gd->Parent<>0) then
-                '_gd->Parent->Invalidate()
             end if
             UnMapBuffer(src,size)
         case &h0E 'GDISetPosition
@@ -276,7 +253,7 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
                     end if
                 else
                     var buffer = MapBufferFromCaller(cptr(unsigned byte ptr,_ESI),_ECX)
-                    UnmapBuffer(src,_ECX)
+                    'UnmapBuffer(src,_ECX)
                     var sk = Skin.CreateFromBuffer(buffer,_ECX,3,12,12,12,12)
                     if (sk<>0) then
                         btn->_Skin = sk
@@ -413,6 +390,7 @@ sub int35Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
             _EBX = YRES
 		case &hFFFFFF 'process terminated
 			TerminatedProc = _ebx
+            asm int &h36
     end select
     if (signalSender) then
         EndIPCHandlerAndSignal()

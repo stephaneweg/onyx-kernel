@@ -12,6 +12,12 @@ end type
 declare function SemaphoreCreate() as unsigned integer
 declare sub SemaphoreLock(s as unsigned integer)
 declare sub SemaphoreUnlock(s as unsigned integer)
+
+
+declare function SignalCreate() as unsigned integer
+declare sub SignalWait(s as unsigned integer)
+declare sub SignalSet(s as unsigned integer)
+
 declare sub SysEnterCritical()
 declare sub SysExitCritical()
 declare function CreateThread(fn as any ptr,prio as unsigned integer) as unsigned integer
@@ -43,12 +49,13 @@ declare sub DefineIPCHandler(id as unsigned integer,c as sub(_intno as unsigned 
 declare function IPCSend(id as unsigned integer,r0 as unsigned integer,r1 as unsigned integer,r2 as unsigned integer,r3 as unsigned integer,r4 as unsigned integer,r5 as unsigned integer,r6 as unsigned integer,r7 as unsigned integer,result2 as unsigned integer ptr,result3 as unsigned integer ptr)  as unsigned integer
 
 declare sub WaitN(delay as unsigned integer)
-declare function GetTimer() as unsigned long
+declare function GetTimer() as unsigned longint
 declare function NextRandomNumber(_min as unsigned integer,_max as unsigned integer) as unsigned integer
 declare function GetTimeBCD() as unsigned integer
 declare sub GetScreenInfo(_xres as unsigned integer ptr,_yres as unsigned integer ptr,_bpp as unsigned integer ptr,_lfb as unsigned integer ptr, _lfbsize as unsigned integer ptr)
 declare sub GetMemInfo(totalPages as unsigned integer ptr,freePages as unsigned integer ptr,slabCount as unsigned integer ptr)
 declare sub SetPriority(p as unsigned integer)
+declare function IDLE_COUNT() as unsigned integer
 #macro EndCallBack()
 	asm
 		mov esp,ebp

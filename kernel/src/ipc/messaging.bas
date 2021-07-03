@@ -200,25 +200,31 @@ function IPCSend(_
     dim result as unsigned integer = 0
     var ipcHandler = IPCEndPoint.FindById(id)
     if (ipcHandler<>0) then
-        var msg = cptr(IPCMessage ptr,KAlloc(sizeof(IPCMessage)))
-        msg->BODY.REG0 = r0
-        msg->BODY.REG1 = r1
-        msg->BODY.REG2 = r2
-        msg->BODY.REG3 = r3
-        msg->BODY.REG4 = r4
-        msg->BODY.REG5 = r5
-        msg->BODY.REG6 = r6
-        msg->BODY.REG7 = r7
-        msg->SENDER = th
-        if (th<>0) then
-            msg->SENDERPROCESS = th->Owner
-        end if
-        ipcHandler->Enqueue(msg)
-        result = 1
-        
-        'if receiver is ready for message then wake it
-        if (ipcHandler->Owner->State=THreadState.Waiting) then
-            if (ipcHandler->ProcessReceive()=1) then result = 2
+        if (ipcHandler->Owner<>th) then
+            var msg = cptr(IPCMessage ptr,KAlloc(sizeof(IPCMessage)))
+           
+            msg->BODY.REG0 = r0
+            msg->BODY.REG1 = r1
+            msg->BODY.REG2 = r2
+            msg->BODY.REG3 = r3
+            msg->BODY.REG4 = r4
+            msg->BODY.REG5 = r5
+            msg->BODY.REG6 = r6
+            msg->BODY.REG7 = r7
+            msg->SENDER = th
+            if (th<>0) then
+                msg->SENDERPROCESS = th->Owner
+            else
+                msg->SENDERPROCESS = 0
+            end if
+            
+            ipcHandler->Enqueue(msg)
+            result = 1
+            
+            'if receiver is ready for message then wake it
+            if (ipcHandler->Owner->State=THreadState.Waiting) then
+                if (ipcHandler->ProcessReceive()=1) then result = 2
+            end if
         end if
     end if
     

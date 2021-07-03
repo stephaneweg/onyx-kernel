@@ -11,5 +11,7 @@ Type Semaphore field =1
     declare sub SemUnlock(th as thread ptr)
     
 end type
-
 Dim shared Semaphores as Semaphore ptr
+
+
+    

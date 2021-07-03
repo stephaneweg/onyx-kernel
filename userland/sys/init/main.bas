@@ -47,7 +47,13 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
         ConsoleWrite(@"Could not open INIT.CFG")
         ConsoleSetForeground(7)
     end if
-    ExitApp()
+    'ExitApp()
     'WaitForEvent()
-    'do:loop
+	'set idle
+    asm
+		mov eax,&h0
+		int 0x30
+	end asm
+	do
+	loop
 end sub

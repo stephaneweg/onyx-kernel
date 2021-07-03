@@ -44,6 +44,7 @@ sub Dialog.CloseDialog()
     rootScreen->RemoveChild(@this)
     DestroyObj(@this)
 end sub
+
 sub MessageBox.Show(message as unsigned byte ptr,title as unsigned byte ptr,btn as DialogButton,th as unsigned integer)
     
     newobj(msg,MessageBox)

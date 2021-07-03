@@ -1,6 +1,3 @@
-
-
-
 function Malloc cdecl alias "malloc" (s as unsigned integer) as any ptr
     return SlabMeta.Alloc(s)
 end function
@@ -165,11 +162,11 @@ sub Slab.Init(isize as unsigned integer)
     this.IsFull = 0
     this.ItemSize = isize
     this.NextSlab = 0
-    this.SlabStart = cast(unsigned integer,PAlloc(4))
+    this.SlabStart = cast(unsigned integer,PAlloc(1))
   
-	memset32(cptr(any ptr,this.slabStart),0,&h1000)
+	memset32(cptr(any ptr,this.slabStart),0,&h400)
     
-    dim numEntries as unsigned integer = (&h4000/this.ItemSize)-1
+    dim numEntries as unsigned integer = (&h1000/this.ItemSize)-1
     this.FreeList = cptr(SlabENtry ptr,this.SlabStart)
     dim current as SlabEntry ptr = this.FreeList
     
@@ -199,7 +196,7 @@ function Slab.Alloc(isize as unsigned integer) as any ptr
 end function
 
 function Slab.Free(addr as any ptr) as unsigned byte
-    if (addr < this.SlabStart) or (addr>=this.SlabStart+&h4000) then
+    if (addr < this.SlabStart) or (addr>=this.SlabStart+&h1000) then
         return 0
     end if
     dim newEntry as SlabEntry ptr = cptr(SlabEntry ptr, addr)
@@ -210,7 +207,7 @@ function Slab.Free(addr as any ptr) as unsigned byte
 end function
 
 function Slab.Owns(addr as any ptr) as unsigned integer
-     if (addr < this.SlabStart) or (addr>=this.SlabStart+&h4000) then
+     if (addr < this.SlabStart) or (addr>=this.SlabStart+&h1000) then
         return 0
     end if
     return 1

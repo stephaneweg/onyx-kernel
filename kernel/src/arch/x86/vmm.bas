@@ -25,9 +25,11 @@ sub VMM_INIT()
   
     'map video memory 1:1
     kernel_context.map_page(cptr(any ptr, &hB8000), cptr(any ptr, &hB8000), VMM_FLAGS_USER_DATA)
+	
+	'map the page tables 
     kernel_context.v_dir = cptr(uinteger ptr, (VMM_PAGETABLES_VIRT_START shr 22)*4096*1024 + (VMM_PAGETABLES_VIRT_START shr 22)*4096)
     
-    'map real mode address 1:1
+    'map real mode module 1:1
     kernel_context.map_page(cptr(any ptr, RealModeAddr), cptr(any ptr, RealModeAddr), VMM_FLAGS_KERNEL_DATA)
     
     
@@ -86,7 +88,7 @@ sub vmm_init_local ()
 		or ebx, &h80
 		mov cr4, ebx
 	end asm
-    KTSS.cr3 = cuint(pagedir)
+	KTSS_SET_CR3(cuint(pagedir))
 	paging_active = 1
     
     current_context->unmap_page(SysConsole.VIRT)
@@ -148,7 +150,8 @@ sub VMMContext.Activate()
             mov ebx, [pagedir]
             mov cr3, ebx
         end asm
-        KTSS.cr3 =cuint( pagedir)
+		
+		KTSS_SET_CR3(cuint(pagedir))
     end if
 end sub
 

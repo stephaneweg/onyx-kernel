@@ -1,6 +1,9 @@
 function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
     dim CurrentThread as Thread ptr = Scheduler.CurrentRuningThread
     select case stack->EAX
+    case &h00 'set idle
+            IDLE_THREAD = CurrentThread
+            return Scheduler.Switch(stack, Scheduler.Schedule())
     case &h01 'load app from memory
             var ctx = vmm_get_current_context()
             var args = cptr(unsigned byte ptr,stack->ESI)
@@ -37,14 +40,16 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             if (SlabMeta.IsValidAddr(cptr(any ptr,stack->ebx))=1) then
             
                 var th = cptr(Thread ptr,stack->EBX)
-                var st =cptr(IRQ_Stack ptr,  th->SavedESP)
-               
-                if (th->State=ThreadState.WaitingReply or th->State=ThreadState.Waiting) then
-                     st->EAX = stack->ECX
-                     st->EBX = stack->EDX
-                    'shedule the thread immediately
-                     Scheduler.SetThreadReadyNow(th)
-                     return Scheduler.Switch(stack, Scheduler.Schedule())
+                if (th->IsValid()) then
+                    var st =cptr(IRQ_Stack ptr,  th->SavedESP)
+                    
+                    if (th->State=ThreadState.WaitingReply or th->State=ThreadState.Waiting) then
+                         st->EAX = stack->ECX
+                         st->EBX = stack->EDX
+                        'shedule the thread immediately
+                         Scheduler.SetThreadReadyNow(th)
+                         return Scheduler.Switch(stack, Scheduler.Schedule())
+                    end if
                 end if
             end if
         case &h07 'UDev create
@@ -61,7 +66,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
         case &h0A 'UDev return
             stack->ESP = stack->EBP
             
-            if (CurrentThread->ReplyTO<>0) then
+            if (CurrentThread->ReplyTO->IsValid()) then
                 if ((CurrentThread->ReplyTO->State=ThreadState.WaitingReply) and (CurrentThread->ReplyTO->ReplyFrom = CurrentThread)) then
                     var st =cptr(IRQ_Stack ptr, CurrentThread->ReplyTO->SavedESP)
                     st->EAX = stack->EBX
@@ -85,11 +90,11 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
         case &h0F 'kill process
             if (SlabMeta.IsValidAddr(cptr(any ptr,stack->ebx))=1) then 
                 var pc = cptr(Process ptr,stack->EBX)
-                Process.Terminate(pc)              
-                if (CurrentThread->Owner=pc) then return Scheduler.Switch(stack, Scheduler.Schedule())
+                Process.Terminate(pc) 
+                if (CurrentThread->Owner=pc) then  return Scheduler.Switch(stack, Scheduler.Schedule())
             end if
         case &h10 'get string
-            if (currentThread->ReplyTo<>0) then
+            if (currentThread->ReplyTo->IsValid()) then
                 var phys = CurrentThread->ReplyTo->VMM_Context->Resolve(cptr(any ptr,stack->ESI))
                 var virt = vmm_kernel_automap(phys,PAGE_SIZE,VMM_FLAGS_KERNEL_DATA)
                 
@@ -99,7 +104,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
                 stack->EAX = 0
             end if
         case &h11 'set string
-            if (currentThread->ReplyTo<>0) then
+            if (currentThread->ReplyTo->IsValid()) then
                 var phys = CurrentThread->ReplyTo->VMM_Context->Resolve(cptr(any ptr,stack->EDI))
                  var virt = vmm_kernel_automap(phys,PAGE_SIZE,VMM_FLAGS_KERNEL_DATA)
                 strcpy(cptr(unsigned byte ptr,virt),cptr(unsigned byte ptr,stack->ESI))
@@ -107,7 +112,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
         case &h12 'Map buffer
             
             stack->EAX = 0
-            if (currentThread->ReplyTo<>0) then
+            if (currentThread->ReplyTo->IsValid()) then
                 if (currentThread->ReplyTo->VMM_Context<>0) then
 				
                     var startPage = stack->ESI and &hFFFFF000
@@ -135,7 +140,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
 			next i
 			
 		case &h14 'mapBuffer to caller
-			if (currentThread->ReplyTo<>0) then
+			if (currentThread->ReplyTo->IsValid()) then
                 if (currentThread->ReplyTo->VMM_Context<>0) then
 				
                     var startPage = stack->ESI and &hFFFFF000
@@ -154,11 +159,16 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
                 end if
             end if	
         case &h15 'get parent process
-            if (SlabMeta.IsValidAddr(cptr(any ptr,stack->ebx))=1) then
-                var proc = cptr(Process ptr,stack->EBX)
-                stack->EAX =cuint( proc->Parent)
+            stack->EAX = 0
+            if (stack->EBX<>0) then
+                if (SlabMeta.IsValidAddr(cptr(any ptr,stack->ebx))=1) then
+                    var proc = cptr(Process ptr,stack->EBX)
+                    stack->EAX =cuint( proc->Parent)
+                end if
             else
-                stack->EAX = 0
+                if (CurrentThread->Owner<>0) then
+                    stack->EAX =cuint( CurrentThread->Owner->Parent)
+                end if
             end if
 'ipc related
         case &hC0 'define IPC handler
@@ -173,7 +183,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
         case &hC1 'end of ipc handler
             stack->ESP = stack->EBP
             
-            if (CurrentThread->ReplyTO<>0) then
+            if (CurrentThread->ReplyTO->IsValid()) then
                 if ((CurrentThread->ReplyTO->State=ThreadState.WaitingReply) and (CurrentThread->ReplyTO->ReplyFrom = CurrentThread)) then
                     var st =cptr(IRQ_Stack ptr, CurrentThread->ReplyTO->SavedESP)
                     st->EAX = *cptr(unsigned integer ptr,stack->ESP+20)
@@ -185,7 +195,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
                     'st->EBP = *cptr(unsigned integer ptr,stack->ESP+44)
                     
                     'reply directly from interrupt
-                    Scheduler.SetThreadReady(CurrentThread->ReplyTO)
+                    Scheduler.SetThreadReadyNow(CurrentThread->ReplyTO)
                 end if
             end if
 			stack->ESP+=48
@@ -236,7 +246,9 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             end if
             
         case &hE0 'Wait N time slice
+             'asm cli
              Scheduler.SetThreadRealTime(CurrentThread,stack->EBX)
+             'asm sti
              return  Scheduler.Switch(stack,Scheduler.Schedule()) 
         case &hE1'enter critical
             EnterCritical()
@@ -246,7 +258,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
         case &hE3 'semaphore init
             var sem = cptr(Semaphore ptr,KAlloc(sizeof(Semaphore)))
             sem->Constructor
-            stack->EAX  = cast(unsigned integer,sem)
+            stack->EAX  = cuint(sem)
         case &hE4 'semaphore lock
             if (SlabMeta.IsValidAddr(cptr(any ptr,stack->ebx))=1) then
                 var sem = cptr(Semaphore ptr, stack->EBX)
@@ -259,9 +271,27 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
                 var sem = cptr(Semaphore ptr, stack->EBX)
                 sem->SemUnlock(CurrentThread) 
             end if
-        case &hE6 '
              
-             dim u0 as unsigned long = TotalEllapsed
+        case &hE6'create signal
+                var si = cptr(Signal ptr,KAlloc(sizeof(Signal)))
+                si->Constructor()
+                stack->EAX = cuint(si)
+        case &hE7'signal wait
+            if (SlabMeta.IsValidAddr(cptr(any ptr,stack->ebx))=1) then
+                var si = cptr(Signal ptr, stack->EBX)
+                if (not si->Wait(CurrentThread)) then
+                    return  Scheduler.Switch(stack,Scheduler.Schedule()) 
+                end if
+            end if
+        case &hE8'signal set
+            if (SlabMeta.IsValidAddr(cptr(any ptr,stack->ebx))=1) then
+                var si = cptr(Signal ptr, stack->EBX)
+                si->Set() 
+            end if
+         
+        case &hE9 '
+             
+             dim u0 as unsigned longint = TotalEllapsed
              dim i0 as unsigned integer
              dim i1 as unsigned integer
              asm
@@ -272,7 +302,8 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
              end asm
              
              stack->EAX = i0
-             stack->EBX = i1
+             stack->EBX = i1   
+             
         case &hF0 'Random
             stack->EAX = NextRandomNumber(stack->EBX,stack->ECX)
         case &hF1 'GetTimeBCD
@@ -288,6 +319,9 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             stack->EAX = TotalPagesCount
             stack->EBX = TotalFreePages
             stack->ECX = SlabMeta.SlabCount
+        case &hF5 'CPU IDLE COunt
+            stack->EAX = IDLE_ThreadRunCount
+            IDLE_ThreadRunCount = 0
     end select
     return stack
 end function

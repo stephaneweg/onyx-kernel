@@ -83,10 +83,10 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
 	xPos = 0
     
     panel = GDICreate(0,xPos,yPos,panelWidth,panelHeight)
-    GDISetShadow(panel,-1)
+    'GDISetShadow(panel,-1)
 	GDISetVisible(panel,0)
 	GDIClear(panel,&hFF000000)
-    GDISetTransparent(panel,-1)
+    'GDISetTransparent(panel,-1)
     GDISetPosition(panel, xPos,yPos)
 	
     dim panelBTNSkinSize as unsigned integer = 0

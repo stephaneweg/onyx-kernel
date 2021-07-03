@@ -240,10 +240,36 @@ sub SemaphoreUnlock(s as unsigned integer)
     end asm
 end sub
 
-function GetTimer() as unsigned long
-     dim u1 as unsigned long = 1
+function SignalCreate() as unsigned integer
+    asm 
+        mov eax,&hE6
+        int 0x30
+        mov [function],eax
+    end asm
+end function
+
+
+sub SignalWait(s as unsigned integer)
+    asm
+        mov eax,&hE7
+        mov ebx,[s]
+        int 0x30
+    end asm
+end sub
+
+sub SignalSet(s as unsigned integer)
+    asm
+        mov eax,&hE8
+        mov ebx,[s]
+        int 0x30
+    end asm
+end sub
+
+
+function GetTimer() as unsigned longint
+     dim u1 as unsigned longint = 1
      asm
-         mov eax,&hE6
+         mov eax,&hE9
          int 0x30
          mov [u1],eax
          mov [u1+4],ebx
@@ -304,6 +330,14 @@ sub GetMemInfo(totalPages as unsigned integer ptr,freePages as unsigned integer 
         *freePages  = fp
         *slabCount  = sc
 end sub
+
+function IDLE_COUNT() as unsigned integer
+    asm
+        mov eax ,&hF5
+        int 0x30
+        mov [function],eax
+    end asm
+end function
 
 sub SetPriority(p as unsigned integer)
     asm

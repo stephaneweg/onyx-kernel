@@ -13,6 +13,7 @@ Type ThreadQueue field = 1
 end type
 
 Type ThreadScheduler field = 1
+    SLock as SpinLock
     NormalQueue as ThreadQueue
     RTCQueue as ThreadQueue
     

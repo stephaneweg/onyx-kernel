@@ -142,6 +142,7 @@ sub GImage.CreateBuffer()
 		if (this._width>0 and this._height>0) then
 			this._bufferSize = newsize
 			this._buffer =cast(unsigned integer ptr, MAlloc(newsize*sizeof(unsigned integer)))
+			this.Clear(0)
 		end if
 	end if
 end sub

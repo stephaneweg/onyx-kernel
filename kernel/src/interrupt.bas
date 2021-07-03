@@ -1,25 +1,3 @@
-
-
-
-sub IRQ_Stack.Dump()
-    ConsoleWriteLine(@"----------")
-    ConsoleWrite(@"  EAX : 0x"):ConsoleWriteNumber(eax,16):ConsoleNewLine()
-    ConsoleWrite(@"  EBX : 0x"):ConsoleWriteNumber(ebx,16):ConsoleNewLine()
-    ConsoleWrite(@"  ECX : 0x"):ConsoleWriteNumber(ecx,16):ConsoleNewLine()
-    ConsoleWrite(@"  EDX : 0x"):ConsoleWriteNumber(edx,16):ConsoleNewLine()
-    ConsoleWrite(@"  EDI : 0x"):ConsoleWriteNumber(edi,16):ConsoleNewLine()
-    ConsoleWrite(@"  ESI : 0x"):ConsoleWriteNumber(esi,16):ConsoleNewLine()
-    ConsoleWrite(@"  EBP : 0x"):ConsoleWriteNumber(ebp,16):ConsoleNewLine()
-    ConsoleWrite(@"  ESP : 0x"):ConsoleWriteNumber(esp,16):ConsoleNewLine()
-    ConsoleWrite(@"  CS : 0x"):ConsoleWriteNumber(cs,16):ConsoleNewLine()
-    ConsoleWrite(@"  DS : 0x"):ConsoleWriteNumber(ds,16):ConsoleNewLine()
-    ConsoleWrite(@"  ES : 0x"):ConsoleWriteNumber(es,16):ConsoleNewLine()
-    ConsoleWrite(@"  FS : 0x"):ConsoleWriteNumber(fs,16):ConsoleNewLine()
-    ConsoleWrite(@"  GS : 0x"):ConsoleWriteNumber(gs,16):ConsoleNewLine()
-    ConsoleWrite(@"  EFLAGS : 0x"):ConsoleWriteNumber(eflags,16):ConsoleNewLine()
-end sub
-
-
 sub InterruptsManager_Init()
     ConsoleWrite(@"Setup Interrupt manager")
 	dim i as unsigned integer
@@ -76,8 +54,13 @@ function int_handler (stack as irq_stack ptr) as irq_stack ptr
             else
                 var endPoint = IPCEndPoint.FindBYId(intno)
                 if (endPoint<>0) then
-                    var ipcSendResult = IPCSend(intno,Scheduler.CurrentRuningThread,stack->EAX,stack->EBX,stack->ECX,stack->EDX,stack->ESI,stack->EDI,stack->EBP,stack->ESP)
-                   
+                    dim ipcSendResult as unsigned integer
+                    if (intno>=&h30) then
+                        ipcSendResult = IPCSend(intno,Scheduler.CurrentRuningThread,stack->EAX,stack->EBX,stack->ECX,stack->EDX,stack->ESI,stack->EDI,stack->EBP,stack->ESP)
+                    else
+                        ipcSendResult = IPCSend(intno,0,0,0,0,0,0,0,0,0)
+                    end if
+                    
                     if (ipcSendResult<>0) then
                         'caller must wait
                         if (endPoint->Synchronous = 1) then

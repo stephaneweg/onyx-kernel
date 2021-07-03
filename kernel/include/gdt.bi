@@ -61,12 +61,11 @@ type TSS_Struct field=1
         iomap (0 to 255) as unsigned byte
 end type
 
+declare sub KTSS_INIT()
+declare sub KTSS_SET(esp0 as unsigned integer,codeseg as unsigned short,dataseg as unsigned short,eflags as unsigned integer)
+declare sub KTSS_SET_CR3(cr3 as unsigned integer)
 declare SUB GDT_INIT()
-declare SUB GDT_FLUSH()
-declare function gdt_create_seg(thebase as unsigned integer,thelimit as unsigned integer, theaccess as byte,realmode as byte = 0) as unsigned integer
 declare sub gdt_set_gate(num as unsigned integer,thebase as unsigned integer, thelimit as unsigned integer, theaccess as byte,realmode as byte = 0)
-
-declare function gdt_find_free() as unsigned integer
-declare sub gdt_delete(i as unsigned integer)
 declare sub ldt_set_gate(theLdt as gdt_entry ptr,thebase as unsigned integer, thelimit as unsigned integer, theaccess as byte,realmode as byte = 0)
-declare sub init_ktss()
+
+

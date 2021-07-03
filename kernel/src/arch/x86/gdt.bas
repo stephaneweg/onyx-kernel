@@ -1,12 +1,12 @@
 #include once "gdt.bi"
 #include once "console.bi"
 
-dim shared KTSS as tss_struct
+
 dim shared gdt(0 to 255) as gdt_entry
 dim shared gp as gdt_ptr
-
+dim shared KTSS as tss_struct
 dim shared os_tss as unsigned integer
-sub init_ktss()
+sub KTSS_INIT()
     dim curCR3 as unsigned integer
     os_tss = &h28 or 3
     KTSS.registres.esp = 0
@@ -43,21 +43,19 @@ sub init_ktss()
     end asm
 end sub
 
-function gdt_find_free() as unsigned integer
-    dim i as integer
-    for i=5 to 255
-        if gdt(i).limit_low=0 and gdt(i).base_low=0 and gdt(i).base_middle = 0 and gdt(i).access = 0 and gdt(i).granularity=0 and gdt(i).base_high=0 then return i
-    next
-    return 0
-end function
+sub KTSS_SET(esp0 as unsigned integer,codeseg as unsigned short,dataseg as unsigned short,eflags as unsigned integer)
+	KTSS.esp0 = esp0
+	KTSS.SS0 = dataseg
+	KTSS.ds = dataseg
+	KTSS.es = dataseg
+	KTSS.fs = dataseg
+	KTSS.gs = dataseg
+	KTSS.cs = codeseg
+	KTSS.eflags = eflags
+end sub
 
-sub gdt_delete(i as unsigned integer)
- gdt(i).limit_low=0 
- gdt(i).base_low=0
- gdt(i).base_middle = 0
- gdt(i).access = 0
- gdt(i).granularity=0
- gdt(i).base_high=0
+sub KTSS_SET_CR3(cr3 as unsigned integer)
+	KTSS.CR3 = cr3
 end sub
 
 SUB GDT_INIT()
@@ -110,20 +108,13 @@ SUB GDT_INIT()
     ConsoleNewLine()
     
     ConsoleWrite(@"Initializing kernel TSS ...")
-    init_ktss()
+    KTSS_INIT()
 	ConsolePrintOK()
     ConsoleNewLine()
     
 END SUB
 
 
-function gdt_create_seg(thebase as unsigned integer,thelimit as unsigned integer, theaccess as byte,realmode as byte = 0) as unsigned integer
-    dim idx as unsigned integer = gdt_find_free()
-    if (idx>0) then
-        gdt_set_gate(idx, thebase, thelimit, theaccess,realmode)
-    end if
-    return  idx
-end function
 
 sub gdt_set_gate(num as unsigned integer,thebase as unsigned integer, thelimit as unsigned integer, theaccess as byte,realmode as byte = 0)
     ldt_set_gate(@gdt(num),thebase,thelimit,theaccess,realmode)

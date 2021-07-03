@@ -19,6 +19,7 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
     ConsoleWriteLine(@"Test from userland")
     Do
 		ConsoleWrite(@".")
+		WAITN(1000)
 	loop
 		
 end sub

@@ -33,21 +33,14 @@ declare sub XAppKeyPress(elem as GDIBase ptr,k as unsigned byte)
 
 
 
-dim shared lockCritical as unsigned integer
-
-declare sub SpinLock()
-declare sub SpinUnLock()
-
-sub SpinLock()
-    while lockCritical<>0:wend
-        lockCritical = 1
-end sub
-sub SpinUnLock()
-   lockCritical=0
-end sub
-
 dim shared WinColor as unsigned integer
-dim shared GUIThread as unsigned integer
+dim shared EV_SIGNAL as unsigned integer
+
+sub SetEvent()
+    SignalSet(EV_SIGNAL)
+end sub
+
+
 
 #include once "stdlib.bas"
 #include once "system.bas"
@@ -58,15 +51,19 @@ dim shared GUIThread as unsigned integer
 #include once "tstring.bas"
 #include once "gdi/gdi.bas"
 
+
+
 #include once "syscall.bas"
 #include once "drivers/mouse.bas"
 #include once "drivers/keyboard.bas"
 
 #include once "screenmenu.bas"
-declare sub GuiLoop(p as any ptr)
+declare sub INIT_GUI()
+declare sub GUI_THREAD_LOOP(p as any ptr)
 
 sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
 	SlabInit()
+    EV_SIGNAL   = SignalCreate()
     
     
     TMPString = MAlloc(256)
@@ -75,65 +72,66 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
 	BytesPerPixel = Bpp shr 3
 	
     
+    
+    
+    INIT_GUI()
+    INIT_KBD()
+    INIT_MOUSE()
+    ProcToTerminate = 0
+	TerminatedProc = 0
+    
+    WaitForEvent()
+	do:loop
+end sub
+
+sub INIT_GUI()
     WinColor = &h303d45'&h224488'
     WindowSkin = Skin.Create(@"SYS:/RES/WINGS.BMP",1,7,7,32,7)
 	ButtonSkin = Skin.Create(@"SYS:/RES/BUTTON.BMP",3,12,12,12,12)
 	WindowCloseBtn = GImage.LoadFromBitmap(@"SYS:/RES/CLOSEBGS.BMP")
-    
     WindowSkin->ApplyColor(wincolor,0)
     WindowCloseBtn->FillRectangleAlphaHalf(0,0,WindowCloseBtn->_width-1,WindowCloseBtn->_height-1,wincolor)
     FontManager.Init()
     
 	ScreenInit()
     ScreenMenu_Init()
-	DefineIPCHandler(&h35,@int35Handler,1)
     
+    'create a separate thread for the gui loop
+    CreateThread(@GUI_THREAD_LOOP,1)
     
-    GUIThread = CreateThread(@GuiLoop,0)
-    INIT_KBD()
-    INIT_MOUSE()
-    ProcToTerminate = 0
-	TerminatedProc = 0
-	GDI_UPDATED=1
+    'the syscall handler is defined in the main thread
+	DefineIPCHandler(&h35,@int35Handler,1)    
 	ExecApp(@"SYS:/SYS/PIN.BIN",0)
-    WaitForEvent()
-	do:loop
 end sub
 
 
-
-sub GuiLoop(p as any ptr)
+sub GUI_THREAD_LOOP(p as any ptr)
+  
+    
     do
-        if (MOUSE_UPDATED = 1 or KBD_UPDATED = 1 or GDI_UPDATED=1) then
-            SpinLock()
-            if (MOUSE_UPDATED = 1) then MOUSE_UPDATED = 0
-            if (KBD_UPDATED = 1) then KBD_UPDATED = 0
-            if (GDI_UPDATED = 1) then GDI_UPDATED=0 
-            SpinUnLock()
+        SignalWait(EV_SIGNAL)
+        ScreenLoop()
+        
+        if (ProcToTerminate<>0 or TerminatedProc<>0) then
+            if (TerminatedProc<>0) then
+                ProcessUnregister(TerminatedProc)
+            end if
             
-            ScreenLoop()
-        end if
-		
-		if (ProcToTerminate<>0 or TerminatedProc<>0) then
-			if (TerminatedProc<>0) then
-				ProcessUnregister(TerminatedProc)
-			end if
-			
-			if (ProcToTerminate<>0) then
-				ProcessUnregister(ProcToTerminate)
-				KillProcess(ProcToTerminate)
-			end if
-			'remove the from the gui
+            if (ProcToTerminate<>0) then
+                ProcessUnregister(ProcToTerminate)
+                KillProcess(ProcToTerminate)
+            end if
+            'remove the from the gui
             var g = RootScreen->FirstChild
             while g<>0
-            	var  n = g->NextChild
-            	if (g->Owner<>0) and ((g->Owner = ProcToTerminate) or (g->Owner=TerminatedProc)) then
-            		RootScreen->RemoveChild(g)
-            		DestroyObj(g)
-            	end if
-            	g = n
+                var  n = g->NextChild
+                if (g->Owner<>0) and ((g->Owner = ProcToTerminate) or (g->Owner=TerminatedProc)) then
+                    RootScreen->RemoveChild(g)
+                    DestroyObj(g)
+                end if
+                g = n
             wend
-			TerminatedProc = 0
+            TerminatedProc = 0
             ProcToTerminate = 0
             
             g = RootScreen->LastChild
@@ -145,10 +143,10 @@ sub GuiLoop(p as any ptr)
                 end if
                 g=g->PrevChild
             wend
-            WaitN(10)
         end if
     loop
 end sub
+
 
 
 sub XAppButtonClick(btn as TButton ptr)

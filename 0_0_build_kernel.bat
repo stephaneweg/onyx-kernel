@@ -34,9 +34,9 @@ rem
 rem		call set "objs=%%objs%% obj/%%~nj.o"
 rem	)
 )
+
 %COMPILER% %CFLAGS%  kernel\src\main.bas -o obj/main.o
 call set "objs=%%objs%% obj/main.o"
-
 
 
 

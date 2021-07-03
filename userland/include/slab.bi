@@ -1,7 +1,4 @@
-#define minSlabPower = 5
-#define maxSlabPower = 9
-
-#define minSize 64
+#define minSize 32
 
 
 

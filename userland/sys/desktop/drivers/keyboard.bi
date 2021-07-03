@@ -9,7 +9,6 @@ const KEY_ALTOFF=184
 const KEY_SHIFT1=42             
 const KEY_SHIFT2=54
 
-dim shared KBD_UPDATED as unsigned integer
 dim shared KBD_BUFFER(0 to 255) as unsigned byte
 dim shared KBD_BUFFERPOS as unsigned integer
 dim shared KBD_CTRL as byte

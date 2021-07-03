@@ -49,6 +49,7 @@ declare function strendswith(src as unsigned byte ptr,search as unsigned byte pt
 declare function strcpy(dst as unsigned byte ptr,src as  unsigned byte ptr) as unsigned byte ptr
 declare function strtoupper(s as  unsigned byte ptr) as unsigned byte ptr
 declare function strtolower(s as  unsigned byte ptr) as unsigned byte ptr
+declare sub strToUpperFix(s as unsigned byte ptr)
 declare sub strToLowerFix(s as unsigned byte ptr)
 declare function strcat(s1 as  unsigned byte ptr,s2 as  unsigned byte ptr) as unsigned byte ptr
 declare function substring(s as  unsigned byte ptr,index as unsigned integer, count as integer) as unsigned byte ptr

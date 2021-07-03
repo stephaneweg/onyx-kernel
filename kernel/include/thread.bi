@@ -13,16 +13,17 @@ enum ThreadState
 end enum
 
 type Thread field=1
-    IsSys as integer
+    Magic as unsigned integer
 	InCritical as integer
-    StackAddr as unsigned integer
     ID as unsigned integer
     Owner as Process ptr
     VMM_Context as VMMContext ptr
-    RTCDelay as unsigned long
+    RTCDelay as unsigned longint
     State as ThreadState
     
     NextThreadQueue as Thread ptr
+    PrevThreadQueue as Thread ptr
+    Queue as any ptr
     NextThreadProc as Thread ptr
     
     SavedESP as unsigned integer
@@ -39,9 +40,9 @@ type Thread field=1
     
     declare static sub InitManager()
     declare static sub Ready()
-    declare static function CreateSys(entryPoint as sub(p as any ptr)) as thread ptr
     declare static function Create(proc as Process ptr,entryPoint as unsigned integer) as Thread ptr
     declare function DoWait(stack as IRQ_Stack ptr) as IRQ_Stack ptr
+    declare function IsValid() as unsigned integer
 end type
 
 declare sub PROCESS_MANAGER(p as any ptr)
@@ -49,12 +50,10 @@ declare sub KERNEL_IDLE(p as any ptr)
 
 declare sub EnterCritical()
 declare sub ExitCritical()
-declare sub ThreadSleep()
-
 declare function int20Handler(stack as irq_stack ptr) as irq_stack ptr
 
 dim shared TerminatedProcess as unsigned integer
 dim shared IDLE_THREAD as Thread ptr
 dim shared IDLE_THREADRunCount as unsigned integer
-dim shared TotalEllapsed as unsigned long
+dim shared TotalEllapsed as unsigned longint
 

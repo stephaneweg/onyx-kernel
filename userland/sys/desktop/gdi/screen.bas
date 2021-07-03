@@ -1,5 +1,8 @@
 sub ScreenInit()
 	GDI_FocusedElement = 0
+    
+    GUI_LOCK    = SemaphoreCreate()
+    
 	LoadMouseCursor()
 	
 	AssignNewObj(RootScreen,GDIBase)
@@ -55,15 +58,8 @@ end sub
 
 
 sub ScreenLoop()
-    UILoop(RootScreen)
-end sub
-
-sub UILoop(elem as GDIBase ptr)
-    
+    SemaphoreLock(GUI_LOCK)
     dim c as unsigned byte
-    if (elem->Parent<>0) then
-        if (elem->Parent->LastChild<>elem) then elem->BringToFront()
-    end if
     c=KBD_GetChar()
 	if (c<>0) then
         var kbdHandled = 0
@@ -83,7 +79,7 @@ sub UILoop(elem as GDIBase ptr)
         end if
         
         if (kbdHandled=0) then
-            var child=elem->LastChild
+            var child=RootScreen->LastChild
             while child<>0
                 if (child->_onUserKeyDown<>0 and child->OwnerThread<>0) then
                     XAppKeyPress(child,c)
@@ -93,9 +89,9 @@ sub UILoop(elem as GDIBase ptr)
             wend
 		end if
 	end if
-	elem->HandleMouse(mousex-elem->_AbsoluteLeft,mousey-elem->_AbsoluteTop,mouseb)
-	elem->Invalidate()
+	RootScreen->HandleMouse(mousex,mousey,mouseb)
     RootScreen->Redraw()
+    SemaphoreUnLock(GUI_LOCK)
 end sub
 
 sub GenBackground()

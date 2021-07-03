@@ -21,12 +21,14 @@
 #include once "scheduler.bi"
 #include once "rng.bi"
 #include once "syscall.bi"
-#include once "semaphore.bi"
 #include once "kernel.bi"
 #include once "elf.bi"
 #include once "udev.bi"
 
-#include once "ipc.bi"
+
+#include once "ipc/signal.bi"
+#include once "ipc/semaphore.bi"
+#include once "ipc/messaging.bi"
 SUB MAIN (mb_info as multiboot_info ptr)
     asm cli
     ConsoleInit()
@@ -121,6 +123,8 @@ end sub
 #include once "scheduler.bas"
 #include once "rng.bas"
 #include once "syscall.bas"
-#include once "semaphore.bas"
 #include once "udev.bas"
-#include once "ipc.bas"
+
+#include once "ipc/signal.bas"
+#include once "ipc/semaphore.bas"
+#include once "ipc/messaging.bas"

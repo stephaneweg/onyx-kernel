@@ -1,6 +1,6 @@
 function PanicException(msg as unsigned byte ptr,stack as IRQ_Stack ptr) as IRQ_Stack ptr
     
-    IRQ_DISABLE(0)
+   
     
     if ( Scheduler.CurrentRuningThread<>0) then
         var pc = Scheduler.CurrentRuningThread->Owner
@@ -9,21 +9,31 @@ function PanicException(msg as unsigned byte ptr,stack as IRQ_Stack ptr) as IRQ_
             ConsoleWriteLine(@" : killing process")
             Process.RequestTerminate(pc)
             Scheduler.CurrentRuningThread=0
-            IRQ_ENABLE(0)
             return Scheduler.Switch(stack, Scheduler.Schedule())
         end if
     end if
+    
+    
     
     asm cli
     VMM_EXIT()
     CurrentConsole = @SysConsole
     VesaResetScreen()
     SysConsole.VIRT = cptr(any ptr,&hB8000)
+    stack=current_context->Resolve(stack)
+    var th = cptr(Thread ptr,current_context->Resolve(SCheduler.CurrentRuningThread))
     ConsoleWriteLine(msg)
-    ConsoleWriteTextAndHex(@"   EIP : ",stack->EIP,true)
-    ConsoleWriteTextAndHex(@"   Current Thread ID : ",SCheduler.CurrentRuningThread->ID,true)
-    ConsoleWriteTextAndHex(@"   Current Thread : ",Cuint(SCheduler.CurrentRuningThread),true)
+    'if (Scheduler.CurrentRuningThread<>0) then
+        ConsoleWriteTextAndHex(@"   EIP : ",stack->EIP,true)
+        ConsoleWriteTextAndHex(@"   Current Thread ID : ",th->ID,true)
+        'ConsoleWriteTextAndHex(@"   Current Thread : ",Cuint(SCheduler.CurrentRuningThread),true)
+        'ConsoleWriteTextAndHex(@"   IDLE Thread : ",Cuint(IDLE_Thread),true)
+        'ConsoleWriteTextAndHex(@"   KERNEL_IDLE : ",cuint(@KERNEL_IDLE),true)
+    'else
+    '    ConsoleWriteLine(@"No runing thread")
+    'end if
     do:loop
+    return stack
 end function
 
 function ExceptionHandler(stack as IRQ_STACK ptr) as IRQ_Stack ptr

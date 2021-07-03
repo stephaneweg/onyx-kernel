@@ -35,7 +35,6 @@ type IRQ_Stack field = 1
     eflags as unsigned integer
     esp as unsigned integer
     ss as unsigned integer
-    declare sub Dump()
 end type
 
 

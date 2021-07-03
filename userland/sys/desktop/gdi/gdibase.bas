@@ -51,7 +51,6 @@ destructor GDIBase()
     end if
     this._left = 0
     this._top = 0
-    this._bufferSize = 0
     this._isScreen = 0
     this._lfb = 0    
     
@@ -91,6 +90,7 @@ function GDIBase_MouseExit(elem as GDIBase ptr) as integer
     elem->MousePressed =  0
     elem->MouseOver = 0
     
+    SemaphoreLock(GUI_LOCK)
     var child = elem->FirstChild
 	while child<>0
 		var n = child->NextChild
@@ -99,12 +99,14 @@ function GDIBase_MouseExit(elem as GDIBase ptr) as integer
         end if
 		child=n
 	wend
+    SemaphoreUnLock(GUI_LOCK)
     
     if (op<>elem->MousePressed or oo<>elem->MouseOver) then elem->Invalidate()
     return 0
 end function
 
 sub GDIBase.DestroyChildren()
+    SemaphoreLock(GUI_LOCK)
 	var child = this.FirstChild
 	while child<>0
 		var n = child->NextChild
@@ -113,6 +115,7 @@ sub GDIBase.DestroyChildren()
 		DestroyObj(child)
 		child=n
 	wend
+    SemaphoreUnLock(GUI_LOCK)
 end sub
 
 sub GDIBaseSizeChanged(elem as GDIBase ptr)
@@ -121,13 +124,10 @@ end sub
 
 sub GDIBase.Invalidate()
     this.IsValid = 0
-    if (this.Parent<>0) then this.Parent->Invalidate()
-    if (this._isScreen) then
-        SpinLock()
-        GDI_UPDATED = 1
-        SpinUnLock()
-        'ThreadWakeUp(GUIThread,0,0)
-        'if (GuiThread->State = ThreadState.waiting) then Scheduler.SetThreadReady(GuiThread,0)
+    if (this.Parent<>0) then 
+        this.Parent->Invalidate()
+    else
+        SetEvent()
     end if
 end sub
 
@@ -139,13 +139,16 @@ sub GDIBase.UpdateAbsolutePosition()
         this._absoluteTop += this.Parent->_absoluteTop+ this.Parent->_paddingTop
     end if
     
+    SemaphoreLock(GUI_LOCK)
     GDIForeach(child,this)
         child->UpdateAbsolutePosition()
     GDIEndForeach(child)
+    SemaphoreUnLock(GUI_LOCK)
 end sub
 
 
 sub GDIBase.AddChild(child as GDIBase ptr)
+    SemaphoreLock(GUI_LOCK)
     if (child->parent = 0) then
         child->NextChild = 0
         child->PrevChild = this.LastChild
@@ -163,9 +166,12 @@ sub GDIBase.AddChild(child as GDIBase ptr)
         child->UpdateAbsolutePosition()
         this.Invalidate()
     end if
+    SemaphoreUnLock(GUI_LOCK)
 end sub
 
 sub GDIBase.RemoveChild(child as GDIBase ptr)
+    
+    SemaphoreLock(GUI_LOCK)
     if (child->Parent=@this) then
         if (child->PrevChild=0) then
             this.FirstChild = child->NextChild
@@ -182,20 +188,24 @@ sub GDIBase.RemoveChild(child as GDIBase ptr)
         this.Invalidate()
         ChildRemoved()
     end if
+    SemaphoreUnLock(GUI_LOCK)
 end sub
 
 sub GDIBase.ChildRemoved()
-        PrevHandledChild = 0
-        if (Parent<>0) then parent->ChildRemoved()
+    PrevHandledChild = 0
+    if (Parent<>0) then parent->ChildRemoved()
 end sub
 
 sub GDIBase.BringToFront()
+    
     if (Parent<>0) then
+        SemaphoreLock(GUI_LOCK)
         if (Parent->LastChild<>@this) then
             var p = Parent
             Parent->RemoveChild(@this)
             p->AddChild(@this)
         end if
+        SemaphoreUnLock(GUI_LOCK)
     end if
 end sub
 
@@ -295,6 +305,8 @@ ConvRGB32ToRGB24_$2:
 end sub
 
 sub GDIBase.RedrawChildren()
+    
+    SemaphoreLock(GUI_LOCK)
     GDIForeach(child,this)
 		if (child->_visible) then
 			var tx = child->_left + this._paddingLeft
@@ -308,10 +320,15 @@ sub GDIBase.RedrawChildren()
 			this.PutOther(child,tx,ty,child->_transparent)
 		end if
     GDIEndForeach(child)
+    SemaphoreUnLock(GUI_LOCK)
 end sub
 
 sub GDIBase.Redraw()
     if (this.isValid = 0) then
+        
+        if (this._isScreen=0) then
+            this.isValid = 1
+        end if
         if (this.OnRedraw<>0) then
             cptr(sub(elem as any ptr), this.OnRedraw)(@this)
         end if
@@ -323,7 +340,6 @@ sub GDIBase.Redraw()
         if (this._isScreen) then
             syncScreen()
         end if
-        this.isValid = 1
     
     end if
 end sub
@@ -348,6 +364,7 @@ end sub
 
 Function GDIBase.HandleMouse(_mx as integer,_my as integer, _mb as integer) as integer
     
+    SemaphoreLock(GUI_LOCK)
     dim handled as integer = 0
     
     if (this.OwnerThread<>0) then
@@ -405,6 +422,8 @@ Function GDIBase.HandleMouse(_mx as integer,_my as integer, _mb as integer) as i
             cptr(sub(p as GDIBase ptr),ExitedFrom->OnMouseExit)(ExitedFrom)
         end if
     end if
+    
+    SemaphoreUnLock(GUI_LOCK)
     return handled
     
 end function
@@ -425,6 +444,8 @@ sub GDIBase.TakeFocus()
 end sub
 
 sub GDIBase.LostFocusInternal()
+    
+    SemaphoreLock(GUI_LOCK)
 	this._hasFocus = 0
 	if (OnLostFocus<>0) then
 		cptr(sub(e as any ptr),OnLostFocus)(@this)
@@ -435,6 +456,8 @@ sub GDIBase.LostFocusInternal()
 	GDIEndForeach(child)
 	
 	if (GDI_FocusedElement=@this) then GDI_FocusedElement = 0
+    
+    SemaphoreUnLock(GUI_LOCK)
 end sub
 
 sub GDIBase.TakeFocusInternal()

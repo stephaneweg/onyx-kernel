@@ -9,3 +9,4 @@
 #include once "twindow.bi"
 #include once "dialog.bi"
 #include once "tconsole.bi"
+dim shared GUI_LOCK as unsigned integer

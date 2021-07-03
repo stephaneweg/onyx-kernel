@@ -5,7 +5,6 @@ sub INIT_MOUSE()
     MouseMaxY = YRes
     MouseX = XRes shr 1
     MouseY = YRes shr 1
-    MOUSE_UPDATED = 0
     MOUSE_INSTALL()
     
     MOUSE_Thread= CreateThread(@MOUSE_Thread_Loop,0)
@@ -141,10 +140,5 @@ sub MOUSE_SET_DATA()
 		if (mousey<0) then MouseY=0
 		if (mousey>=MouseMaxY) then MouseY=MouseMaxY
 	end if
-    SpinLock()
-    MOUSE_UPDATED = 1
-    SpinUnLock()
-    'if (GuiThread<>0) then
-    '    if (GuiThread->State = ThreadState.waiting) then Scheduler.SetThreadReady(GuiThread,0)
-    'end if
+    SetEvent()
 end sub

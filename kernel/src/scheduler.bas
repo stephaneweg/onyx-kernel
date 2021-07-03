@@ -7,29 +7,41 @@ end constructor
 'enqueue at the begining of the queue
 sub ThreadQueue.EnqueueHead(t as Thread ptr)
     t->NextThreadQueue = this.FirstThread
-    this.FirstThread = t
+    t->PrevThreadQueue = 0
+    t->Queue = @this
+    if (this.FirstThread<>0) then this.FirstThread->PrevThreadQueue = t
+    
     if (this.LastThread=0) then
         this.LastThread = t
     end if
+    
+    this.FirstThread = t
 end sub
 
 'enqueue at the end of the queue
 sub ThreadQueue.EnqueueTail(t as Thread ptr)
-    if (this.FirstThread<>0) then
-        this.LastThread->NextThreadQueue = t
-    else
+    t->NextThreadQueue = 0
+    t->PrevThreadQueue = this.LastThread
+    t->Queue = @this
+    
+    if (this.LastThread<>0) then this.LastThread->NextThreadQueue = t
+    
+    if (this.FirstThread=0) then
         this.FirstThread = t
     end if
+    
     this.LastThread = t
-    t->NextThreadQueue = 0
 end sub
 
 function ThreadQueue.Dequeue() as Thread ptr
     dim t as Thread ptr =  this.FirstThread
+    
     if (t<>0) then
         this.FirstThread = t->NextThreadQueue
         if (this.FirstThread = 0) then this.LastThread = 0
         t->NextThreadQueue = 0
+        t->PrevThreadQueue = 0
+        t->Queue = 0
     end if
     return t
 end function
@@ -39,36 +51,25 @@ function ThreadQueue.RTCDequeue() as Thread ptr
     dim t as Thread ptr =  this.FirstThread
     dim selected as Thread ptr = 0
     while (t<>0)
-            if (t->RTCDelay<TotalEllapsed) then
-                selected = t
-                exit while
-            end if
-            t=t->NextThreadQueue
+        if (t->RTCDelay<TotalEllapsed) then
+            this.Remove(t)
+            return t
+            exit while
+        end if
+        t=t->NextThreadQueue
     wend
-    if (selected<>0) then this.Remove(selected)
-    return selected
+    return 0
 end function
 
 sub ThreadQueue.Remove(t as Thread ptr)
-    var removed = 0
-    if (t = this.FirstThread) then
-        this.FirstThread = t->NextThreadQueue
-        removed = 1
-    else
-        dim th as Thread ptr =  this.FirstThread 
-        while th<>0
-            if (th->NextThreadQueue = t) then
-                th->NextThreadQueue = t->NextThreadQueue
-                if (th->NextThreadQueue=0) then this.LastThread = th
-                removed = 1
-                exit while
-            end if
-            th=>th->NextThreadQueue
-        wend
-    end if
-    if (removed=1) then
-        if (this.FirstThread =0) then this.LastThread = 0
+    if (t->Queue = @this) then
+        if (t->PrevThreadQueue<>0) then t->PrevThreadQueue->NextThreadQueue = t->NextThreadQueue
+        if (t->NextThreadQueue<>0) then t->NextThreadQueue->PrevThreadQueue = t->PrevThreadQueue
+        if (this.FirstThread = t) then this.FirstThread = t->NextThreadQueue
+        if (this.LastThread = t) then this.LastThread = t->PrevThreadQueue
         t->NextThreadQueue = 0
+        t->PrevThreadQueue = 0
+        t->Queue = 0
     end if
 end sub
 
@@ -100,19 +101,10 @@ function ThreadScheduler.Switch(_stack as IRQ_Stack ptr,newThread as Thread ptr)
 	CurrentRuningThread  = newThread
 
 	CurrentRuningThread->State = ThreadState.Runing
-	'consoleWrite(@"LDT index : 0x")
-	'consoleWriteNumber(localldt,16)
+    
 	nstack =cptr(irq_stack ptr,CurrentRuningThread->SavedESP)
 		
-	KTSS.esp0 = CurrentRuningThread->SavedESP + sizeof(irq_stack)
-	KTSS.SS0 = &h10
-	KTSS.ds = &h10
-	KTSS.es = &h10
-	KTSS.fs = &h10
-	KTSS.gs = &h10
-	KTSS.cs = &h8
-	KTSS.eflags = &h3202
-    
+    KTSS_SET(CurrentRuningThread->SavedESP + sizeof(irq_stack),&h8,&h10,&h3202)
     CurrentRuningThread->VMM_Context->Activate()
     if (CurrentRuningThread->Owner<>0) then
         CurrentRuningThread->Owner->VIRT_CONSOLE->Activate()
@@ -131,41 +123,40 @@ sub ThreadScheduler.SetThreadRealTime(t as Thread ptr,delay as unsigned integer)
         SetThreadReady(t)
         exit sub
     end if
+    t->State=ThreadState.Ready
     t->RTCDelay = TotalEllapsed+delay
     RTCQueue.EnqueueTail(t)
-    t->State=ThreadState.Ready
 end sub
 
 
 
 sub ThreadScheduler.SetThreadReadyNow(t as Thread ptr)
     if (t->State=ThreadState.Ready) then exit sub
-    NormalQueue.EnqueueHead(t)
     t->State=ThreadState.Ready
+    NormalQueue.EnqueueHead(t)
 end sub
 
 sub ThreadScheduler.SetThreadReady(t as Thread ptr)
     if (t->State=ThreadState.Ready) then exit sub
-    NormalQueue.EnqueueTail(t)
     t->State=ThreadState.Ready
+    NormalQueue.EnqueueTail(t)
 end sub
 
 
 
 function ThreadScheduler.Schedule() as Thread ptr
-
     dim i as unsigned integer
     dim j as unsigned integer
     dim th as Thread ptr  = 0
     
     if (CurrentRuningThread<>0) then
-        if (CurrentRuningThread->InCritical = 1 and CurrentRuningThread<> RemovedThread) then
+        if (CurrentRuningThread->InCritical = 1) and (CurrentRuningThread<> RemovedThread) then
             return CurrentRuningThread
         end if
     end if
 	
     if (CurrentRuningThread <> RemovedThread) then
-        if (CurrentRuningThread<>0 and CurrentRuningThread<>IDLE_Thread) then
+        if (CurrentRuningThread<>0)  and (CurrentRuningThread<>IDLE_Thread) then
             if (CurrentRuningThread->State = ThreadState.Runing) then
                 SetThreadReady(CurrentRuningThread)
             end if
@@ -173,17 +164,14 @@ function ThreadScheduler.Schedule() as Thread ptr
     end if
 	
     th = RTCQueue.RTCDequeue()
+        
     if (th=0) then 
         th=NormalQueue.Dequeue()
     end if
-    
-	
 	
     if (th=0) then
         th = IDLE_Thread
         IDLE_ThreadRunCount+=1
-    else
-        IDLE_ThreadRunCount=0
     end if
     return th
 end function

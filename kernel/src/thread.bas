@@ -15,25 +15,16 @@ sub ExitCritical()
     end if
 end sub
 
-sub ThreadSleep()
-    asm
-        mov eax,&h04 '&hE2
-        int 0x30
-    end asm
-end sub
-
 
 
 sub Thread.InitManager()
-        TotalEllapsed = 0
-        CriticalCount = 0
-        TotalThreadCount = 0
-        ThreadIDS = 0
-        IDLE_THREADRunCount = 0
-        Scheduler.Constructor()
-    
-    
-        IDLE_Thread = Thread.CreateSys(@KERNEL_IDLE)
+    TotalEllapsed = 0
+    CriticalCount = 0
+    TotalThreadCount = 0
+    ThreadIDS = 0
+    IDLE_THREADRunCount = 0
+    IDLE_Thread = 0
+    Scheduler.Constructor()
 end sub
 
 sub Thread.Ready()
@@ -54,6 +45,7 @@ function int20Handler(stack as irq_stack ptr) as irq_stack ptr
         Process.Terminate(ProcessToTerminate)
         ProcessToTerminate = 0
     end if
+    
     dim nextThread as Thread ptr = 0
      nextThread = Scheduler.Schedule()
     
@@ -66,16 +58,16 @@ function int20Handler(stack as irq_stack ptr) as irq_stack ptr
 end function
 
 destructor Thread()
-	if (IsSys=1) then KMM_FREEPAGE(cptr(any ptr,stackAddr))
+    Magic = 0
     ReplyTo = 0
-	IsSys = 0
-	StackAddr = 0
 	ID = 0
 	InCritical =0
 	Owner = 0
     VMM_Context = 0
 	State = 0
+    PrevThreadQueue = 0
 	NextThreadQueue = 0
+    Queue = 0
 	NextThreadProc = 0
 	SavedESP = 0
     KMM_FREEPAGE(cptr(any ptr,KernelStackBase))
@@ -86,70 +78,29 @@ destructor Thread()
 	TotalThreadCount-=1
 end destructor
 
-function Thread.CreateSys(entryPoint as sub(p as any ptr)) as Thread ptr
-    dim th as Thread ptr = cptr(Thread ptr,KAlloc(sizeof(Thread)))
+function Thread.IsValid() as unsigned integer
+    if (@this = 0) then return  0
+    if (this.Magic<>&hFFABCDEF) then return 0
     
-    TotalThreadCount+=1
-    ThreadIDS+=1    
-    
-    th->IsSys = 1
-    th->ReplyTo = 0
-	th->InCritical = 0
-    th->RTCDelay = 0
-    th->StackAddr = cuint(KMM_ALLOCPAGE())
-    th->ID = ThreadIDS
-    th->Owner = 0
-    th->VMM_Context = @kernel_context
-    th->State = ThreadState.created
-    th->NextThreadQueue = 0
-    th->NextThreadProc = 0
-    
-    th->KernelStackBase = cuint(KMM_ALLOCPAGE())
-    th->KernelStackLimit = th->KernelStackBase + (1 shl 12)-4
-    th->SavedESP = th->KernelStackLimit - sizeof(irq_stack)
-    
-    th->RTCDelay = 0
-    
-    'configure the process's context
-    var st = cptr(irq_stack ptr,th->SavedESP)
-    st->EAX = 0
-    st->EBX = 0
-    st->ECX = 0
-    st->EDX = 0
-    st->ESI = 0
-    st->EDI = 0
-    st->EIP = cuint(entryPoint)
-    st->cs = &h8 
-    st->ds = &h10 
-    st->es = &h10 
-    st->ss = &h10
-    st->fs = &h10
-    st->gs = &h10
-    st->ESP = (th->StackAddr + (1 shl 12)) -4
-    st->eflags = &h3202
-    
-    
-    th->AddToList()
-    Scheduler.SetThreadReady(th)
-    return th
+    return 1
 end function
+
 
 function Thread.Create(proc as Process ptr,entryPoint as unsigned integer) as Thread ptr
     dim th as Thread ptr = cptr(Thread ptr,KAlloc(sizeof(Thread)))
     
     TotalThreadCount+=1
     ThreadIDS+=1    
-    
-    th->IsSys = 0
+    th->Magic = &hFFABCDEF
     th->ReplyTo = 0
 	th->InCritical = 0
-    th->StackAddr = 0
     th->ID = ThreadIDS
     th->Owner = proc
     th->VMM_Context = @proc->VMM_Context
     th->State = ThreadState.created
     th->NextThreadQueue = 0
     th->NextThreadProc = 0
+    th->Queue = 0
     
     th->KernelStackBase = cuint(KMM_ALLOCPAGE())
     th->KernelStackLimit = th->KernelStackBase + (1 shl 12)-4

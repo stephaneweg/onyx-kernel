@@ -10,10 +10,23 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
             if (args<>0) then
                 if (strlen(args)=0) then args = 0
             end if
-            var p=Process.Create(cptr( EXECUTABLE_HEADER ptr,stack->EBX),stack->ECX,args)
+            var stdIn   = @CONSOLE_PIPE
+            var stdout  = @CONSOLE_PIPE
+            
+            if (CurrentThread->Owner<>0) then
+                stdIn   = CurrentThread->Owner->STD_IN
+                stdOut  = CurrentThread->Owner->STD_OUT
+            end if
+            
+            var p=Process.Create(cptr( EXECUTABLE_HEADER ptr,stack->EBX),stack->ECX,args,stdIn,stdOut)
             ctx->Activate()
             if (p<>0) then 
                     p->Parent = CurrentThread->Owner
+                    if (stack->EDX = 1) then
+                        CurrentThread->STATE = WaitingForProcess
+                        p->WaitingThread = CurrentThread
+                        return Scheduler.Switch(stack, Scheduler.Schedule())
+                    end if
                     stack->EAX = 1
             '        return Scheduler.Switch(stack, Scheduler.Schedule())
             else
@@ -47,7 +60,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
                          st->EAX = stack->ECX
                          st->EBX = stack->EDX
                         'shedule the thread immediately
-                         Scheduler.SetThreadReadyNow(th)
+                         Scheduler.SetThreadReady(th)
                          return Scheduler.Switch(stack, Scheduler.Schedule())
                     end if
                 end if
@@ -71,7 +84,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
                     var st =cptr(IRQ_Stack ptr, CurrentThread->ReplyTO->SavedESP)
                     st->EAX = stack->EBX
                     'wake the caller and run it directly
-                    Scheduler.SetThreadReadyNow(CurrentThread->ReplyTO)
+                    Scheduler.SetThreadReady(CurrentThread->ReplyTO)
                 end if
             end if
 			stack->ESP+=36
@@ -195,7 +208,7 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
                     'st->EBP = *cptr(unsigned integer ptr,stack->ESP+44)
                     
                     'reply directly from interrupt
-                    Scheduler.SetThreadReadyNow(CurrentThread->ReplyTO)
+                    Scheduler.SetThreadReady(CurrentThread->ReplyTO)
                 end if
             end if
 			stack->ESP+=48
@@ -255,21 +268,21 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
 		case &hE2 'exit critical
 			ExitCritical()
             
-        case &hE3 'semaphore init
-            var sem = cptr(Semaphore ptr,KAlloc(sizeof(Semaphore)))
-            sem->Constructor
-            stack->EAX  = cuint(sem)
-        case &hE4 'semaphore lock
+        case &hE3 'Mutex init
+            var _mutex = cptr(Mutex ptr,KAlloc(sizeof(Mutex)))
+            _mutex->Constructor
+            stack->EAX  = cuint(_mutex)
+        case &hE4 'Mutex acquire
             if (SlabMeta.IsValidAddr(cptr(any ptr,stack->ebx))=1) then
-                var sem = cptr(Semaphore ptr, stack->EBX)
-                if (not sem->SemLock(CurrentThread)) then
+                var _mutex = cptr(Mutex ptr, stack->EBX)
+                if (not _mutex->Acquire(CurrentThread)) then
                     return  Scheduler.Switch(stack,Scheduler.Schedule()) 
                 end if
             end if
-        case &hE5 'semaphore unlock
+        case &hE5 'Mutex release
             if (SlabMeta.IsValidAddr(cptr(any ptr,stack->ebx))=1) then
-                var sem = cptr(Semaphore ptr, stack->EBX)
-                sem->SemUnlock(CurrentThread) 
+                var _mutex = cptr(Mutex ptr, stack->EBX)
+                _mutex->Release(CurrentThread) 
             end if
              
         case &hE6'create signal

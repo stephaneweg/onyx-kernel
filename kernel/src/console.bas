@@ -2,25 +2,17 @@
 #include once "stdlib.bi"
 
 
-const consoleWidth=80
-const consoleHeight=25
-
-
 
 sub ConsoleInit()
-    VIRT_CONSOLE_MEM = cptr(unsigned byte ptr,&HB8000)
-    PHYS_CONSOLE_MEM = cptr(unsigned byte ptr,&HB8000)
+    CONSOLE_MEM = cptr(unsigned byte ptr,&HB8000)
     
-    SYSCONSOLE.CursorX = 0
-    SYSCONSOLE.CursorY = 0
-    SYSCONSOLE.Foreground = 7
-    SYSCONSOLE.BACKGROUND = 1
-    SYSCONSOLE.PHYS = PHYS_CONSOLE_MEM
-    SYSCONSOLE.VIRT = VIRT_CONSOLE_MEM
-    CurrentConsole = @SYSCONSOLE
-    
-    ConsoleSetForeground(7)
-    ConsoleSetBackground(0)
+    consoleWidth            = 80
+    consoleHeight           = 25
+    consoleLineOffset       = 0
+    consoleCursorX          = 0
+    consoleCursorY          = 0
+    consoleForeground       = 7
+    consoleBackground       = 0
     ConsoleClear()
     ConsoleUpdateCursor()
     
@@ -28,153 +20,150 @@ sub ConsoleInit()
     ConsoleWrite(@KERNEL_NAME)
     ConsoleWrite(@" ")
     ConsoleWrite(@KERNEL_VERSION)
+    ConsoleWriteLine(@" startup ...")
     ConsoleSetForeground(7)
-    ConsoleWriteLine(@" ... System startup")
-    
+    ConsoleNewLine
 end sub
 
-destructor VirtConsole()
-    if (PHYS<>PHYS_CONSOLE_MEM) then
-       PMM_FREEPAGE(PHYS)
-    end if
-end destructor
-
-sub VirtConsole.Activate()
-    CurrentConsole=@this
-end sub
-
-sub VirtConsole.PutChar(c as byte)
+sub ConsolePutChar(c as byte)
     
     if (c=13) then return
     
     if (c=10) then
-        NewLine()
+        ConsoleNewLine()
         return
     end if
     if (c=8) then
-        BackSpace()
+        ConsoleBackSpace()
         return
     end if
     if (c=9) then
-        CursorX=CursorX+5
+        consoleCursorX += 5-(consoleCursorX mod 5)
+        if (consoleCursorX>=consoleWidth) then ConsoleNewLine()
     else
-        VIRT[(CursorY*consoleWidth+CursorX)*2]=c
-        VIRT[(CursorY*consoleWidth+CursorX)*2+1]=(Background* 16 +Foreground)
-        CursorX=CursorX+1
+        CONSOLE_MEM[(consoleLineOffset+consoleCursorX)*2]=c
+        CONSOLE_MEM[(consoleLineOffset+consoleCursorX)*2+1]=((consoleBackground* 16) +consoleForeground)
+        consoleCursorX=consoleCursorX+1
         
     end if
-    if (CursorX>=consoleWidth) then 
-        NewLine()
+    if (consoleCursorX>=consoleWidth) then 
+        ConsoleNewLine()
     end if
+    ConsoleUpdateCursor()
 end sub
 
 
-sub VirtConsole.PrintOK()
-    VIRT[(CursorY*consoleWidth+consoleWidth-7)*2]=91 '['
-    VIRT[(CursorY*consoleWidth+consoleWidth-6)*2]=32 ' '
-    VIRT[(CursorY*consoleWidth+consoleWidth-5)*2]=79 'O'
-    VIRT[(CursorY*consoleWidth+consoleWidth-4)*2]=75 'K'
-    VIRT[(CursorY*consoleWidth+consoleWidth-3)*2]=32 ' '
-    VIRT[(CursorY*consoleWidth+consoleWidth-2)*2]=93 ']'
-    VIRT[(CursorY*consoleWidth+consoleWidth-1)*2]=32 ' '
+sub ConsolePrintOK()
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-7)*2]=91 '['
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-6)*2]=32 ' '
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-5)*2]=79 'O'
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-4)*2]=75 'K'
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-3)*2]=32 ' '
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-2)*2]=93 ']'
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-1)*2]=32 ' '
     
-    VIRT[(CursorY*consoleWidth+consoleWidth-7)*2+1]=(Background* 16 +10)
-    VIRT[(CursorY*consoleWidth+consoleWidth-6)*2+1]=(Background* 16 +10)
-    VIRT[(CursorY*consoleWidth+consoleWidth-5)*2+1]=(Background* 16 +9)
-    VIRT[(CursorY*consoleWidth+consoleWidth-4)*2+1]=(Background* 16 +9)
-    VIRT[(CursorY*consoleWidth+consoleWidth-3)*2+1]=(Background* 16 +10)
-    VIRT[(CursorY*consoleWidth+consoleWidth-2)*2+1]=(Background* 16 +10)
-    VIRT[(CursorY*consoleWidth+consoleWidth-1)*2+1]=(Background* 16 +10)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-7)*2+1]=(consoleBackground* 16 + 9)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-6)*2+1]=(consoleBackground* 16 + consoleForeground)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-5)*2+1]=(consoleBackground* 16 + 10)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-4)*2+1]=(consoleBackground* 16 + 10)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-3)*2+1]=(consoleBackground* 16 + consoleForeground)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-2)*2+1]=(consoleBackground* 16 + 9)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-1)*2+1]=(consoleBackground* 16 + consoleForeground)
 end sub
 
-sub VirtConsole.PrintFAIL()
+sub ConsolePrintFAIL()
     	
-	VIRT[(CursorY*consoleWidth+consoleWidth-7)*2]=asc("[")
-    VIRT[(CursorY*consoleWidth+consoleWidth-6)*2]=asc("F")
-    VIRT[(CursorY*consoleWidth+consoleWidth-5)*2]=asc("A")
-    VIRT[(CursorY*consoleWidth+consoleWidth-4)*2]=asc("I")
-    VIRT[(CursorY*consoleWidth+consoleWidth-3)*2]=asc("L")
-    VIRT[(CursorY*consoleWidth+consoleWidth-2)*2]=asc("]")
-    VIRT[(CursorY*consoleWidth+consoleWidth-1)*2]=asc(" ")
+	CONSOLE_MEM[(consoleLineOffset+consoleWidth-7)*2]=asc("[")
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-6)*2]=asc("F")
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-5)*2]=asc("A")
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-4)*2]=asc("I")
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-3)*2]=asc("L")
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-2)*2]=asc("]")
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-1)*2]=asc(" ")
     
     
-    VIRT[(CursorY*consoleWidth+consoleWidth-7)*2+1]=(Background* 16 +Foreground)
-    VIRT[(CursorY*consoleWidth+consoleWidth-6)*2+1]=(Background* 16 +12)
-    VIRT[(CursorY*consoleWidth+consoleWidth-5)*2+1]=(Background* 16 +12)
-    VIRT[(CursorY*consoleWidth+consoleWidth-4)*2+1]=(Background* 16 +12)
-    VIRT[(CursorY*consoleWidth+consoleWidth-3)*2+1]=(Background* 16 +12)
-    VIRT[(CursorY*consoleWidth+consoleWidth-2)*2+1]=(Background* 16 +Foreground)
-    VIRT[(CursorY*consoleWidth+consoleWidth-1)*2+1]=(Background* 16 +Foreground)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-7)*2+1]=(consoleBackground* 16 + 9)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-6)*2+1]=(consoleBackground* 16 + 12)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-5)*2+1]=(consoleBackground* 16 + 12)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-4)*2+1]=(consoleBackground* 16 + 12)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-3)*2+1]=(consoleBackground* 16 + 12)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-2)*2+1]=(consoleBackground* 16 + 9)
+    CONSOLE_MEM[(consoleLineOffset+consoleWidth-1)*2+1]=(consoleBackground* 16 + consoleForeground)
 end sub
 
-sub VirtConsole.BackSpace()
-    if (CursorX=0) then
-        if (CursorY>0) then
-            CursorX=consoleWidth-1
-			CursorY-=1
+sub ConsoleBackSpace()
+    if (consoleCursorX=0) then
+        if (consoleCursorY>0) then
+            consoleCursorX=consoleWidth-1
+			consoleCursorY-=1
         end if
         
     else
-        CursorX-=1
+        consoleCursorX-=1
     end if
-    VIRT[(CursorY*consoleWidth+CursorX)*2]=0
-    VIRT[(CursorY*consoleWidth+CursorX)*2+1]=(Background* 16 +Foreground)
-end sub
-sub VirtConsole.WriteLine(src as unsigned byte ptr)
-    this.Write(src)
-    this.NewLine()
+    consoleLineOffset = consoleCursorY * consoleWidth
+    CONSOLE_MEM[(consoleLineOffset+consoleCursorX)*2]=0
+    CONSOLE_MEM[(consoleLineOffset+consoleCursorX)*2+1]=(consoleBackground* 16 +consoleForeground)
+    
+    ConsoleUpdateCursor()
 end sub
 
-sub VirtConsole.Write(src as unsigned byte ptr)
+sub ConsoleWriteLine(src as unsigned byte ptr)
+    ConsoleWrite(src)
+    ConsoleNewLine()
+    
+    ConsoleUpdateCursor()
+end sub
+
+sub ConsoleWrite(src as unsigned byte ptr)
     dim cpt as integer
     cpt=0
     WHILE src[cpt] <> 0
 		if (src[cpt]=10) then 
-			NewLine()
+			ConsoleNewLine()
 		elseif(src[cpt]=9) then
-			CursorX=CursorX+5
-			if (CursorX>=consoleWidth) then NewLine()
+			consoleCursorX += 5-(consoleCursorX mod 5)
+			if (consoleCursorX>=consoleWidth) then ConsoleNewLine()
 		elseif(src[cpt]=13) then
 		else
-			VIRT[(CursorY*consoleWidth+CursorX)*2]=src[cpt]
-			VIRT[(CursorY*consoleWidth+CursorX)*2+1]=(Background* 16 +Foreground)
-			CursorX=CursorX+1
-			if (CursorX>=consoleWidth) then NewLine()
+			CONSOLE_MEM[(consoleLineOffset+consoleCursorX)*2]=src[cpt]
+			CONSOLE_MEM[(consoleLineOffset+consoleCursorX)*2+1]=(consoleBackground* 16 +consoleForeground)
+			consoleCursorX=consoleCursorX+1
+			if (consoleCursorX>=consoleWidth) then ConsoleNewLine()
 		end if
         cpt=cpt+1
     WEND
 end sub
 
-sub VirtConsole.NewLine()
-    CursorX=0
-    CursorY=CursorY+1
-    if (CursorY>=consoleHeight) then Scroll()
+sub ConsoleNewLine()
+    consoleCursorX=0
+    consoleCursorY=consoleCursorY+1
+    if (consoleCursorY>=consoleHeight) then ConsoleScroll()
+    consoleLineOffset = consoleCursorY*ConsoleWidth
 end sub
 
-sub VirtConsole.Scroll()
-    memcpy16(cptr(unsigned short ptr,cuint(VIRT)),cptr(unsigned short ptr,cuint(VIRT)+(consoleWidth*2)),consoleWidth*(consoleHeight-1))
-    memset16(cptr(unsigned short ptr,cuint(VIRT)+consoleWidth*(consoleHeight-1)*2),(Background* 16 +Foreground) shl 8,consoleWidth)
+sub ConsoleScroll()
+    memcpy16(cptr(unsigned short ptr,cuint(CONSOLE_MEM)),cptr(unsigned short ptr,cuint(CONSOLE_MEM)+(consoleWidth*2)),consoleWidth*(consoleHeight-1))
+    memset16(cptr(unsigned short ptr,cuint(CONSOLE_MEM)+consoleWidth*(consoleHeight-1)*2),(consoleBackground* 16 +consoleForeground) shl 8,consoleWidth)
 
-	CursorY=CursorY-1
+	consoleCursorY=consoleCursorY-1
+    consoleLineOffset = consoleCursorY*ConsoleWidth
 end sub
 
-sub VirtConsole.Clear()
-    memset16(cptr(unsigned short ptr,cuint(VIRT)),(Background* 16 +Foreground) shl 8,consoleWidth*consoleHeight)
-    CursorX = 0
-    CursorY = 0
+sub ConsoleClear()
+    memset16(cptr(unsigned short ptr,cuint(CONSOLE_MEM)),(consoleBackground* 16 +consoleForeground) shl 8,consoleWidth*consoleHeight)
+    consoleCursorX = 0
+    consoleCursorY = 0
+    consoleLineOffset = consoleCursorY*ConsoleWidth
 end sub
 
 
 sub ConsoleSetForeground(c as byte)
-    CurrentConsole->Foreground=c
+    consoleForeground=c
 end sub
 
 sub ConsoleSetBackground(c as byte)
-    CurrentConsole->Background=c
-end sub
-
-sub ConsoleWriteLine(src as unsigned byte ptr)
-    CurrentConsole->WriteLine(src)
+    consoleBackground=c
 end sub
 
 sub ConsoleWriteTextAndHex(src as unsigned byte ptr,n as unsigned integer,newline as boolean)
@@ -184,14 +173,12 @@ sub ConsoleWriteTextAndHex(src as unsigned byte ptr,n as unsigned integer,newlin
     if (newline) then ConsoleNewLine()
 end sub
 
-
 sub ConsoleWriteTextAndDec(src as unsigned byte ptr,n as unsigned integer,newline as boolean)
     ConsoleWrite(src)
     ConsoleWrite(@" ")
     ConsoleWriteNumber(n,10)
     if (newline) then ConsoleNewLine()
 end sub
-
 
 sub ConsoleWriteTextAndSize(src as unsigned byte ptr,s as unsigned integer,newline as boolean)
     ConsoleWrite(src)
@@ -229,46 +216,17 @@ sub ConsoleWriteNumber(number as integer,abase as unsigned integer)
     ConsoleWrite(IntToStr(number,abase))
 end sub
 
-sub ConsolePutChar (c as byte)  
-    CurrentConsole->PutChar(c)
-end sub
-
-sub ConsolePrintOK()
-    CurrentConsole->PrintOK()
-end sub
-    
-
-sub ConsolePrintFAIL()
-    CurrentConsole->PrintFAIL()
-end sub
-
-sub ConsoleBackSpace()
-    CurrentConsole->BackSpace()
-end sub
-
-sub ConsoleWrite(src as unsigned byte ptr)
-    CurrentConsole->Write(src)
-end sub
-
-sub ConsoleNewLine()
-    CurrentConsole->NewLine()
-end sub
-
-sub ConsoleClear()
-    CurrentConsole->Clear()
-end sub
-
 sub ConsoleUpdateCursor()
-    'dim position as unsigned short=consoleCursorY*consoleWidth+consoleCursorX
+    dim position as unsigned short=consoleCursorY*consoleWidth+consoleCursorX
  
-    'dim out1 as unsigned byte = cast(unsigned byte,position and &hFF)
-	'dim out2 as unsigned byte = cast(unsigned byte,(position shr 8) and &hFF)
+    dim out1 as unsigned byte = cast(unsigned byte,position and &hFF)
+	dim out2 as unsigned byte = cast(unsigned byte,(position shr 8) and &hFF)
     '// cursor LOW port to vga INDEX register
-    'outb(&h3D4, &h0F)
-    'outb(&h3D5,[out1] )
+    outb(&h3D4, &h0F)
+    outb(&h3D5,[out1] )
     '// cursor HIGH port to vga INDEX register
-    'outb(&h3D4, &h0E)
-    'outb(&h3D5,[out2] )
+    outb(&h3D4, &h0E)
+    outb(&h3D5,[out2] )
 end sub
 
 

@@ -83,10 +83,10 @@ sub VesaSetMode(mode as unsigned integer)
     var lfbEND =LFB+(((LFBSize shr 12) +1) shl 12)
     kernel_context.map_range(cptr(any ptr,LFB),cptr(any ptr, LFB),cptr(any ptr, lfbEND), VMM_FLAGS_USER_DATA)
     
-    SysConsole.Phys =  PMM_ALLOCPAGE()
-    kernel_context.map_page(SysConsole.Virt,SysConsole.Phys, VMM_FLAGS_USER_DATA)
+    var PHYS_CONSOLE_MEM =  PMM_ALLOCPAGE()
+    kernel_context.map_page(&HB8000,PHYS_CONSOLE_MEM, VMM_FLAGS_USER_DATA)
 	DoRealModeActionReg(&h4F02,mode,0,0,0,0,0,&h10)
-    
+    'ConsoleClear()
 end sub
 
 

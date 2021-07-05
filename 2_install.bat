@@ -30,6 +30,7 @@ for /d %%i in (userland\apps\*.*) do (
 )
 
 
+
 echo install keymaps
 copy bin\keymaps\*.* %Drive%\keys
 
@@ -47,6 +48,10 @@ copy bin\res\mousecur.bin %Drive%\res
 
 echo Instal System bin
 copy bin\sys\*.* %Drive%\sys
+
+
+echo Instal Utilities
+copy bin\utils\*.* %Drive%\bin
 
 copy bin\*.bin %Drive%\bin
 

@@ -23,8 +23,8 @@ sub VMM_INIT()
     kernel_context.map_range(KSTART, KSTART, KEND, VMM_FLAGS_KERNEL_DATA)
     
   
-    'map video memory 1:1
-    kernel_context.map_page(cptr(any ptr, &hB8000), cptr(any ptr, &hB8000), VMM_FLAGS_USER_DATA)
+    'map text video memory
+    kernel_context.map_page(CONSOLE_MEM,CONSOLE_MEM, VMM_FLAGS_USER_DATA)
 	
 	'map the page tables 
     kernel_context.v_dir = cptr(uinteger ptr, (VMM_PAGETABLES_VIRT_START shr 22)*4096*1024 + (VMM_PAGETABLES_VIRT_START shr 22)*4096)
@@ -51,8 +51,8 @@ sub VMM_EXIT()
         and ebx, &h7FFFFFFF
         mov cr0,ebx
     end asm
-    SysConsole.VIRT = cptr(any ptr, &hB8000)
     paging_active = 0
+    
 end sub
 
 function vmm_get_current_context () as VMMContext ptr
@@ -71,7 +71,6 @@ end sub
 
 '' loads the pagedir into cr3 and activates paging
 sub vmm_init_local ()
-    ConsoleWrite(@"Enabling paging")
 	dim pagedir as uinteger ptr = kernel_context.p_dir
 	asm
 		'' load the page directory address
@@ -90,13 +89,6 @@ sub vmm_init_local ()
 	end asm
 	KTSS_SET_CR3(cuint(pagedir))
 	paging_active = 1
-    
-    current_context->unmap_page(SysConsole.VIRT)
-    SysConsole.Virt = cptr(unsigned byte ptr, ProcessConsoleAddress)
-    current_context->map_page(SysConsole.VIRT,SysConsole.PHYS, VMM_FLAGS_USER_DATA)
-    
-    ConsolePrintOK()
-    ConsoleNewLine()
 end sub
 
 destructor VMMContext()

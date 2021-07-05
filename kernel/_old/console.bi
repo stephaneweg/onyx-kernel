@@ -1,7 +1,32 @@
+Type VirtConsole
+    CursorX as integer
+    CursorY as integer
+    Foreground as byte
+    Background as byte
+    PHYS as byte ptr
+    VIRT as byte ptr
+    declare sub PutChar (c as byte)  
+    declare sub PrintOK()
+    declare sub PrintFAIL()
+    declare sub BackSpace()
+    declare sub Write(src as unsigned byte ptr)
+    declare sub WriteLine(src as unsigned byte ptr)
+    declare sub NewLine()
+    declare sub Scroll()
+    declare sub Clear()
+    
+    declare destructor()
+    
+    declare sub Activate()
+end type
+
 declare sub ConsoleInit()
 DECLARE sub ConsoleClear()
 declare sub ConsoleSetBackground(c as byte)
 declare sub ConsoleSetForeground(c as byte)
+
+
+
 declare sub ConsoleWriteTextAndHex(src as unsigned byte ptr,n as unsigned integer,newline as boolean)
 declare sub ConsoleWriteTextAndSize(src as unsigned byte ptr,s as unsigned integer,newline as boolean)
 declare sub ConsoleWriteTextAndDec(src as unsigned byte ptr,n as unsigned integer,newline as boolean)
@@ -17,11 +42,7 @@ declare sub ConsoleUpdateCursor()
 declare sub ConsolePrintOK()
 declare sub ConsolePrintFAIL()
 declare sub ConsolePutChar (c as byte)
-dim shared CONSOLE_MEM     as unsigned byte ptr
-dim shared consoleWidth         as integer
-dim shared consoleHeight        as integer
-dim shared consoleCursorX       as integer
-dim shared consoleCursorY       as integer
-dim shared consoleLineOffset    as integer
-dim shared consoleBackground    as unsigned byte
-dim shared consoleForeground    as unsigned byte
+dim shared CurrentConsole as VirtConsole ptr
+dim shared SYSCONSOLE as VirtConsole
+dim shared VIRT_CONSOLE_MEM as unsigned byte ptr
+dim shared PHYS_CONSOLE_MEM as unsigned byte ptr

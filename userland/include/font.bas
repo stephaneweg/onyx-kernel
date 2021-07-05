@@ -13,6 +13,6 @@ function LoadFont(fontname as unsigned byte ptr) as FontData ptr
     result->Buffer = buffer
     result->FLen = fsize
     result->FontHeight = fsize/256
-    
+    if (result->FontHeight>16) then result->FontHeight = 16
     return result
 end function

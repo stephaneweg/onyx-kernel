@@ -1,7 +1,7 @@
 sub ScreenInit()
 	GDI_FocusedElement = 0
     
-    GUI_LOCK    = SemaphoreCreate()
+    GUI_LOCK    = SysMutexCreate()
     
 	LoadMouseCursor()
 	
@@ -58,7 +58,7 @@ end sub
 
 
 sub ScreenLoop()
-    SemaphoreLock(GUI_LOCK)
+    SysMutexAcquire(GUI_LOCK)
     dim c as unsigned byte
     c=KBD_GetChar()
 	if (c<>0) then
@@ -91,7 +91,7 @@ sub ScreenLoop()
 	end if
 	RootScreen->HandleMouse(mousex,mousey,mouseb)
     RootScreen->Redraw()
-    SemaphoreUnLock(GUI_LOCK)
+    SysMutexRelease(GUI_LOCK)
 end sub
 
 sub GenBackground()

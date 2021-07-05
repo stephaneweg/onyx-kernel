@@ -52,7 +52,7 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
 end sub
 
 sub ConsoleThread()
-    dim src as unsigned short ptr = cptr(unsigned short ptr,&hA0000000)
+    dim src as unsigned short ptr = cptr(unsigned short ptr,&hB8000)
     dim Colors16(0 to 15) as unsigned integer
     
     Colors16(0) = &hFF000000

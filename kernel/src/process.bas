@@ -17,15 +17,6 @@ constructor Process()
     LastProcessList = @this
     NextProcessList = 0
     
-    if (Scheduler.CurrentRuningThread<>0) then
-        if (Scheduler.CurrentRuningThread->Owner<>0) then
-            VIRT_CONSOLE = Scheduler.CurrentRUningThread->Owner->VIRT_CONSOLE
-        else
-            VIRT_CONSOLE = @SYSCONSOLE
-        end if
-    else
-        VIRT_CONSOLE = @SYSCONSOLE
-    end if
     ServerChannels = 0
     ClientChannels = 0
     
@@ -56,9 +47,6 @@ destructor Process()
     
     NextProcessList= 0
     PrevProcessList= 0
-
-    
-    FreeConsole()
 end destructor
 
 function Process.CreateAddressSpace(virt as unsigned integer) as AddressSpaceEntry ptr
@@ -99,45 +87,6 @@ sub Process.RemoveAddressSpace(virt as unsigned integer)
     end if
 end sub
 
-sub Process.CreateConsole()
-    FreeConsole()
-    var console = cptr(VirtConsole ptr, KAlloc(sizeof(VirtConsole)))
-    console->CursorX = 0
-    console->CursorY = 0
-    console->Foreground = 7
-    console->Background = 0
-    console->PHYS = PMM_ALLOCPAGE()
-    console->VIRT =cptr(unsigned byte ptr, ProcessConsoleAddress)'cptr(unsigned byte ptr,&HB8000)
-    
-    current_context->map_page(console->VIRT,console->PHYS, VMM_FLAGS_USER_DATA)
-    console->Activate()
-    console->Clear()
-    
-    VIRT_CONSOLE = console
-end sub
-
-sub Process.FreeConsole()
-    if (VIRT_CONSOLE <> @SYSCONSOLE) then
-        if (CurrentConsole = VIRT_CONSOLE) then
-            SysConsole.Activate()
-        end if
-        
-        var used = false
-        var proc=FirstProcessList
-        while proc<>0
-            if (proc<>@this) and (proc->VIRT_CONSOLE=VIRT_CONSOLE) then
-                used = true
-            end if
-            proc=proc->NextProcessList
-        wend
-        if (not used) then
-            VIRT_CONSOLE->Destructor()
-            KFREE(VIRT_CONSOLE)
-        end if
-    end if
-end sub
-
-
 function Process.DoLoadFlat() as unsigned integer
     dim neededPages as unsigned integer = ((image->ImageEnd - ProcessAddress) shr 12)+2
     CodeAddressSpace = this.CreateAddressSpace(ProcessAddress)
@@ -177,7 +126,6 @@ end function
 sub Process.DoLoad()
 	    
 	VMM_Context.Initialize()
-    VMM_Context.map_page(VIRT_CONSOLE->VIRT,VIRT_CONSOLE->PHYS, VMM_FLAGS_USER_DATA)
 	
     dim entry as unsigned integer = 0
     if (image->Magic = &hAADDBBFF) then
@@ -280,11 +228,13 @@ sub Process.ParseArguments()
 	end if
 end sub
 
-function Process.Create(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,args as unsigned byte ptr) as Process ptr
+function Process.Create(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,args as unsigned byte ptr,stdIn as STD_PIPE ptr,stdOut as STD_PIPE ptr) as Process ptr
     dim result as Process ptr = 0
     result = cptr(Process ptr,KAlloc(sizeof(Process)))
     result->Constructor()
-    
+    result->WaitingThread = 0
+    result->STD_IN  = stdIn
+    result->STD_OUT = stdOut
     result->Image = image
 	result->Image->ArgsCount = 0'argsCount
 	'to do: copy data of arguments
@@ -333,8 +283,43 @@ sub Process.Terminate(app as Process ptr)
 		
 		th=n
     wend
+    if (app->WaitingThread<>0) then
+            Scheduler.SetThreadReady(app->WaitingThread)
+    end if
     app->Destructor()
     KFree(app)
     ConsoleWriteLine(@"Process terminated")
 end sub
 
+
+function Process.GET_IN(pip as STD_PIPE ptr) as STD_PIPE ptr
+    if (pip=0) then
+        pip =STD_IN
+    elseif (pip->MAGIC<>STD_PIPE_MAGIC) then
+        pip = STD_IN
+    end if
+    if (pip=0) then
+        pip = @CONSOLE_PIPE
+    elseif (pip->MAGIC<>STD_PIPE_MAGIC) then
+        pip = @CONSOLE_PIPE
+    end if
+    
+    return pip
+end function
+    
+
+function Process.GET_OUT(pip as STD_PIPE ptr) as STD_PIPE ptr
+    if (pip=0) then
+        pip =STD_OUT
+    elseif (pip->MAGIC<>STD_PIPE_MAGIC) then
+        pip = STD_OUT
+    end if
+    if (pip=0) then
+        pip = @CONSOLE_PIPE
+    elseif (pip->MAGIC<>STD_PIPE_MAGIC) then
+        pip = @CONSOLE_PIPE
+    end if
+    
+    return pip
+end function
+    

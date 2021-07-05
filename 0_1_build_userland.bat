@@ -13,6 +13,7 @@ set AFLAGS=
 echo compile userland apps
 if not exist obj mkdir obj
 if not exist bin mkdir bin
+if not exist bin\utils mkdir bin\utils
 if not exist bin\userland mkdir bin\userland
 if not exist bin\sys mkdir bin\sys
 
@@ -31,4 +32,16 @@ for /d %%j in (userland\apps\*.*) do (
 
 echo building FASM
 %ASSEMBLER% userland/FASM/main.asm bin/fasm.bin
+
+echo building utilities
+for /d %%j in (userland\utils\*.*) do (
+	if exist userland\utils\%%~nj\main.bas echo %COMPILER% %CFLAGS%  userland/utils/%%~nj/main.bas -o obj/%%~nj.o
+	if exist userland\utils\%%~nj\main.bas %COMPILER% %CFLAGS%  userland/utils/%%~nj/main.bas -o obj/%%~nj.o
+	if exist userland\utils\%%~nj\main.bas echo %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/utils/%%~nj.bin
+	if exist userland\utils\%%~nj\main.bas %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/utils/%%~nj.bin
+	
+	if exist userland\utils\%%~nj\main.asm echo %ASSEMBLER% userland/utils/%%~nj/main.asm bin/utils/%%~nj.bin
+	if exist userland\utils\%%~nj\main.asm %ASSEMBLER% userland/utils/%%~nj/main.asm bin/utils/%%~nj.bin
+	
+)
 pause

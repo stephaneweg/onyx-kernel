@@ -4,10 +4,27 @@ function ExecApp(path as unsigned byte ptr,args as unsigned byte ptr) as unsigne
 	dim fsize as unsigned integer = 0
 	dim img as unsigned byte ptr = VFS_LOAD_FILE(path,@fsize)
 	if (img<>0 and fsize<>0) then
-		dim retval as unsigned integer= CreateProcess(img,fsize,args)
+		dim retval as unsigned integer= CreateProcess(img,fsize,args,0)
         Free(img)
         return retval
 	else
+    '    ConsoleWrite(@"File not found : ")
+     '   ConsoleWriteLine(path)
+		return 0
+	end if
+end function
+
+
+function ExecAppAndWait(path as unsigned byte ptr,args as unsigned byte ptr) as unsigned integer
+	dim fsize as unsigned integer = 0
+	dim img as unsigned byte ptr = VFS_LOAD_FILE(path,@fsize)
+	if (img<>0 and fsize<>0) then
+		dim retval as unsigned integer= CreateProcess(img,fsize,args,1)
+        Free(img)
+        return retval
+	else
+     '   ConsoleWrite(@"File not found : ")
+     '   ConsoleWriteLine(path)
 		return 0
 	end if
 end function

@@ -9,9 +9,9 @@ Type IPCMessageBody field = 1
     REG7            as unsigned integer    'ebp
 end type
 
-declare function SemaphoreCreate() as unsigned integer
-declare sub SemaphoreLock(s as unsigned integer)
-declare sub SemaphoreUnlock(s as unsigned integer)
+declare function SysMutexCreate() as unsigned integer
+declare sub SysMutexAcquire(s as unsigned integer)
+declare sub SysMutexRelease(s as unsigned integer)
 
 
 declare function SignalCreate() as unsigned integer
@@ -22,7 +22,7 @@ declare sub SysEnterCritical()
 declare sub SysExitCritical()
 declare function CreateThread(fn as any ptr,prio as unsigned integer) as unsigned integer
 
-declare function CreateProcess(img as any ptr,fsize as unsigned integer,args as unsigned byte ptr) as unsigned integer
+declare function CreateProcess(img as any ptr,fsize as unsigned integer,args as unsigned byte ptr,dowait as unsigned integer) as unsigned integer
 declare sub ThreadYield()
 declare sub KillProcess(th as unsigned integer)
 declare sub ThreadWakeUP(th as unsigned integer,p1 as unsigned integer,p2 as unsigned integer)

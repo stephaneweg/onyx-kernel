@@ -106,7 +106,9 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
                 end if
         end select
         
-        if i = 1 then
+        if i = 0 then
+              GDIButtonSetIcon(btn,@"SYS:/ICONS/TERM.BMP",0)
+        elseif i = 1 then
               GDIButtonSetIcon(btn,@"SYS:/ICONS/FILEMAN.BMP",0)
         elseif i = buttonCount-1 then
               GDIButtonSetIcon(btn,@"SYS:/ICONS/APPSX.BMP",0)
@@ -230,9 +232,12 @@ sub AppButtonClick(btn as unsigned integer,num as unsigned integer)
 end sub
 
 sub btnClick(btn as unsigned integer,parm as unsigned integer)
-	if (parm=1) then
-		ExecApp(@"SYS:/SYS/fileman.bin",0)
-	end if
+    select case parm
+        case 0
+            ExecApp(@"SYS:/APPS/TERMINAL.APP/main.bin",0)
+        case 1
+            ExecApp(@"SYS:/SYS/fileman.bin",0)
+	end select
 	EndCallBack()
 end sub
 

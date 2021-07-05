@@ -143,6 +143,9 @@ sub KBD_HANDLER(akey as unsigned byte)
                     
                     
                     if (k<>0) then 
+                        if (KBD_CTRL=1) then
+                            KBD_PutChar(KEY_CTRL)
+                        end if
                         KBD_PutChar(k or NextArrow)
                     end if
                 end if

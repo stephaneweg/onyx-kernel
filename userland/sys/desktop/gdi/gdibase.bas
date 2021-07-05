@@ -90,7 +90,7 @@ function GDIBase_MouseExit(elem as GDIBase ptr) as integer
     elem->MousePressed =  0
     elem->MouseOver = 0
     
-    SemaphoreLock(GUI_LOCK)
+    SysMutexAcquire(GUI_LOCK)
     var child = elem->FirstChild
 	while child<>0
 		var n = child->NextChild
@@ -99,14 +99,14 @@ function GDIBase_MouseExit(elem as GDIBase ptr) as integer
         end if
 		child=n
 	wend
-    SemaphoreUnLock(GUI_LOCK)
+    SysMutexRelease(GUI_LOCK)
     
     if (op<>elem->MousePressed or oo<>elem->MouseOver) then elem->Invalidate()
     return 0
 end function
 
 sub GDIBase.DestroyChildren()
-    SemaphoreLock(GUI_LOCK)
+    SysMutexAcquire(GUI_LOCK)
 	var child = this.FirstChild
 	while child<>0
 		var n = child->NextChild
@@ -115,7 +115,7 @@ sub GDIBase.DestroyChildren()
 		DestroyObj(child)
 		child=n
 	wend
-    SemaphoreUnLock(GUI_LOCK)
+    SysMutexRelease(GUI_LOCK)
 end sub
 
 sub GDIBaseSizeChanged(elem as GDIBase ptr)
@@ -139,16 +139,16 @@ sub GDIBase.UpdateAbsolutePosition()
         this._absoluteTop += this.Parent->_absoluteTop+ this.Parent->_paddingTop
     end if
     
-    SemaphoreLock(GUI_LOCK)
+    SysMutexAcquire(GUI_LOCK)
     GDIForeach(child,this)
         child->UpdateAbsolutePosition()
     GDIEndForeach(child)
-    SemaphoreUnLock(GUI_LOCK)
+    SysMutexRelease(GUI_LOCK)
 end sub
 
 
 sub GDIBase.AddChild(child as GDIBase ptr)
-    SemaphoreLock(GUI_LOCK)
+    SysMutexAcquire(GUI_LOCK)
     if (child->parent = 0) then
         child->NextChild = 0
         child->PrevChild = this.LastChild
@@ -166,12 +166,12 @@ sub GDIBase.AddChild(child as GDIBase ptr)
         child->UpdateAbsolutePosition()
         this.Invalidate()
     end if
-    SemaphoreUnLock(GUI_LOCK)
+    SysMutexRelease(GUI_LOCK)
 end sub
 
 sub GDIBase.RemoveChild(child as GDIBase ptr)
     
-    SemaphoreLock(GUI_LOCK)
+    SysMutexAcquire(GUI_LOCK)
     if (child->Parent=@this) then
         if (child->PrevChild=0) then
             this.FirstChild = child->NextChild
@@ -188,7 +188,7 @@ sub GDIBase.RemoveChild(child as GDIBase ptr)
         this.Invalidate()
         ChildRemoved()
     end if
-    SemaphoreUnLock(GUI_LOCK)
+    SysMutexRelease(GUI_LOCK)
 end sub
 
 sub GDIBase.ChildRemoved()
@@ -199,13 +199,13 @@ end sub
 sub GDIBase.BringToFront()
     
     if (Parent<>0) then
-        SemaphoreLock(GUI_LOCK)
+        SysMutexAcquire(GUI_LOCK)
         if (Parent->LastChild<>@this) then
             var p = Parent
             Parent->RemoveChild(@this)
             p->AddChild(@this)
         end if
-        SemaphoreUnLock(GUI_LOCK)
+        SysMutexRelease(GUI_LOCK)
     end if
 end sub
 
@@ -306,7 +306,7 @@ end sub
 
 sub GDIBase.RedrawChildren()
     
-    SemaphoreLock(GUI_LOCK)
+    SysMutexAcquire(GUI_LOCK)
     GDIForeach(child,this)
 		if (child->_visible) then
 			var tx = child->_left + this._paddingLeft
@@ -320,7 +320,7 @@ sub GDIBase.RedrawChildren()
 			this.PutOther(child,tx,ty,child->_transparent)
 		end if
     GDIEndForeach(child)
-    SemaphoreUnLock(GUI_LOCK)
+    SysMutexRelease(GUI_LOCK)
 end sub
 
 sub GDIBase.Redraw()
@@ -364,7 +364,7 @@ end sub
 
 Function GDIBase.HandleMouse(_mx as integer,_my as integer, _mb as integer) as integer
     
-    SemaphoreLock(GUI_LOCK)
+    SysMutexAcquire(GUI_LOCK)
     dim handled as integer = 0
     
     if (this.OwnerThread<>0) then
@@ -423,7 +423,7 @@ Function GDIBase.HandleMouse(_mx as integer,_my as integer, _mb as integer) as i
         end if
     end if
     
-    SemaphoreUnLock(GUI_LOCK)
+    SysMutexRelease(GUI_LOCK)
     return handled
     
 end function
@@ -445,7 +445,7 @@ end sub
 
 sub GDIBase.LostFocusInternal()
     
-    SemaphoreLock(GUI_LOCK)
+    SysMutexAcquire(GUI_LOCK)
 	this._hasFocus = 0
 	if (OnLostFocus<>0) then
 		cptr(sub(e as any ptr),OnLostFocus)(@this)
@@ -457,7 +457,7 @@ sub GDIBase.LostFocusInternal()
 	
 	if (GDI_FocusedElement=@this) then GDI_FocusedElement = 0
     
-    SemaphoreUnLock(GUI_LOCK)
+    SysMutexRelease(GUI_LOCK)
 end sub
 
 sub GDIBase.TakeFocusInternal()

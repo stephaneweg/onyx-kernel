@@ -98,7 +98,6 @@ sub INIT_GUI()
     
     'create a separate thread for the gui loop
     CreateThread(@GUI_THREAD_LOOP,1)
-    
     'the syscall handler is defined in the main thread
 	DefineIPCHandler(&h35,@int35Handler,1)    
 	ExecApp(@"SYS:/SYS/PIN.BIN",0)
@@ -106,8 +105,6 @@ end sub
 
 
 sub GUI_THREAD_LOOP(p as any ptr)
-  
-    
     do
         SignalWait(EV_SIGNAL)
         ScreenLoop()

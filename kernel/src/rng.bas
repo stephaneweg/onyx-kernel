@@ -10,6 +10,7 @@ function NextRandomNumber(_min as unsigned integer,_max as unsigned integer) as 
     nextR = nextR * 1103515245 + ((((( (day + month*31 + year*365) *24 )+hour) *60)+minute)*60) + second
     read_rtc()
     nextR = nextR * 1103515245 + ((((( (day + month*31 + year*365) *24 )+hour) *60)+minute)*60) + second
+    if (_min = 0 and _max = &hFFFFFFFF) then return nextR
     return  mi+((cast(unsigned integer ,(nextR / 65536) MOD 32768)) MOD (interval+1))
 return 0
 end function

@@ -108,7 +108,11 @@ sub int33Handler(_intno as unsigned integer,_senderproc as unsigned integer,_sen
         case &h0b 'eof
             var handle = cptr(FileHandle ptr,_EBX)
             if (handle<>0) then
-                _EAX = handle->FilePos>=handle->FileSize
+                if (handle->FileSize=-1) then 
+                    _EAX = 0
+                else
+                    _EAX = handle->FilePos>=handle->FileSize
+                end if
             else
                 _EAX = -1
             end if

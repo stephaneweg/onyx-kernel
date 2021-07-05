@@ -22,8 +22,6 @@ TYPE Process field =1
     VMM_Context as VMMContext
     TmpArgs as unsigned byte ptr
     
-    VIRT_CONSOLE as VirtConsole ptr
-    
     ServerChannels as any ptr
     ClientChannels as any ptr
     
@@ -32,12 +30,16 @@ TYPE Process field =1
     CodeAddressSpace as AddressSpaceEntry ptr
     StackAddressSpace as AddressSpaceEntry ptr
     
+    STD_IN  as STD_PIPE ptr
+    STD_OUT as STD_PIPE ptr
+    WaitingThread as any ptr
+    
     declare function CreateAddressSpace(virt as unsigned integer) as AddressSpaceEntry ptr
     declare function FindAddressSpace(virt as unsigned integer)  as AddressSpaceEntry ptr
     declare sub RemoveAddressSpace(virt as unsigned integer)
     
     declare static sub InitEngine()
-    declare static function Create(image as EXECUTABLE_HEADER ptr,size as unsigned integer,args as unsigned byte ptr) as Process ptr
+    declare static function Create(image as EXECUTABLE_HEADER ptr,size as unsigned integer,args as unsigned byte ptr,stdIn as STD_PIPE ptr,stdOut as STD_PIPE ptr) as Process ptr
     
     declare static sub Terminate(app as Process ptr)
     declare static sub RequestTerminate(app as Process ptr)
@@ -50,8 +52,8 @@ TYPE Process field =1
     declare function DoLoadElf() as unsigned integer
     declare sub ParseArguments()
     
-    declare sub FreeConsole()
-    declare sub CreateConsole()
+    declare function GET_IN(pip as STD_PIPE ptr) as STD_PIPE ptr
+    declare function GET_OUT(pip as STD_PIPE ptr) as STD_PIPE ptr
     
 end type
 

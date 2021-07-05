@@ -5,10 +5,11 @@ enum ThreadState
     waiting = 3
     waitingIRQ = 4
     waitingForMessage = 5
-    WaitingSemaphore = 6
-    WaitingDialog = 7
+    WaitingMutex = 6
+    WaitingSignal = 7
     WaitingReply = 8
     WaitingSendChannel = 9
+    WaitingForProcess=10
     Terminating = 127
 end enum
 

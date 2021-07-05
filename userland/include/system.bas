@@ -1,10 +1,11 @@
 
 
-function CreateProcess(img as any ptr,fsize as unsigned integer,args as unsigned byte ptr) as unsigned integer
+function CreateProcess(img as any ptr,fsize as unsigned integer,args as unsigned byte ptr,dowait as unsigned integer) as unsigned integer
     asm
         mov eax,&h01
         mov ebx,[img]
         mov ecx,[fsize]
+        mov edx,[dowait]
         mov esi,[args]
         int 0x30
         mov [function],eax
@@ -215,7 +216,7 @@ sub SysExitCritical()
 end sub
 
 
-function SemaphoreCreate() as unsigned integer
+function SysMutexCreate() as unsigned integer
     asm 
         mov eax,&hE3
         int 0x30
@@ -224,7 +225,7 @@ function SemaphoreCreate() as unsigned integer
 end function
 
 
-sub SemaphoreLock(s as unsigned integer)
+sub SysMutexAcquire(s as unsigned integer)
     asm
         mov eax,&hE4
         mov ebx,[s]
@@ -232,7 +233,7 @@ sub SemaphoreLock(s as unsigned integer)
     end asm
 end sub
 
-sub SemaphoreUnlock(s as unsigned integer)
+sub SysMutexRelease(s as unsigned integer)
     asm
         mov eax,&hE5
         mov ebx,[s]

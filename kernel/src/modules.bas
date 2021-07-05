@@ -19,7 +19,7 @@ sub MODULES_INIT(mb_info as multiboot_info ptr)
         
         var image = cptr(EXECUTABLE_HEADER ptr,mod_start)
         
-		var proc = Process.Create(image,mod_end-mod_start,v_mod_table[i].mod_string)
+		var proc = Process.Create(image,mod_end-mod_start,v_mod_table[i].mod_string,@CONSOLE_PIPE,@CONSOLE_PIPE)
         proc->Parent = 0
     next i
 end sub

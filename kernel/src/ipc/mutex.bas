@@ -1,23 +1,23 @@
-constructor Semaphore()
+constructor Mutex()
     value  = 0
     ThreadQueue = 0
-    nextSem = Semaphores
-    Semaphores = @this
+    NextMutex = Mutexes
+    Mutexes = @this
 end constructor
 
 
-destructor Semaphore()
-    dim s as Semaphore ptr = Semaphores
+destructor Mutex()
+    dim s as Mutex ptr = Mutexes
     
     if (s=@this) then
-        Semaphores = this.NextSem
+        Mutexes = this.NextMutex
     else
         while s<>0
-            if (s->NextSem = @this) then
-                s->NextSem = this.NextSem
+            if (s->NextMutex = @this) then
+                s->NextMutex = this.NextMutex
                 exit while
             end if
-            s = s->NextSem
+            s = s->NextMutex
         wend
     end if
     
@@ -25,9 +25,9 @@ end destructor
 
 
             
-function Semaphore.SemLock(th as thread ptr) as unsigned integer
+function Mutex.Acquire(th as thread ptr) as unsigned integer
     
-    'semaphore is not locked
+    'mutex is not locked
     if (value=0) then
         'increment level
         CurrentThread = th
@@ -35,17 +35,17 @@ function Semaphore.SemLock(th as thread ptr) as unsigned integer
         return 1
     
     
-    'semaphore is already locked by this thread
+    'mutex is already locked by this thread
     elseif (CurrentThread=th) then
         'increment level
         Value+=1
         return 1
         
-    'semaphore is aloready locked by another thread
+    'mutex is aloready locked by another thread
     else
-        ConsoleWriteLine(@"Lock on semaphore")
+        ConsoleWriteLine(@"Lock on Mutex")
         'block this thread
-        th->State = WaitingSemaphore
+        th->State = WaitingMutex
         if (this.ThreadQueue = 0) then
             this.ThreadQueue = th
         else
@@ -60,19 +60,19 @@ function Semaphore.SemLock(th as thread ptr) as unsigned integer
     return 0
 end function
 
-sub Semaphore.SemUnlock(th as Thread ptr)
-    'semaphore must be loocked by this thread
+sub Mutex.Release(th as Thread ptr)
+    'mutex must be loocked by this thread
     if (CurrentThread=th) and (value>0) then
         'decrement level
         Value-=1
         
-        'semaphore is not locked anymore
+        'mutex is not locked anymore
         if (value=0) then
             CurrentThread = this.ThreadQueue
             
             'if there is a pending thread, unblock the first
             if (CurrentThread<>0) then
-                ConsoleWriteLine(@"Unlock on semaphore")
+                ConsoleWriteLine(@"Unlock on mutex")
                 'increment level
                 Value+=1
                 'make therad read

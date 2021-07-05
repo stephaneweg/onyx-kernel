@@ -5,12 +5,21 @@ constructor FileHandle()
     FileSize = 0
     Dirty = 0
     BufferSize = 0
+    
+    
+    ReadMethod      = 0
+    WriteMethod     = 0
+    FlushMethod     = 0
+    ReadLineMethod  = 0
+    
 end constructor
 
 destructor FileHandle()
     DeleteBuffer()
     delete this.Path
 end destructor
+
+
 
 sub FileHandle.DeleteBuffer()
     if (this.Buffer<>0) then
@@ -45,49 +54,84 @@ end sub
 
 function FileHandle.Open(p as unsigned byte ptr) as unsigned integer
     DeleteBuffer()
-    dim s as unsigned integer
-    dim b as unsigned byte ptr
-    b = VFS_LOAD_FILE(p,@s)
-    if (b<>0 and s<>0) then
-        this.CreateBuffer(s)
-        memcpy(this.Buffer,b,s)
-        Free(b)
-        this.FileSize = s
-        this.FilePos = 0
-        this.Dirty = 0
+    
+    if (strcmp(p,@"random")=0) then
+        this.FileSize   = -1
+        this.FilePos    = 0
+        this.Dirty      =0
         this.Path->SetText(p)
+        
+        this.ReadMethod         = @RandomRead
+        this.ReadLineMethod     = 0
+        this.WriteMethod        = 0
+        this.FlushMethod        = 0
+        this.LSeekMethod        = 0
         return 1
+    else
+        dim s as unsigned integer
+        dim b as unsigned byte ptr
+        b = VFS_LOAD_FILE(p,@s)
+        if (b<>0 and s<>0) then
+            this.CreateBuffer(s)
+            memcpy(this.Buffer,b,s)
+            Free(b)
+            this.FileSize = s
+            this.FilePos = 0
+            this.Dirty = 0
+            this.Path->SetText(p)
+            
+            
+            this.ReadMethod      = @FileHandleRead
+            this.ReadLineMethod  = @FileHandleReadLine
+            this.WriteMethod     = @FileHandleWrite
+            this.FlushMethod     = @FileHandleFlush
+            this.LSeekMethod     = @FileHandleLSeek
+            return 1
+        end if
     end if
     return 0
 end function
 
 sub FileHandle.Flush()
-    if (this.Dirty = 1 and this.FileSize>0) then
-        this.Dirty = 0
-        VFS_WRITE_FILE(this.Path->Buffer,this.FileSize,this.Buffer)
+    if (FlushMethod<>0) then
+       FlushMethod(@this)
     end if
 end sub
 
 function FileHandle.LSeek(count as integer,mode as SeekOrigin) as unsigned integer
-    if (mode = SeekBegin) then
-        FilePos = 0
-    elseif(mode = SeekEnd) then
-        FilePos = FileSize
+    if (LSeekMethod<>0) then
+        return LSeekMethod(@this,count,mode)
     end if
-    FilePos+=count
-    if (FilePos>this.FileSize) then
-        this.CreateBuffer(FilePos)
-        this.FileSize = FilePos
-    end if
-    return FilePos
+    return 0
 end function
 
 function FileHandle.Read(count as unsigned integer,dst as unsigned byte ptr) as unsigned integer
+    if (ReadMethod<>0) then
+        return ReadMethod(@this,count,dst)
+    end if
+    return 0
+end function
+
+function FileHandle.ReadLine(dst as unsigned byte ptr) as unsigned integer
+    if (ReadLineMethod<>0) then
+        return ReadLineMethod(@this,dst)
+    end if
+    return 0
+end function
+
+sub FileHandle.Write(count as unsigned integer,src as unsigned byte ptr)
+    if (WriteMethod<>0) then
+        WriteMethod(@this,count,src)
+    end if
+end sub
+
+'specific methods for "real files"
+function FileHandleRead(fd as FileHandle ptr,count as unsigned integer,dst as unsigned byte ptr) as unsigned integer
     dim cpt as integer = count
-    dim st as integer = this.FilePos
+    dim st as integer = fd->FilePos
     
-    if (this.FilePos+cpt>this.FileSize) then
-        cpt = this.FileSize-this.FilePos
+    if (fd->FilePos+cpt>fd->FileSize) then
+        cpt = fd->FileSize-fd->FilePos
     end if
     
     
@@ -95,47 +139,77 @@ function FileHandle.Read(count as unsigned integer,dst as unsigned byte ptr) as 
     if (cpt<0) then cpt = 0
     
     if (cpt>0) then
-        memcpy(dst,cptr(unsigned byte ptr, cast(unsigned integer,this.Buffer)+  st),cpt)
+        memcpy(dst,cptr(unsigned byte ptr, cast(unsigned integer,fd->Buffer)+  st),cpt)
         st+=cpt
-        this.FilePos = st
+        fd->FilePos = st
     end if
     return cpt
 end function
 
-function FileHandle.ReadLine(dst as unsigned byte ptr) as unsigned integer
+function FileHandleReadLine(fd as FileHandle ptr,dst as unsigned byte ptr) as unsigned integer
     dim i as integer = 0
-    dim c as unsigned byte = this.Buffer[this.FilePos]
-    while c<>10 and c<>13 and c<>0 and this.FilePos<this.FileSize
+    dim c as unsigned byte = fd->Buffer[fd->FilePos]
+    while c<>10 and c<>13 and c<>0 and fd->FilePos<fd->FileSize
         dst[i] = c
         i+=1
-        this.FilePos+=1
-        c=this.Buffer[this.FilePos]
+        fd->FilePos+=1
+        c=fd->Buffer[fd->FilePos]
     wend
-    this.FilePos+=1
-    c=this.Buffer[this.FilePos]
-    while (c=0 or c=13 or c=10) and this.FilePos<this.FileSize
-        this.FilePos+=1
-        c=this.Buffer[this.FilePos]
+    fd->FilePos+=1
+    c=fd->Buffer[fd->FilePos]
+    while (c=0 or c=13 or c=10) and fd->FilePos<fd->FileSize
+        fd->FilePos+=1
+        c=fd->Buffer[fd->FilePos]
     wend
     dst[i]=0
     return i
 end function
 
-sub FileHandle.Write(count as unsigned integer,src as unsigned byte ptr)
+sub FileHandleWrite(fd as FileHandle ptr,count as unsigned integer,src as unsigned byte ptr)
     if (count>0) then
-        var newSize = this.FilePos + count
+        var newSize = fd->FilePos + count
         
-        if (newSize>this.FileSize) then
-            this.CreateBuffer(newSize)
-            this.FileSize = newSize
+        if (newSize>fd->FileSize) then
+            fd->CreateBuffer(newSize)
+            fd->FileSize = newSize
         end if
         
-        memcpy(cptr(unsigned byte ptr,cast(unsigned integer,this.Buffer )+this.FilePos),src,count)
-        this.FilePos+=count
-        this.Dirty = 1
+        memcpy(cptr(unsigned byte ptr,cast(unsigned integer,fd->Buffer )+fd->FilePos),src,count)
+        fd->FilePos+=count
+        fd->Dirty = 1
     end if
 end sub
-        
 
+sub FileHandleFlush(fd as FileHandle ptr)
+     if (fd->Dirty = 1 and fd->FileSize>0) then
+        fd->Dirty = 0
+        VFS_WRITE_FILE(fd->Path->Buffer,fd->FileSize,fd->Buffer)
+    end if
+end sub
+
+function FileHandleLSeek(fd as FileHandle ptr,count as integer,mode as SeekOrigin) as unsigned integer
+    if (mode = SeekBegin) then
+        fd->FilePos = 0
+    elseif(mode = SeekEnd) then
+        fd->FilePos = fd->FileSize
+    end if
+    fd->FilePos+=count
+    if (fd->FilePos > fd->FileSize) then
+        fd->CreateBuffer(fd->FilePos)
+        fd->FileSize = fd->FilePos
+    end if
+    return fd->FilePos
+end function
+
+
+'specifics method for special files
+
+
+function RandomRead(fd as FileHandle ptr,count as unsigned integer,dst as unsigned byte ptr) as unsigned integer
+    for i as integer = 0 to count-1
+        dst[i] = NextRandomNumber(0,&hFFFFFFFF) and &hFF
+    next i
+    return count
+end function
     
     

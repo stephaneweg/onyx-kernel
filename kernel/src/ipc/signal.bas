@@ -28,7 +28,7 @@ function Signal.Wait(th as Thread ptr) as unsigned integer
         value = 0
         return 1
     else
-        th->State = WaitingSemaphore
+        th->State = WaitingSignal
         
         th->NextThreadQueue = this.ThreadQueue
         this.ThreadQueue = th

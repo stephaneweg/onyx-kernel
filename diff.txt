@@ -1,0 +1,2052 @@
+diff --git a/0_1_build_userland.bat b/0_1_build_userland.bat
+index 461e6fd..c53d4ca 100644
+--- a/0_1_build_userland.bat
++++ b/0_1_build_userland.bat
+@@ -13,6 +13,7 @@ set AFLAGS=
+ echo compile userland apps
+ if not exist obj mkdir obj
+ if not exist bin mkdir bin
++if not exist bin\utils mkdir bin\utils
+ if not exist bin\userland mkdir bin\userland
+ if not exist bin\sys mkdir bin\sys
+ 
+@@ -31,4 +32,16 @@ for /d %%j in (userland\apps\*.*) do (
+ 
+ echo building FASM
+ %ASSEMBLER% userland/FASM/main.asm bin/fasm.bin
++
++echo building utilities
++for /d %%j in (userland\utils\*.*) do (
++	if exist userland\utils\%%~nj\main.bas echo %COMPILER% %CFLAGS%  userland/utils/%%~nj/main.bas -o obj/%%~nj.o
++	if exist userland\utils\%%~nj\main.bas %COMPILER% %CFLAGS%  userland/utils/%%~nj/main.bas -o obj/%%~nj.o
++	if exist userland\utils\%%~nj\main.bas echo %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/utils/%%~nj.bin
++	if exist userland\utils\%%~nj\main.bas %LINKER% obj/userland_header.o obj/%%~nj.o -T userland/userland.ld -o bin/utils/%%~nj.bin
++	
++	if exist userland\utils\%%~nj\main.asm echo %ASSEMBLER% userland/utils/%%~nj/main.asm bin/utils/%%~nj.bin
++	if exist userland\utils\%%~nj\main.asm %ASSEMBLER% userland/utils/%%~nj/main.asm bin/utils/%%~nj.bin
++	
++)
+ pause
+\ No newline at end of file
+diff --git a/2_install.bat b/2_install.bat
+index 35b11b9..4666267 100644
+--- a/2_install.bat
++++ b/2_install.bat
+@@ -30,6 +30,7 @@ for /d %%i in (userland\apps\*.*) do (
+ )
+ 
+ 
++
+ echo install keymaps
+ copy bin\keymaps\*.* %Drive%\keys
+ 
+@@ -48,6 +49,10 @@ copy bin\res\mousecur.bin %Drive%\res
+ echo Instal System bin
+ copy bin\sys\*.* %Drive%\sys
+ 
++
++echo Instal Utilities
++copy bin\utils\*.* %Drive%\bin
++
+ copy bin\*.bin %Drive%\bin
+ 
+ echo Install config
+diff --git a/4_startQemu.bat b/4_startQemu.bat
+index 5068c23..a3d8d8f 100644
+--- a/4_startQemu.bat
++++ b/4_startQemu.bat
+@@ -1,4 +1,4 @@
+ set mypath=%cd%
+ cd qemu
+-qemu-system-i386.exe -m 128 -hda ..\hd.img -device sb16 -D con
++qemu-system-i386.exe -m 1G -hda ..\hd.img -device sb16 -D con
+ pause
+\ No newline at end of file
+diff --git a/kernel.map b/kernel.map
+index eb805a6..64a8247 100644
+--- a/kernel.map
++++ b/kernel.map
+@@ -11,7 +11,7 @@ LOAD obj/Interrupts.o
+ LOAD obj/main.o
+                 0x00100000                . = 0x100000
+ 
+-.text           0x00100000     0xa3d4
++.text           0x00100000     0xa764
+                 0x00100000                _KERNEL_START = .
+  *(.text)
+  .text          0x00100000      0x1cf obj/0Start.o
+@@ -22,258 +22,256 @@ LOAD obj/main.o
+  *fill*         0x001001cf        0x1 00
+  .text          0x001001d0     0x1214 obj/Interrupts.o
+                 0x00100fe4                _INTERRUPT_TAB@0
+- .text          0x001013e4     0x8ff0 obj/main.o
+-                0x00108314                __ZN15THREADSCHEDULER17SETTHREADREALTIMEEP6THREADm@12
+-                0x00101884                _KTSS_SET_CR3@4
+-                0x001025a4                _GET_RTC_UPDATE_IN_PROGRESS_FLAG@0
+-                0x00102cf4                __ZN11VIRTCONSOLE8ACTIVATEEv@4
+-                0x00109c54                __ZN11IPCENDPOINT10CREATENAMEEPhP6THREADmm@16
+-                0x00102524                _PIC_INIT@0
+-                0x00109e54                __ZN11IPCENDPOINTD1Ev
+-                0x00108074                __ZN11THREADQUEUE10RTCDEQUEUEEv@4
+-                0x00109674                __ZN14USERMODEDEVICE4FINDEPh@4
+-                0x00103e94                _STRLASTINDEXOF@8
+-                0x00103c04                _STRTRIM@4
+-                0x00106284                _IRQ_ENABLE@4
+-                0x00105f54                _KALLOC@4
+-                0x00104554                _STRCAT@8
+-                0x00103684                _CONSOLECLEAR@0
+-                0x00101c14                _VMM_KERNEL_AUTOMAP@12
+-                0x00106e14                __ZN7PROCESSD1Ev
+-                0x00107b64                _KERNEL_IDLE@4
+-                0x00107ae4                __ZN6THREAD11INITMANAGEREv@0
+-                0x00103b24                _STRLEN@4
+-                0x001071c4                __ZN7PROCESS9DOLOADELFEv@4
+-                0x00103b64                _STRWLEN@4
+-                0x00109b04                _IPC_INIT@0
+-                0x00107b44                __ZN6THREAD5READYEv@0
+-                0x00109494                _XAPPSIGNAL2PARAMETERS@16
+-                0x00102dd4                __ZN11VIRTCONSOLE7PRINTOKEv@4
+-                0x00103f64                _STRNCMP@12
+-                0x00107014                __ZN7PROCESS13CREATECONSOLEEv@4
+-                0x00103bb4                _STRDLEN@4
+-                0x00103244                __ZN11VIRTCONSOLE9WRITELINEEPh@8
+-                0x00105e64                __ZN4SLAB11ISVALIDADDREPv@8
+-                0x00106f34                __ZN7PROCESS16FINDADDRESSSPACEEm@8
+-                0x00109514                _XAPPSIGNAL6PARAMETERS@32
+-                0x00107754                __ZN7PROCESS16REQUESTTERMINATEEPS_@4
+-                0x00107d04                __ZN6THREAD6CREATEEP7PROCESSm@8
+-                0x00105784                _PMM_STRIPE@8
+-                0x00103994                _SQRT@8
+-                0x00109ba4                __ZN11IPCENDPOINT10FINDBYNAMEEPh@4
+-                0x00103584                _CONSOLEWRITESIGNED@4
+-                0x00109964                __ZN9SEMAPHORED1Ev
+-                0x00106364                _IRQ_ATTACH_HANDLER@8
+-                0x00109834                __ZN6SIGNAL4WAITEP6THREAD@8
+-                0x00105204                _ATOF@4
+-                0x001055d4                _PMM_GET_FREEPAGES_COUNT@0
+-                0x001016b4                _DOREALMODEACTIONREG@32
+-                0x00104b14                _ULONGTOSTR@8
+-                0x001095d4                _UDEV_INIT@0
+-                0x00106ec4                __ZN7PROCESS18CREATEADDRESSSPACEEm@8
+-                0x00104064                _STRWCMP@8
+-                0x00101d84                __ZN10VMMCONTEXT10INITIALIZEEv@4
+-                0x00106c94                __ZN7PROCESSC1Ev
+-                0x00103db4                _STRINDEXOF@8
+-                0x00102d14                __ZN11VIRTCONSOLE7PUTCHAREa@8
+-                0x001083d4                __ZN15THREADSCHEDULER8SCHEDULEEv@4
+-                0x00102c14                _CONSOLEINIT@0
+-                0x00103494                _CONSOLEWRITETEXTANDHEX@12
+-                0x001081f4                __ZN15THREADSCHEDULER12REMOVETHREADEP6THREAD@8
+-                0x001021b4                __ZN10VMMCONTEXT8MAP_PAGEEPvS0_m@16
+-                0x00101fb4                __ZN10VMMCONTEXT14FREE_PAGETABLEEPm@8
+-                0x00103ae4                _FSIN@4
+-                0x00108624                _SYSCALL30HANDLER@4
+-                0x00103454                _CONSOLESETBACKGROUND@4
+-                0x001083a4                __ZN15THREADSCHEDULER14SETTHREADREADYEP6THREAD@8
+-                0x00105964                _SLABINIT@0
+-                0x00105ec4                _KMM_ALLOCPAGE@0
+-                0x00106434                _PANICEXCEPTION@8
+-                0x00107aa4                _ENTERCRITICAL@0
+-                0x00105bf4                __ZN4SLABD1Ev
+-                0x00101bb4                _VMM_EXIT@0
+-                0x00107cc4                __ZN6THREAD7ISVALIDEv@4
+-                0x001025e4                _GET_RTC_REGISTER@4
+-                0x001054c4                _ATOLHEX@4
+-                0x00104cf4                _UINTTOSTR@8
+-                0x00103474                _CONSOLEWRITELINE@4
+-                0x00107c14                __ZN6THREADD1Ev
+-                0x001069c4                _VESAPROBE@0
+-                0x00106924                _VESAGETMODEINFO@4
+-                0x001055a4                _ABSOLUTE@4
+-                0x0010a204                _IPCSEND@40
+-                0x00101584                _DOREALMODEACTION@4
+-                0x001023a4                __ZN10VMMCONTEXT10UNMAP_PAGEEPv@8
++ .text          0x001013e4     0x9380 obj/main.o
++                0x00108384                __ZN15THREADSCHEDULER17SETTHREADREALTIMEEP6THREADm@12
++                0x00101874                _KTSS_SET_CR3@4
++                0x00102544                _GET_RTC_UPDATE_IN_PROGRESS_FLAG@0
++                0x00107b24                _STD_READ@4
++                0x00109ff4                __ZN11IPCENDPOINT10CREATENAMEEPhP6THREADmm@16
++                0x001024c4                _PIC_INIT@0
++                0x0010a1f4                __ZN11IPCENDPOINTD1Ev
++                0x00108114                __ZN11THREADQUEUE10RTCDEQUEUEEv@4
++                0x00109a14                __ZN14USERMODEDEVICE4FINDEPh@4
++                0x00103dd4                _STRLASTINDEXOF@8
++                0x00103b44                _STRTRIM@4
++                0x001061c4                _IRQ_ENABLE@4
++                0x00105e94                _KALLOC@4
++                0x00104494                _STRCAT@8
++                0x00103364                _CONSOLECLEAR@0
++                0x00101bf4                _VMM_KERNEL_AUTOMAP@12
++                0x00106d14                __ZN7PROCESSD1Ev
++                0x00107c04                _KERNEL_IDLE@4
++                0x00107b84                __ZN6THREAD11INITMANAGEREv@0
++                0x00103a64                _STRLEN@4
++                0x00106f84                __ZN7PROCESS9DOLOADELFEv@4
++                0x00103aa4                _STRWLEN@4
++                0x00109ea4                _IPC_INIT@0
++                0x00107be4                __ZN6THREAD5READYEv@0
++                0x00109834                _XAPPSIGNAL2PARAMETERS@16
++                0x00103ea4                _STRNCMP@12
++                0x00103af4                _STRDLEN@4
++                0x00105da4                __ZN4SLAB11ISVALIDADDREPv@8
++                0x00106e34                __ZN7PROCESS16FINDADDRESSSPACEEm@8
++                0x001098b4                _XAPPSIGNAL6PARAMETERS@32
++                0x00107504                __ZN7PROCESS16REQUESTTERMINATEEPS_@4
++                0x00107da4                __ZN6THREAD6CREATEEP7PROCESSm@8
++                0x001056c4                _PMM_STRIPE@8
++                0x001038d4                _SQRT@8
++                0x00109f44                __ZN11IPCENDPOINT10FINDBYNAMEEPh@4
++                0x001034f4                _CONSOLEWRITESIGNED@4
++                0x00109d04                __ZN9SEMAPHORED1Ev
++                0x001062a4                _IRQ_ATTACH_HANDLER@8
++                0x00109bd4                __ZN6SIGNAL4WAITEP6THREAD@8
++                0x00105144                _ATOF@4
++                0x00105514                _PMM_GET_FREEPAGES_COUNT@0
++                0x001016a4                _DOREALMODEACTIONREG@32
++                0x00107414                __ZN7PROCESS6CREATEEP17EXECUTABLE_HEADERmPhP8STD_PIPES4_@20
++                0x00104a54                _ULONGTOSTR@8
++                0x00109974                _UDEV_INIT@0
++                0x00106dc4                __ZN7PROCESS18CREATEADDRESSSPACEEm@8
++                0x00103fa4                _STRWCMP@8
++                0x00101d24                __ZN10VMMCONTEXT10INITIALIZEEv@4
++                0x00106bb4                __ZN7PROCESSC1Ev
++                0x00103cf4                _STRINDEXOF@8
++                0x00108444                __ZN15THREADSCHEDULER8SCHEDULEEv@4
++                0x00102bb4                _CONSOLEINIT@0
++                0x00103404                _CONSOLEWRITETEXTANDHEX@12
++                0x00108294                __ZN15THREADSCHEDULER12REMOVETHREADEP6THREAD@8
++                0x00102154                __ZN10VMMCONTEXT8MAP_PAGEEPvS0_m@16
++                0x00101f54                __ZN10VMMCONTEXT14FREE_PAGETABLEEPm@8
++                0x00103a24                _FSIN@4
++                0x00108694                _SYSCALL30HANDLER@4
++                0x001033e4                _CONSOLESETBACKGROUND@4
++                0x00108414                __ZN15THREADSCHEDULER14SETTHREADREADYEP6THREAD@8
++                0x001058a4                _SLABINIT@0
++                0x00105e04                _KMM_ALLOCPAGE@0
++                0x00106374                _PANICEXCEPTION@8
++                0x00107b44                _ENTERCRITICAL@0
++                0x00105b34                __ZN4SLABD1Ev
++                0x00101ba4                _VMM_EXIT@0
++                0x00107d64                __ZN6THREAD7ISVALIDEv@4
++                0x00102584                _GET_RTC_REGISTER@4
++                0x00105404                _ATOLHEX@4
++                0x00104c34                _UINTTOSTR@8
++                0x00103164                _CONSOLEWRITELINE@4
++                0x00107cb4                __ZN6THREADD1Ev
++                0x001068f4                _VESAPROBE@0
++                0x00106854                _VESAGETMODEINFO@4
++                0x001054e4                _ABSOLUTE@4
++                0x0010a5a4                _IPCSEND@40
++                0x00101574                _DOREALMODEACTION@4
++                0x00102344                __ZN10VMMCONTEXT10UNMAP_PAGEEPv@8
+                 0x001013e4                _MAIN@4
+-                0x00105b94                __ZN12SLABMETADATA11ISVALIDADDREPv@8
+-                0x00104ed4                _STRCPY@8
+-                0x00101ad4                _VMM_INIT@0
+-                0x00101c54                _VMM_KERNEL_UNMAP@8
+-                0x00105f04                _KMM_FREEPAGE@4
+-                0x00103fd4                _STRCMP@8
+-                0x00104f34                _memcpy
+-                0x00103694                _CONSOLEUPDATECURSOR@0
+-                0x00109d74                __ZN11IPCENDPOINT12CREATECOMMONEPS_P6THREADmm@16
+-                0x00105074                _memset
+-                0x00107674                __ZN7PROCESS6CREATEEP17EXECUTABLE_HEADERmPh@12
+-                0x00105304                _ATOIHEX@4
+-                0x00107b84                _INT20HANDLER@4
+-                0x00109c14                __ZN11IPCENDPOINT5NEWIDEv@0
++                0x00105ad4                __ZN12SLABMETADATA11ISVALIDADDREPv@8
++                0x00104e14                _STRCPY@8
++                0x00107674                __ZN7PROCESS7GET_OUTEP8STD_PIPE@8
++                0x00101ac4                _VMM_INIT@0
++                0x00101c34                _VMM_KERNEL_UNMAP@8
++                0x00105e44                _KMM_FREEPAGE@4
++                0x00103f14                _STRCMP@8
++                0x00104e74                _memcpy
++                0x00103574                _CONSOLEUPDATECURSOR@0
++                0x0010a114                __ZN11IPCENDPOINT12CREATECOMMONEPS_P6THREADmm@16
++                0x00104fb4                _memset
++                0x00105244                _ATOIHEX@4
++                0x00107c24                _INT20HANDLER@4
++                0x00109fb4                __ZN11IPCENDPOINT5NEWIDEv@0
+                 0x001014c4                _KERNEL_ERROR@8
+-                0x00106b34                _VESASETMODE@4
+-                0x001035c4                _CONSOLEWRITEUNUMBER@8
+-                0x00109b44                __ZN11IPCENDPOINT8FINDBYIDEm@4
+-                0x001058f4                _GETSMALLESTPOWEROFTWOO@4
+-                0x00107fa4                __ZN11THREADQUEUE11ENQUEUETAILEP6THREAD@8
+-                0x001023c4                __ZN10VMMCONTEXT11UNMAP_RANGEEPvm@12
+-                0x001060d4                _INT_HANDLER@4
+-                0x00101824                _KTSS_SET@16
+-                0x001050b4                _MEMSET32@12
+-                0x00104f54                _MEMCPY16@12
+-                0x00102114                __ZN10VMMCONTEXT7AUTOMAPEPvmmmm@24
+-                0x00101a24                _LDT_SET_GATE@20
+-                0x00101ef4                __ZN10VMMCONTEXT13GET_PAGETABLEEm@8
+-                0x00107f14                __ZN11THREADQUEUEC1Ev
+-                0x00109fa4                __ZN11IPCENDPOINT7DEQUEUEEv@4
+-                0x00105dd4                __ZN4SLAB4FREEEPv@8
+-                0x001062f4                _IRQ_DISABLE@4
+-                0x00101fe4                __ZN10VMMCONTEXT15FIND_FREE_PAGESEmmm@16
+-                0x00106c74                __ZN7PROCESS10INITENGINEEv@0
+-                0x00105fa4                _INTERRUPTSMANAGER_INIT@0
+-                0x00109f54                __ZN11IPCENDPOINT7ENQUEUEEP10IPCMESSAGE@8
+-                0x0010a004                __ZN11IPCENDPOINT14PROCESSRECEIVEEv@4
+-                0x001019f4                _GDT_SET_GATE@20
+-                0x001063a4                _IRQ_SEND_ACK@4
+-                0x00103aa4                _FCOS@4
+-                0x00104294                _STRTOUPPER@4
+-                0x00106384                _IRQ_DETACH_HANDLER@4
+-                0x00103a54                _DSIN@8
+-                0x001050d4                _ATOI@4
+-                0x00107ea4                __ZN6THREAD6DOWAITEP9IRQ_STACK@8
+-                0x00103a04                _DCOS@8
+-                0x001057d4                _PMM_ALLOCPAGE@0
+-                0x00103624                _CONSOLEPRINTOK@0
+-                0x00107a04                __ZN17ADDRESSSPACEENTRY8COPYFROMEPvm@12
+-                0x00108174                __ZN15THREADSCHEDULERC1Ev
+-                0x00102334                __ZN10VMMCONTEXT9MAP_RANGEEPvS0_S0_m@20
+-                0x0010a1a4                _IPCSENDBODY@12
+-                0x001036a4                _MODULES_INIT@4
+-                0x00101534                _REALMODE_INIT@0
+-                0x00104624                _FTOA@12
+-                0x00101bf4                _VMM_GET_CURRENT_CONTEXT@0
+-                0x00107724                __ZN7PROCESS9ADDTHREADEPv@8
+-                0x001059d4                __ZN12SLABMETADATA6KALLOCEm@8
+-                0x00109394                _SYSCALL31HANDLER@4
+-                0x00109a84                __ZN9SEMAPHORE9SEMUNLOCKEP6THREAD@8
+-                0x00104834                _FLOATTOSTR@4
+-                0x00107944                __ZN17ADDRESSSPACEENTRYD1Ev
+-                0x00102744                _GETTIMEBCD@0
+-                0x00104354                _STRTOLOWER@4
+-                0x00102cc4                __ZN11VIRTCONSOLED1Ev
+-                0x00105c24                __ZN4SLAB4INITEt@8
+-                0x00103834                _MODULES_PRE_INIT@4
+-                0x001049a4                _DOUBLETOSTR@8
+-                0x001034c4                _CONSOLEWRITETEXTANDDEC@12
+-                0x00104414                _SUBSTRING@12
+-                0x001024b4                _SET_TIMER_FREQ@4
+-                0x00102bb4                __ZN8SPINLOCK7ACQUIREEv@4
+-                0x00103434                _CONSOLESETFOREGROUND@4
+-                0x00105094                _MEMSET16@12
+-                0x00108004                __ZN11THREADQUEUE7DEQUEUEEv@4
+-                0x00101e54                __ZN10VMMCONTEXT4SYNCEv@4
+-                0x00103634                _CONSOLEPRINTFAIL@0
+-                0x001044e4                _STRENDSWITH@8
+-                0x00104104                _STRREV@4
+-                0x00105d14                __ZN4SLAB5ALLOCEm@8
+-                0x001055f4                _PMM_INIT@4
+-                0x00102624                _GETDATEBCD@0
+-                0x00104dd4                _INTTOSTR@8
+-                0x001073d4                __ZN7PROCESS14PARSEARGUMENTSEv@4
+-                0x00102bf4                __ZN8SPINLOCK7RELEASEEv@4
+-                0x001095e4                __ZN14USERMODEDEVICE6CREATEEPhP6THREADmm@16
+-                0x00102fc4                __ZN11VIRTCONSOLE9PRINTFAILEv@4
+-                0x00104204                _STRTOLOWERFIX@4
+-                0x00101724                _KTSS_INIT@0
+-                0x00103354                __ZN11VIRTCONSOLE7NEWLINEEv@4
+-                0x00105ad4                __ZN12SLABMETADATA5KFREEEPv@8
+-                0x00105f84                _KFREE@4
+-                0x00104ff4                _MEMCPY64@12
+-                0x001035e4                _CONSOLEWRITENUMBER@8
+-                0x00107ac4                _EXITCRITICAL@0
+-                0x001099c4                __ZN9SEMAPHORE7SEMLOCKEP6THREAD@8
+-                0x00106524                _EXCEPTIONHANDLER@4
+-                0x001070a4                __ZN7PROCESS11FREECONSOLEEv@4
+-                0x00108234                __ZN15THREADSCHEDULER6SWITCHEP9IRQ_STACKP6THREAD@12
+-                0x00103674                _CONSOLENEWLINE@0
+-                0x001077a4                __ZN7PROCESS9TERMINATEEPS_@4
+-                0x00103604                _CONSOLEPUTCHAR@4
+-                0x001053e4                _ATOL@4
+-                0x001096d4                __ZN14USERMODEDEVICE6INVOKEEmP6THREADmmmm@24
+-                0x001080e4                __ZN11THREADQUEUE6REMOVEEP6THREAD@8
+-                0x00107f44                __ZN11THREADQUEUE11ENQUEUEHEADEP6THREAD@8
+-                0x001031c4                __ZN11VIRTCONSOLE9BACKSPACEEv@4
+-                0x00103644                _CONSOLEBACKSPACE@0
+-                0x00109894                __ZN6SIGNAL3SETEv@4
+-                0x00109904                __ZN9SEMAPHOREC1Ev
+-                0x001084d4                _NEXTRANDOMNUMBER@8
+-                0x00106f84                __ZN7PROCESS18REMOVEADDRESSSPACEEm@8
+-                0x001072f4                __ZN7PROCESS6DOLOADEv@4
+-                0x00103384                __ZN11VIRTCONSOLE6SCROLLEv@4
+-                0x00104bf4                _LONGTOSTR@8
+-                0x00109cd4                __ZN11IPCENDPOINT8CREATEIDEmP6THREADmm@16
+-                0x001034f4                _CONSOLEWRITETEXTANDSIZE@12
+-                0x001033e4                __ZN11VIRTCONSOLE5CLEAREv@4
+-                0x001068b4                _VESAGETINFO@0
+-                0x001063c4                _IRQ_THREAD_TERMINATED@4
+-                0x00104f94                _MEMCPY512@12
+-                0x00109774                __ZN6SIGNALC1Ev
+-                0x00109e14                __ZN10IPCMESSAGED1Ev
+-                0x00108374                __ZN15THREADSCHEDULER17SETTHREADREADYNOWEP6THREAD@8
+-                0x00104194                _STRTOUPPERFIX@4
+-                0x00105864                _PMM_FREEPAGE@4
+-                0x00104f74                _MEMCPY32@12
+-                0x00107e84                __ZN6THREAD9ADDTOLISTEv@4
+-                0x001018a4                _GDT_INIT@0
+-                0x00102414                __ZN10VMMCONTEXT7RESOLVEEPv@8
+-                0x00106c54                _VESARESETSCREEN@0
+-                0x00103264                __ZN11VIRTCONSOLE5WRITEEPh@8
+-                0x00101c84                _VMM_INIT_LOCAL@0
+-                0x00107834                __ZN17ADDRESSSPACEENTRY4SBRKEm@8
+-                0x00102b94                __ZN8SPINLOCK4INITEv@4
+-                0x00102b14                _PIC_IS_SPURIOUS@4
+-                0x00102584                _MASK_IRQ@0
+-                0x001097d4                __ZN6SIGNALD1Ev
+-                0x00102564                _UNMASK_IRQ@0
+-                0x00106074                _SET_IDT@12
+-                0x00101ea4                __ZN10VMMCONTEXT8ACTIVATEEv@4
+-                0x00103654                _CONSOLEWRITE@4
+-                0x00101d14                __ZN10VMMCONTEXTD1Ev
+-                0x00107154                __ZN7PROCESS10DOLOADFLATEv@4
+-                0x00102824                _READ_RTC@0
+-                0x00103d94                _STRCONTAINS@8
++                0x00106a64                _VESASETMODE@4
++                0x00103534                _CONSOLEWRITEUNUMBER@8
++                0x00109ee4                __ZN11IPCENDPOINT8FINDBYIDEm@4
++                0x00105834                _GETSMALLESTPOWEROFTWOO@4
++                0x00108044                __ZN11THREADQUEUE11ENQUEUETAILEP6THREAD@8
++                0x00102364                __ZN10VMMCONTEXT11UNMAP_RANGEEPvm@12
++                0x00106014                _INT_HANDLER@4
++                0x00101814                _KTSS_SET@16
++                0x00104ff4                _MEMSET32@12
++                0x00104e94                _MEMCPY16@12
++                0x001020b4                __ZN10VMMCONTEXT7AUTOMAPEPvmmmm@24
++                0x00101a14                _LDT_SET_GATE@20
++                0x00101e94                __ZN10VMMCONTEXT13GET_PAGETABLEEm@8
++                0x00107fb4                __ZN11THREADQUEUEC1Ev
++                0x0010a344                __ZN11IPCENDPOINT7DEQUEUEEv@4
++                0x00105d14                __ZN4SLAB4FREEEPv@8
++                0x00106234                _IRQ_DISABLE@4
++                0x00101f84                __ZN10VMMCONTEXT15FIND_FREE_PAGESEmmm@16
++                0x00107a54                _VIRT_IO_READ@4
++                0x00106b94                __ZN7PROCESS10INITENGINEEv@0
++                0x00105ee4                _INTERRUPTSMANAGER_INIT@0
++                0x0010a2f4                __ZN11IPCENDPOINT7ENQUEUEEP10IPCMESSAGE@8
++                0x0010a3a4                __ZN11IPCENDPOINT14PROCESSRECEIVEEv@4
++                0x001019e4                _GDT_SET_GATE@20
++                0x001062e4                _IRQ_SEND_ACK@4
++                0x001039e4                _FCOS@4
++                0x001041d4                _STRTOUPPER@4
++                0x001062c4                _IRQ_DETACH_HANDLER@4
++                0x00103994                _DSIN@8
++                0x00105014                _ATOI@4
++                0x001079a4                _VIRT_STDIO_CREATE@0
++                0x00107f44                __ZN6THREAD6DOWAITEP9IRQ_STACK@8
++                0x00103944                _DCOS@8
++                0x00105714                _PMM_ALLOCPAGE@0
++                0x00102d24                _CONSOLEPRINTOK@0
++                0x001078b4                __ZN17ADDRESSSPACEENTRY8COPYFROMEPvm@12
++                0x00108214                __ZN15THREADSCHEDULERC1Ev
++                0x001022d4                __ZN10VMMCONTEXT9MAP_RANGEEPvS0_S0_m@20
++                0x0010a544                _IPCSENDBODY@12
++                0x001035e4                _MODULES_INIT@4
++                0x00101524                _REALMODE_INIT@0
++                0x00104564                _FTOA@12
++                0x00101bd4                _VMM_GET_CURRENT_CONTEXT@0
++                0x001074d4                __ZN7PROCESS9ADDTHREADEPv@8
++                0x00105914                __ZN12SLABMETADATA6KALLOCEm@8
++                0x00109474                _SYSCALL31HANDLER@4
++                0x00109e24                __ZN9SEMAPHORE9SEMUNLOCKEP6THREAD@8
++                0x00104774                _FLOATTOSTR@4
++                0x001077f4                __ZN17ADDRESSSPACEENTRYD1Ev
++                0x001026e4                _GETTIMEBCD@0
++                0x00104294                _STRTOLOWER@4
++                0x00105b64                __ZN4SLAB4INITEt@8
++                0x00103774                _MODULES_PRE_INIT@4
++                0x001048e4                _DOUBLETOSTR@8
++                0x00103434                _CONSOLEWRITETEXTANDDEC@12
++                0x00104354                _SUBSTRING@12
++                0x00107ad4                _INIT_STD_PIPE@0
++                0x00102454                _SET_TIMER_FREQ@4
++                0x00102b54                __ZN8SPINLOCK7ACQUIREEv@4
++                0x001033c4                _CONSOLESETFOREGROUND@4
++                0x00104fd4                _MEMSET16@12
++                0x001080a4                __ZN11THREADQUEUE7DEQUEUEEv@4
++                0x00101df4                __ZN10VMMCONTEXT4SYNCEv@4
++                0x00102f04                _CONSOLEPRINTFAIL@0
++                0x00104424                _STRENDSWITH@8
++                0x00104044                _STRREV@4
++                0x00105c54                __ZN4SLAB5ALLOCEm@8
++                0x00105534                _PMM_INIT@4
++                0x001025c4                _GETDATEBCD@0
++                0x00104d14                _INTTOSTR@8
++                0x00107174                __ZN7PROCESS14PARSEARGUMENTSEv@4
++                0x00107a14                _VIRT_IO_WRITE@8
++                0x00102b94                __ZN8SPINLOCK7RELEASEEv@4
++                0x00109984                __ZN14USERMODEDEVICE6CREATEEPhP6THREADmm@16
++                0x00104144                _STRTOLOWERFIX@4
++                0x00101714                _KTSS_INIT@0
++                0x00105a14                __ZN12SLABMETADATA5KFREEEPv@8
++                0x001032d4                _CONSOLESCROLL@0
++                0x00105ec4                _KFREE@4
++                0x00104f34                _MEMCPY64@12
++                0x00107b04                _STD_WRITE@8
++                0x00103554                _CONSOLEWRITENUMBER@8
++                0x00107b64                _EXITCRITICAL@0
++                0x00109d64                __ZN9SEMAPHORE7SEMLOCKEP6THREAD@8
++                0x00106464                _EXCEPTIONHANDLER@4
++                0x001082d4                __ZN15THREADSCHEDULER6SWITCHEP9IRQ_STACKP6THREAD@12
++                0x00103294                _CONSOLENEWLINE@0
++                0x00107554                __ZN7PROCESS9TERMINATEEPS_@4
++                0x00102c44                _CONSOLEPUTCHAR@4
++                0x00105324                _ATOL@4
++                0x00109a74                __ZN14USERMODEDEVICE6INVOKEEmP6THREADmmmm@24
++                0x00108184                __ZN11THREADQUEUE6REMOVEEP6THREAD@8
++                0x00107fe4                __ZN11THREADQUEUE11ENQUEUEHEADEP6THREAD@8
++                0x00107604                __ZN7PROCESS6GET_INEP8STD_PIPE@8
++                0x001030d4                _CONSOLEBACKSPACE@0
++                0x00109c34                __ZN6SIGNAL3SETEv@4
++                0x00109ca4                __ZN9SEMAPHOREC1Ev
++                0x00108544                _NEXTRANDOMNUMBER@8
++                0x00107984                __ZN8STD_PIPE5WRITEEh@8
++                0x00106e84                __ZN7PROCESS18REMOVEADDRESSSPACEEm@8
++                0x001070b4                __ZN7PROCESS6DOLOADEv@4
++                0x00104b34                _LONGTOSTR@8
++                0x0010a074                __ZN11IPCENDPOINT8CREATEIDEmP6THREADmm@16
++                0x00103464                _CONSOLEWRITETEXTANDSIZE@12
++                0x001067e4                _VESAGETINFO@0
++                0x00106304                _IRQ_THREAD_TERMINATED@4
++                0x00104ed4                _MEMCPY512@12
++                0x00109b14                __ZN6SIGNALC1Ev
++                0x0010a1b4                __ZN10IPCMESSAGED1Ev
++                0x001083e4                __ZN15THREADSCHEDULER17SETTHREADREADYNOWEP6THREAD@8
++                0x001040d4                _STRTOUPPERFIX@4
++                0x001057a4                _PMM_FREEPAGE@4
++                0x00104eb4                _MEMCPY32@12
++                0x00107f24                __ZN6THREAD9ADDTOLISTEv@4
++                0x00101894                _GDT_INIT@0
++                0x001023b4                __ZN10VMMCONTEXT7RESOLVEEPv@8
++                0x00106b74                _VESARESETSCREEN@0
++                0x00101c64                _VMM_INIT_LOCAL@0
++                0x001076e4                __ZN17ADDRESSSPACEENTRY4SBRKEm@8
++                0x00102b34                __ZN8SPINLOCK4INITEv@4
++                0x00102ab4                _PIC_IS_SPURIOUS@4
++                0x00102524                _MASK_IRQ@0
++                0x00109b74                __ZN6SIGNALD1Ev
++                0x00102504                _UNMASK_IRQ@0
++                0x00105fb4                _SET_IDT@12
++                0x00101e44                __ZN10VMMCONTEXT8ACTIVATEEv@4
++                0x00103184                _CONSOLEWRITE@4
++                0x00101cb4                __ZN10VMMCONTEXTD1Ev
++                0x00106f14                __ZN7PROCESS10DOLOADFLATEv@4
++                0x00107954                __ZN8STD_PIPE4READEv@4
++                0x001027c4                _READ_RTC@0
++                0x00103cd4                _STRCONTAINS@8
+ 
+ .rodata
+  *(.rodata)
+ 
+-.data           0x0010b000      0x670
++.data           0x0010b000      0x650
+  *(.data)
+- .data          0x0010b000      0x670 obj/main.o
++ .data          0x0010b000      0x650 obj/main.o
+ 
+-.ctors          0x0010b670        0x8
+- .ctors         0x0010b670        0x8 obj/main.o
++.ctors          0x0010b650        0x8
++ .ctors         0x0010b650        0x8 obj/main.o
+ 
+-.dtors          0x0010b678        0x4
+- .dtors         0x0010b678        0x4 obj/main.o
++.dtors          0x0010b658        0x4
++ .dtors         0x0010b658        0x4 obj/main.o
+ 
+-.bss            0x0010b67c   0x2029b0
+-                0x0010b67c                SBSS = .
++.bss            0x0010b65c   0x2029b8
++                0x0010b65c                SBSS = .
+  *(COMMON)
+  *(.bss)
+- .bss           0x0010b67c   0x100000 obj/0Start.o
+- .bss           0x0020b67c   0x1029b0 obj/main.o
+-                0x0030e02c                EBSS = .
+-                0x0030e02c                _KERNEL_END = .
++ .bss           0x0010b65c   0x100000 obj/0Start.o
++ .bss           0x0020b65c   0x1029b8 obj/main.o
++                0x0030e014                EBSS = .
++                0x0030e014                _KERNEL_END = .
+ OUTPUT(bin/kernel.elf elf32-i386)
+ 
+-.rel.dyn        0x0030e02c        0x0
++.rel.dyn        0x0030e014        0x0
+  .rel.text      0x00000000        0x0 obj/0Start.o
+diff --git a/kernel/include/console.bi b/kernel/include/console.bi
+index d0491a4..d12c5e1 100644
+--- a/kernel/include/console.bi
++++ b/kernel/include/console.bi
+@@ -1,32 +1,7 @@
+-Type VirtConsole
+-    CursorX as integer
+-    CursorY as integer
+-    Foreground as byte
+-    Background as byte
+-    PHYS as byte ptr
+-    VIRT as byte ptr
+-    declare sub PutChar (c as byte)  
+-    declare sub PrintOK()
+-    declare sub PrintFAIL()
+-    declare sub BackSpace()
+-    declare sub Write(src as unsigned byte ptr)
+-    declare sub WriteLine(src as unsigned byte ptr)
+-    declare sub NewLine()
+-    declare sub Scroll()
+-    declare sub Clear()
+-    
+-    declare destructor()
+-    
+-    declare sub Activate()
+-end type
+-
+ declare sub ConsoleInit()
+ DECLARE sub ConsoleClear()
+ declare sub ConsoleSetBackground(c as byte)
+ declare sub ConsoleSetForeground(c as byte)
+-
+-
+-
+ declare sub ConsoleWriteTextAndHex(src as unsigned byte ptr,n as unsigned integer,newline as boolean)
+ declare sub ConsoleWriteTextAndSize(src as unsigned byte ptr,s as unsigned integer,newline as boolean)
+ declare sub ConsoleWriteTextAndDec(src as unsigned byte ptr,n as unsigned integer,newline as boolean)
+@@ -42,7 +17,11 @@ declare sub ConsoleUpdateCursor()
+ declare sub ConsolePrintOK()
+ declare sub ConsolePrintFAIL()
+ declare sub ConsolePutChar (c as byte)
+-dim shared CurrentConsole as VirtConsole ptr
+-dim shared SYSCONSOLE as VirtConsole
+-dim shared VIRT_CONSOLE_MEM as unsigned byte ptr
+-dim shared PHYS_CONSOLE_MEM as unsigned byte ptr
+\ No newline at end of file
++dim shared CONSOLE_MEM     as unsigned byte ptr
++dim shared consoleWidth         as integer
++dim shared consoleHeight        as integer
++dim shared consoleCursorX       as integer
++dim shared consoleCursorY       as integer
++dim shared consoleLineOffset    as integer
++dim shared consoleBackground    as unsigned byte
++dim shared consoleForeground    as unsigned byte
+\ No newline at end of file
+diff --git a/kernel/include/process.bi b/kernel/include/process.bi
+index ffb85e6..817e0dd 100644
+--- a/kernel/include/process.bi
++++ b/kernel/include/process.bi
+@@ -22,8 +22,6 @@ TYPE Process field =1
+     VMM_Context as VMMContext
+     TmpArgs as unsigned byte ptr
+     
+-    VIRT_CONSOLE as VirtConsole ptr
+-    
+     ServerChannels as any ptr
+     ClientChannels as any ptr
+     
+@@ -32,12 +30,16 @@ TYPE Process field =1
+     CodeAddressSpace as AddressSpaceEntry ptr
+     StackAddressSpace as AddressSpaceEntry ptr
+     
++    STD_IN  as STD_PIPE ptr
++    STD_OUT as STD_PIPE ptr
++    WaitingThread as any ptr
++    
+     declare function CreateAddressSpace(virt as unsigned integer) as AddressSpaceEntry ptr
+     declare function FindAddressSpace(virt as unsigned integer)  as AddressSpaceEntry ptr
+     declare sub RemoveAddressSpace(virt as unsigned integer)
+     
+     declare static sub InitEngine()
+-    declare static function Create(image as EXECUTABLE_HEADER ptr,size as unsigned integer,args as unsigned byte ptr) as Process ptr
++    declare static function Create(image as EXECUTABLE_HEADER ptr,size as unsigned integer,args as unsigned byte ptr,stdIn as STD_PIPE ptr,stdOut as STD_PIPE ptr) as Process ptr
+     
+     declare static sub Terminate(app as Process ptr)
+     declare static sub RequestTerminate(app as Process ptr)
+@@ -50,8 +52,8 @@ TYPE Process field =1
+     declare function DoLoadElf() as unsigned integer
+     declare sub ParseArguments()
+     
+-    declare sub FreeConsole()
+-    declare sub CreateConsole()
++    declare function GET_IN(pip as STD_PIPE ptr) as STD_PIPE ptr
++    declare function GET_OUT(pip as STD_PIPE ptr) as STD_PIPE ptr
+     
+ end type
+ 
+diff --git a/kernel/include/thread.bi b/kernel/include/thread.bi
+index 4c6afe3..ca7493d 100644
+--- a/kernel/include/thread.bi
++++ b/kernel/include/thread.bi
+@@ -9,6 +9,7 @@ enum ThreadState
+     WaitingDialog = 7
+     WaitingReply = 8
+     WaitingSendChannel = 9
++    WaitingForProcess=10
+     Terminating = 127
+ end enum
+ 
+diff --git a/kernel/src/arch/x86/vmm.bas b/kernel/src/arch/x86/vmm.bas
+index f57e25a..270c9b6 100644
+--- a/kernel/src/arch/x86/vmm.bas
++++ b/kernel/src/arch/x86/vmm.bas
+@@ -23,8 +23,8 @@ sub VMM_INIT()
+     kernel_context.map_range(KSTART, KSTART, KEND, VMM_FLAGS_KERNEL_DATA)
+     
+   
+-    'map video memory 1:1
+-    kernel_context.map_page(cptr(any ptr, &hB8000), cptr(any ptr, &hB8000), VMM_FLAGS_USER_DATA)
++    'map text video memory
++    kernel_context.map_page(CONSOLE_MEM,CONSOLE_MEM, VMM_FLAGS_USER_DATA)
+ 	
+ 	'map the page tables 
+     kernel_context.v_dir = cptr(uinteger ptr, (VMM_PAGETABLES_VIRT_START shr 22)*4096*1024 + (VMM_PAGETABLES_VIRT_START shr 22)*4096)
+@@ -51,8 +51,8 @@ sub VMM_EXIT()
+         and ebx, &h7FFFFFFF
+         mov cr0,ebx
+     end asm
+-    SysConsole.VIRT = cptr(any ptr, &hB8000)
+     paging_active = 0
++    
+ end sub
+ 
+ function vmm_get_current_context () as VMMContext ptr
+@@ -71,7 +71,6 @@ end sub
+ 
+ '' loads the pagedir into cr3 and activates paging
+ sub vmm_init_local ()
+-    ConsoleWrite(@"Enabling paging")
+ 	dim pagedir as uinteger ptr = kernel_context.p_dir
+ 	asm
+ 		'' load the page directory address
+@@ -90,13 +89,6 @@ sub vmm_init_local ()
+ 	end asm
+ 	KTSS_SET_CR3(cuint(pagedir))
+ 	paging_active = 1
+-    
+-    current_context->unmap_page(SysConsole.VIRT)
+-    SysConsole.Virt = cptr(unsigned byte ptr, ProcessConsoleAddress)
+-    current_context->map_page(SysConsole.VIRT,SysConsole.PHYS, VMM_FLAGS_USER_DATA)
+-    
+-    ConsolePrintOK()
+-    ConsoleNewLine()
+ end sub
+ 
+ destructor VMMContext()
+diff --git a/kernel/src/console.bas b/kernel/src/console.bas
+index e0a6da6..e346c16 100644
+--- a/kernel/src/console.bas
++++ b/kernel/src/console.bas
+@@ -2,25 +2,17 @@
+ #include once "stdlib.bi"
+ 
+ 
+-const consoleWidth=80
+-const consoleHeight=25
+-
+-
+ 
+ sub ConsoleInit()
+-    VIRT_CONSOLE_MEM = cptr(unsigned byte ptr,&HB8000)
+-    PHYS_CONSOLE_MEM = cptr(unsigned byte ptr,&HB8000)
++    CONSOLE_MEM = cptr(unsigned byte ptr,&HB8000)
+     
+-    SYSCONSOLE.CursorX = 0
+-    SYSCONSOLE.CursorY = 0
+-    SYSCONSOLE.Foreground = 7
+-    SYSCONSOLE.BACKGROUND = 1
+-    SYSCONSOLE.PHYS = PHYS_CONSOLE_MEM
+-    SYSCONSOLE.VIRT = VIRT_CONSOLE_MEM
+-    CurrentConsole = @SYSCONSOLE
+-    
+-    ConsoleSetForeground(7)
+-    ConsoleSetBackground(0)
++    consoleWidth            = 80
++    consoleHeight           = 25
++    consoleLineOffset       = 0
++    consoleCursorX          = 0
++    consoleCursorY          = 0
++    consoleForeground       = 7
++    consoleBackground       = 0
+     ConsoleClear()
+     ConsoleUpdateCursor()
+     
+@@ -28,153 +20,150 @@ sub ConsoleInit()
+     ConsoleWrite(@KERNEL_NAME)
+     ConsoleWrite(@" ")
+     ConsoleWrite(@KERNEL_VERSION)
++    ConsoleWriteLine(@" startup ...")
+     ConsoleSetForeground(7)
+-    ConsoleWriteLine(@" ... System startup")
+-    
++    ConsoleNewLine
+ end sub
+ 
+-destructor VirtConsole()
+-    if (PHYS<>PHYS_CONSOLE_MEM) then
+-       PMM_FREEPAGE(PHYS)
+-    end if
+-end destructor
+-
+-sub VirtConsole.Activate()
+-    CurrentConsole=@this
+-end sub
+-
+-sub VirtConsole.PutChar(c as byte)
++sub ConsolePutChar(c as byte)
+     
+     if (c=13) then return
+     
+     if (c=10) then
+-        NewLine()
++        ConsoleNewLine()
+         return
+     end if
+     if (c=8) then
+-        BackSpace()
++        ConsoleBackSpace()
+         return
+     end if
+     if (c=9) then
+-        CursorX=CursorX+5
++        consoleCursorX += 5-(consoleCursorX mod 5)
++        if (consoleCursorX>=consoleWidth) then ConsoleNewLine()
+     else
+-        VIRT[(CursorY*consoleWidth+CursorX)*2]=c
+-        VIRT[(CursorY*consoleWidth+CursorX)*2+1]=(Background* 16 +Foreground)
+-        CursorX=CursorX+1
++        CONSOLE_MEM[(consoleLineOffset+consoleCursorX)*2]=c
++        CONSOLE_MEM[(consoleLineOffset+consoleCursorX)*2+1]=((consoleBackground* 16) +consoleForeground)
++        consoleCursorX=consoleCursorX+1
+         
+     end if
+-    if (CursorX>=consoleWidth) then 
+-        NewLine()
++    if (consoleCursorX>=consoleWidth) then 
++        ConsoleNewLine()
+     end if
++    ConsoleUpdateCursor()
+ end sub
+ 
+ 
+-sub VirtConsole.PrintOK()
+-    VIRT[(CursorY*consoleWidth+consoleWidth-7)*2]=91 '['
+-    VIRT[(CursorY*consoleWidth+consoleWidth-6)*2]=32 ' '
+-    VIRT[(CursorY*consoleWidth+consoleWidth-5)*2]=79 'O'
+-    VIRT[(CursorY*consoleWidth+consoleWidth-4)*2]=75 'K'
+-    VIRT[(CursorY*consoleWidth+consoleWidth-3)*2]=32 ' '
+-    VIRT[(CursorY*consoleWidth+consoleWidth-2)*2]=93 ']'
+-    VIRT[(CursorY*consoleWidth+consoleWidth-1)*2]=32 ' '
++sub ConsolePrintOK()
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-7)*2]=91 '['
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-6)*2]=32 ' '
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-5)*2]=79 'O'
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-4)*2]=75 'K'
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-3)*2]=32 ' '
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-2)*2]=93 ']'
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-1)*2]=32 ' '
+     
+-    VIRT[(CursorY*consoleWidth+consoleWidth-7)*2+1]=(Background* 16 +10)
+-    VIRT[(CursorY*consoleWidth+consoleWidth-6)*2+1]=(Background* 16 +10)
+-    VIRT[(CursorY*consoleWidth+consoleWidth-5)*2+1]=(Background* 16 +9)
+-    VIRT[(CursorY*consoleWidth+consoleWidth-4)*2+1]=(Background* 16 +9)
+-    VIRT[(CursorY*consoleWidth+consoleWidth-3)*2+1]=(Background* 16 +10)
+-    VIRT[(CursorY*consoleWidth+consoleWidth-2)*2+1]=(Background* 16 +10)
+-    VIRT[(CursorY*consoleWidth+consoleWidth-1)*2+1]=(Background* 16 +10)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-7)*2+1]=(consoleBackground* 16 + 9)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-6)*2+1]=(consoleBackground* 16 + consoleForeground)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-5)*2+1]=(consoleBackground* 16 + 10)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-4)*2+1]=(consoleBackground* 16 + 10)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-3)*2+1]=(consoleBackground* 16 + consoleForeground)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-2)*2+1]=(consoleBackground* 16 + 9)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-1)*2+1]=(consoleBackground* 16 + consoleForeground)
+ end sub
+ 
+-sub VirtConsole.PrintFAIL()
++sub ConsolePrintFAIL()
+     	
+-	VIRT[(CursorY*consoleWidth+consoleWidth-7)*2]=asc("[")
+-    VIRT[(CursorY*consoleWidth+consoleWidth-6)*2]=asc("F")
+-    VIRT[(CursorY*consoleWidth+consoleWidth-5)*2]=asc("A")
+-    VIRT[(CursorY*consoleWidth+consoleWidth-4)*2]=asc("I")
+-    VIRT[(CursorY*consoleWidth+consoleWidth-3)*2]=asc("L")
+-    VIRT[(CursorY*consoleWidth+consoleWidth-2)*2]=asc("]")
+-    VIRT[(CursorY*consoleWidth+consoleWidth-1)*2]=asc(" ")
++	CONSOLE_MEM[(consoleLineOffset+consoleWidth-7)*2]=asc("[")
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-6)*2]=asc("F")
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-5)*2]=asc("A")
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-4)*2]=asc("I")
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-3)*2]=asc("L")
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-2)*2]=asc("]")
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-1)*2]=asc(" ")
+     
+     
+-    VIRT[(CursorY*consoleWidth+consoleWidth-7)*2+1]=(Background* 16 +Foreground)
+-    VIRT[(CursorY*consoleWidth+consoleWidth-6)*2+1]=(Background* 16 +12)
+-    VIRT[(CursorY*consoleWidth+consoleWidth-5)*2+1]=(Background* 16 +12)
+-    VIRT[(CursorY*consoleWidth+consoleWidth-4)*2+1]=(Background* 16 +12)
+-    VIRT[(CursorY*consoleWidth+consoleWidth-3)*2+1]=(Background* 16 +12)
+-    VIRT[(CursorY*consoleWidth+consoleWidth-2)*2+1]=(Background* 16 +Foreground)
+-    VIRT[(CursorY*consoleWidth+consoleWidth-1)*2+1]=(Background* 16 +Foreground)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-7)*2+1]=(consoleBackground* 16 + 9)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-6)*2+1]=(consoleBackground* 16 + 12)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-5)*2+1]=(consoleBackground* 16 + 12)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-4)*2+1]=(consoleBackground* 16 + 12)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-3)*2+1]=(consoleBackground* 16 + 12)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-2)*2+1]=(consoleBackground* 16 + 9)
++    CONSOLE_MEM[(consoleLineOffset+consoleWidth-1)*2+1]=(consoleBackground* 16 + consoleForeground)
+ end sub
+ 
+-sub VirtConsole.BackSpace()
+-    if (CursorX=0) then
+-        if (CursorY>0) then
+-            CursorX=consoleWidth-1
+-			CursorY-=1
++sub ConsoleBackSpace()
++    if (consoleCursorX=0) then
++        if (consoleCursorY>0) then
++            consoleCursorX=consoleWidth-1
++			consoleCursorY-=1
+         end if
+         
+     else
+-        CursorX-=1
++        consoleCursorX-=1
+     end if
+-    VIRT[(CursorY*consoleWidth+CursorX)*2]=0
+-    VIRT[(CursorY*consoleWidth+CursorX)*2+1]=(Background* 16 +Foreground)
++    consoleLineOffset = consoleCursorY * consoleWidth
++    CONSOLE_MEM[(consoleLineOffset+consoleCursorX)*2]=0
++    CONSOLE_MEM[(consoleLineOffset+consoleCursorX)*2+1]=(consoleBackground* 16 +consoleForeground)
++    
++    ConsoleUpdateCursor()
+ end sub
+-sub VirtConsole.WriteLine(src as unsigned byte ptr)
+-    this.Write(src)
+-    this.NewLine()
++
++sub ConsoleWriteLine(src as unsigned byte ptr)
++    ConsoleWrite(src)
++    ConsoleNewLine()
++    
++    ConsoleUpdateCursor()
+ end sub
+ 
+-sub VirtConsole.Write(src as unsigned byte ptr)
++sub ConsoleWrite(src as unsigned byte ptr)
+     dim cpt as integer
+     cpt=0
+     WHILE src[cpt] <> 0
+ 		if (src[cpt]=10) then 
+-			NewLine()
++			ConsoleNewLine()
+ 		elseif(src[cpt]=9) then
+-			CursorX=CursorX+5
+-			if (CursorX>=consoleWidth) then NewLine()
++			consoleCursorX += 5-(consoleCursorX mod 5)
++			if (consoleCursorX>=consoleWidth) then ConsoleNewLine()
+ 		elseif(src[cpt]=13) then
+ 		else
+-			VIRT[(CursorY*consoleWidth+CursorX)*2]=src[cpt]
+-			VIRT[(CursorY*consoleWidth+CursorX)*2+1]=(Background* 16 +Foreground)
+-			CursorX=CursorX+1
+-			if (CursorX>=consoleWidth) then NewLine()
++			CONSOLE_MEM[(consoleLineOffset+consoleCursorX)*2]=src[cpt]
++			CONSOLE_MEM[(consoleLineOffset+consoleCursorX)*2+1]=(consoleBackground* 16 +consoleForeground)
++			consoleCursorX=consoleCursorX+1
++			if (consoleCursorX>=consoleWidth) then ConsoleNewLine()
+ 		end if
+         cpt=cpt+1
+     WEND
+ end sub
+ 
+-sub VirtConsole.NewLine()
+-    CursorX=0
+-    CursorY=CursorY+1
+-    if (CursorY>=consoleHeight) then Scroll()
++sub ConsoleNewLine()
++    consoleCursorX=0
++    consoleCursorY=consoleCursorY+1
++    if (consoleCursorY>=consoleHeight) then ConsoleScroll()
++    consoleLineOffset = consoleCursorY*ConsoleWidth
+ end sub
+ 
+-sub VirtConsole.Scroll()
+-    memcpy16(cptr(unsigned short ptr,cuint(VIRT)),cptr(unsigned short ptr,cuint(VIRT)+(consoleWidth*2)),consoleWidth*(consoleHeight-1))
+-    memset16(cptr(unsigned short ptr,cuint(VIRT)+consoleWidth*(consoleHeight-1)*2),(Background* 16 +Foreground) shl 8,consoleWidth)
++sub ConsoleScroll()
++    memcpy16(cptr(unsigned short ptr,cuint(CONSOLE_MEM)),cptr(unsigned short ptr,cuint(CONSOLE_MEM)+(consoleWidth*2)),consoleWidth*(consoleHeight-1))
++    memset16(cptr(unsigned short ptr,cuint(CONSOLE_MEM)+consoleWidth*(consoleHeight-1)*2),(consoleBackground* 16 +consoleForeground) shl 8,consoleWidth)
+ 
+-	CursorY=CursorY-1
++	consoleCursorY=consoleCursorY-1
++    consoleLineOffset = consoleCursorY*ConsoleWidth
+ end sub
+ 
+-sub VirtConsole.Clear()
+-    memset16(cptr(unsigned short ptr,cuint(VIRT)),(Background* 16 +Foreground) shl 8,consoleWidth*consoleHeight)
+-    CursorX = 0
+-    CursorY = 0
++sub ConsoleClear()
++    memset16(cptr(unsigned short ptr,cuint(CONSOLE_MEM)),(consoleBackground* 16 +consoleForeground) shl 8,consoleWidth*consoleHeight)
++    consoleCursorX = 0
++    consoleCursorY = 0
++    consoleLineOffset = consoleCursorY*ConsoleWidth
+ end sub
+ 
+ 
+ sub ConsoleSetForeground(c as byte)
+-    CurrentConsole->Foreground=c
++    consoleForeground=c
+ end sub
+ 
+ sub ConsoleSetBackground(c as byte)
+-    CurrentConsole->Background=c
+-end sub
+-
+-sub ConsoleWriteLine(src as unsigned byte ptr)
+-    CurrentConsole->WriteLine(src)
++    consoleBackground=c
+ end sub
+ 
+ sub ConsoleWriteTextAndHex(src as unsigned byte ptr,n as unsigned integer,newline as boolean)
+@@ -184,7 +173,6 @@ sub ConsoleWriteTextAndHex(src as unsigned byte ptr,n as unsigned integer,newlin
+     if (newline) then ConsoleNewLine()
+ end sub
+ 
+-
+ sub ConsoleWriteTextAndDec(src as unsigned byte ptr,n as unsigned integer,newline as boolean)
+     ConsoleWrite(src)
+     ConsoleWrite(@" ")
+@@ -192,7 +180,6 @@ sub ConsoleWriteTextAndDec(src as unsigned byte ptr,n as unsigned integer,newlin
+     if (newline) then ConsoleNewLine()
+ end sub
+ 
+-
+ sub ConsoleWriteTextAndSize(src as unsigned byte ptr,s as unsigned integer,newline as boolean)
+     ConsoleWrite(src)
+     ConsoleWrite(@" ")
+@@ -229,46 +216,17 @@ sub ConsoleWriteNumber(number as integer,abase as unsigned integer)
+     ConsoleWrite(IntToStr(number,abase))
+ end sub
+ 
+-sub ConsolePutChar (c as byte)  
+-    CurrentConsole->PutChar(c)
+-end sub
+-
+-sub ConsolePrintOK()
+-    CurrentConsole->PrintOK()
+-end sub
+-    
+-
+-sub ConsolePrintFAIL()
+-    CurrentConsole->PrintFAIL()
+-end sub
+-
+-sub ConsoleBackSpace()
+-    CurrentConsole->BackSpace()
+-end sub
+-
+-sub ConsoleWrite(src as unsigned byte ptr)
+-    CurrentConsole->Write(src)
+-end sub
+-
+-sub ConsoleNewLine()
+-    CurrentConsole->NewLine()
+-end sub
+-
+-sub ConsoleClear()
+-    CurrentConsole->Clear()
+-end sub
+-
+ sub ConsoleUpdateCursor()
+-    'dim position as unsigned short=consoleCursorY*consoleWidth+consoleCursorX
++    dim position as unsigned short=consoleCursorY*consoleWidth+consoleCursorX
+  
+-    'dim out1 as unsigned byte = cast(unsigned byte,position and &hFF)
+-	'dim out2 as unsigned byte = cast(unsigned byte,(position shr 8) and &hFF)
++    dim out1 as unsigned byte = cast(unsigned byte,position and &hFF)
++	dim out2 as unsigned byte = cast(unsigned byte,(position shr 8) and &hFF)
+     '// cursor LOW port to vga INDEX register
+-    'outb(&h3D4, &h0F)
+-    'outb(&h3D5,[out1] )
++    outb(&h3D4, &h0F)
++    outb(&h3D5,[out1] )
+     '// cursor HIGH port to vga INDEX register
+-    'outb(&h3D4, &h0E)
+-    'outb(&h3D5,[out2] )
++    outb(&h3D4, &h0E)
++    outb(&h3D5,[out2] )
+ end sub
+ 
+ 
+diff --git a/kernel/src/drivers/vesa.bas b/kernel/src/drivers/vesa.bas
+index 70f96f2..dd1874a 100644
+--- a/kernel/src/drivers/vesa.bas
++++ b/kernel/src/drivers/vesa.bas
+@@ -83,10 +83,10 @@ sub VesaSetMode(mode as unsigned integer)
+     var lfbEND =LFB+(((LFBSize shr 12) +1) shl 12)
+     kernel_context.map_range(cptr(any ptr,LFB),cptr(any ptr, LFB),cptr(any ptr, lfbEND), VMM_FLAGS_USER_DATA)
+     
+-    SysConsole.Phys =  PMM_ALLOCPAGE()
+-    kernel_context.map_page(SysConsole.Virt,SysConsole.Phys, VMM_FLAGS_USER_DATA)
++    var PHYS_CONSOLE_MEM =  PMM_ALLOCPAGE()
++    kernel_context.map_page(&HB8000,PHYS_CONSOLE_MEM, VMM_FLAGS_USER_DATA)
+ 	DoRealModeActionReg(&h4F02,mode,0,0,0,0,0,&h10)
+-    
++    'ConsoleClear()
+ end sub
+ 
+ 
+diff --git a/kernel/src/exception.bas b/kernel/src/exception.bas
+index b70b8d7..bab294b 100644
+--- a/kernel/src/exception.bas
++++ b/kernel/src/exception.bas
+@@ -17,9 +17,8 @@ function PanicException(msg as unsigned byte ptr,stack as IRQ_Stack ptr) as IRQ_
+     
+     asm cli
+     VMM_EXIT()
+-    CurrentConsole = @SysConsole
+     VesaResetScreen()
+-    SysConsole.VIRT = cptr(any ptr,&hB8000)
++    CONSOLE_MEM = cptr(any ptr,&hB8000)
+     stack=current_context->Resolve(stack)
+     var th = cptr(Thread ptr,current_context->Resolve(SCheduler.CurrentRuningThread))
+     ConsoleWriteLine(msg)
+@@ -83,9 +82,8 @@ function ExceptionHandler(stack as IRQ_STACK ptr) as IRQ_Stack ptr
+                     mov [acr2],ebx
+                 end asm
+                 VMM_EXIT()
+-                CurrentConsole = @SysConsole
+                 VesaResetScreen()
+-                SysConsole.VIRT = cptr(any ptr,&hB8000)
++                CONSOLE_MEM = cptr(any ptr,&hB8000)
+                 ConsoleSetBackGround(4)
+                 ConsoleSetForeground(15)
+                 ConsoleClear()
+diff --git a/kernel/src/main.bas b/kernel/src/main.bas
+index eabed01..2d63d0b 100644
+--- a/kernel/src/main.bas
++++ b/kernel/src/main.bas
+@@ -16,6 +16,7 @@
+ #include once "exception.bi"
+ #include once "vesa.bi"
+ #include once "address_space.bi"
++#include once "std_pipe.bi"
+ #include once "process.bi"
+ #include once "thread.bi"
+ #include once "scheduler.bi"
+@@ -29,10 +30,10 @@
+ #include once "ipc/signal.bi"
+ #include once "ipc/semaphore.bi"
+ #include once "ipc/messaging.bi"
++
+ SUB MAIN (mb_info as multiboot_info ptr)
+     asm cli
+     ConsoleInit()
+-    ConsoleWriteLine(@"Test 1")
+     
+     GDT_INIT()
+     InterruptsManager_Init()
+@@ -55,7 +56,7 @@ SUB MAIN (mb_info as multiboot_info ptr)
+     Process.InitEngine()
+     
+     IPC_INIT()
+-    
++    INIT_STD_PIPE()
+     
+     MODULES_INIT(mb_info)
+     'find the best graphic mode
+@@ -64,7 +65,7 @@ SUB MAIN (mb_info as multiboot_info ptr)
+     vmm_init_local()
+     ConsoleNewLine()
+     
+-    if (mode<>0) then        
++    if (mode<>0) then
+         'switch to selected graphic mode
+         VMM_EXIT()
+         VesaSetMode(mode)
+@@ -84,9 +85,8 @@ end sub
+ sub KERNEL_ERROR(message as unsigned byte ptr,code as unsigned integer) 
+     asm cli
+     VMM_EXIT()
+-    CurrentConsole = @SysConsole
++    CONSOLE_MEM = cptr(any ptr,&hB8000)
+     VesaResetScreen()
+-    SysConsole.VIRT = cptr(any ptr,&hB8000)
+     
+     ConsoleSetBackGround(4)
+     ConsoleSetForeground(15)
+@@ -119,6 +119,7 @@ end sub
+ #include once "drivers/vesa.bas"
+ #include once "process.bas"
+ #include once "address_space.bas"
++#include once "std_pipe.bas"
+ #include once "thread.bas"
+ #include once "scheduler.bas"
+ #include once "rng.bas"
+diff --git a/kernel/src/modules.bas b/kernel/src/modules.bas
+index 76d6055..03f3bd9 100644
+--- a/kernel/src/modules.bas
++++ b/kernel/src/modules.bas
+@@ -19,7 +19,7 @@ sub MODULES_INIT(mb_info as multiboot_info ptr)
+         
+         var image = cptr(EXECUTABLE_HEADER ptr,mod_start)
+         
+-		var proc = Process.Create(image,mod_end-mod_start,v_mod_table[i].mod_string)
++		var proc = Process.Create(image,mod_end-mod_start,v_mod_table[i].mod_string,@CONSOLE_PIPE,@CONSOLE_PIPE)
+         proc->Parent = 0
+     next i
+ end sub
+diff --git a/kernel/src/process.bas b/kernel/src/process.bas
+index cef7324..eca7701 100644
+--- a/kernel/src/process.bas
++++ b/kernel/src/process.bas
+@@ -17,15 +17,6 @@ constructor Process()
+     LastProcessList = @this
+     NextProcessList = 0
+     
+-    if (Scheduler.CurrentRuningThread<>0) then
+-        if (Scheduler.CurrentRuningThread->Owner<>0) then
+-            VIRT_CONSOLE = Scheduler.CurrentRUningThread->Owner->VIRT_CONSOLE
+-        else
+-            VIRT_CONSOLE = @SYSCONSOLE
+-        end if
+-    else
+-        VIRT_CONSOLE = @SYSCONSOLE
+-    end if
+     ServerChannels = 0
+     ClientChannels = 0
+     
+@@ -56,9 +47,6 @@ destructor Process()
+     
+     NextProcessList= 0
+     PrevProcessList= 0
+-
+-    
+-    FreeConsole()
+ end destructor
+ 
+ function Process.CreateAddressSpace(virt as unsigned integer) as AddressSpaceEntry ptr
+@@ -99,45 +87,6 @@ sub Process.RemoveAddressSpace(virt as unsigned integer)
+     end if
+ end sub
+ 
+-sub Process.CreateConsole()
+-    FreeConsole()
+-    var console = cptr(VirtConsole ptr, KAlloc(sizeof(VirtConsole)))
+-    console->CursorX = 0
+-    console->CursorY = 0
+-    console->Foreground = 7
+-    console->Background = 0
+-    console->PHYS = PMM_ALLOCPAGE()
+-    console->VIRT =cptr(unsigned byte ptr, ProcessConsoleAddress)'cptr(unsigned byte ptr,&HB8000)
+-    
+-    current_context->map_page(console->VIRT,console->PHYS, VMM_FLAGS_USER_DATA)
+-    console->Activate()
+-    console->Clear()
+-    
+-    VIRT_CONSOLE = console
+-end sub
+-
+-sub Process.FreeConsole()
+-    if (VIRT_CONSOLE <> @SYSCONSOLE) then
+-        if (CurrentConsole = VIRT_CONSOLE) then
+-            SysConsole.Activate()
+-        end if
+-        
+-        var used = false
+-        var proc=FirstProcessList
+-        while proc<>0
+-            if (proc<>@this) and (proc->VIRT_CONSOLE=VIRT_CONSOLE) then
+-                used = true
+-            end if
+-            proc=proc->NextProcessList
+-        wend
+-        if (not used) then
+-            VIRT_CONSOLE->Destructor()
+-            KFREE(VIRT_CONSOLE)
+-        end if
+-    end if
+-end sub
+-
+-
+ function Process.DoLoadFlat() as unsigned integer
+     dim neededPages as unsigned integer = ((image->ImageEnd - ProcessAddress) shr 12)+2
+     CodeAddressSpace = this.CreateAddressSpace(ProcessAddress)
+@@ -177,7 +126,6 @@ end function
+ sub Process.DoLoad()
+ 	    
+ 	VMM_Context.Initialize()
+-    VMM_Context.map_page(VIRT_CONSOLE->VIRT,VIRT_CONSOLE->PHYS, VMM_FLAGS_USER_DATA)
+ 	
+     dim entry as unsigned integer = 0
+     if (image->Magic = &hAADDBBFF) then
+@@ -280,11 +228,13 @@ sub Process.ParseArguments()
+ 	end if
+ end sub
+ 
+-function Process.Create(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,args as unsigned byte ptr) as Process ptr
++function Process.Create(image as EXECUTABLE_HEADER ptr,fsize as unsigned integer,args as unsigned byte ptr,stdIn as STD_PIPE ptr,stdOut as STD_PIPE ptr) as Process ptr
+     dim result as Process ptr = 0
+     result = cptr(Process ptr,KAlloc(sizeof(Process)))
+     result->Constructor()
+-    
++    result->WaitingThread = 0
++    result->STD_IN  = stdIn
++    result->STD_OUT = stdOut
+     result->Image = image
+ 	result->Image->ArgsCount = 0'argsCount
+ 	'to do: copy data of arguments
+@@ -333,8 +283,43 @@ sub Process.Terminate(app as Process ptr)
+ 		
+ 		th=n
+     wend
++    if (app->WaitingThread<>0) then
++            Scheduler.SetThreadReady(app->WaitingThread)
++    end if
+     app->Destructor()
+     KFree(app)
+     ConsoleWriteLine(@"Process terminated")
+ end sub
+ 
++
++function Process.GET_IN(pip as STD_PIPE ptr) as STD_PIPE ptr
++    if (pip=0) then
++        pip =STD_IN
++    elseif (pip->MAGIC<>STD_PIPE_MAGIC) then
++        pip = STD_IN
++    end if
++    if (pip=0) then
++        pip = @CONSOLE_PIPE
++    elseif (pip->MAGIC<>STD_PIPE_MAGIC) then
++        pip = @CONSOLE_PIPE
++    end if
++    
++    return pip
++end function
++    
++
++function Process.GET_OUT(pip as STD_PIPE ptr) as STD_PIPE ptr
++    if (pip=0) then
++        pip =STD_OUT
++    elseif (pip->MAGIC<>STD_PIPE_MAGIC) then
++        pip = STD_OUT
++    end if
++    if (pip=0) then
++        pip = @CONSOLE_PIPE
++    elseif (pip->MAGIC<>STD_PIPE_MAGIC) then
++        pip = @CONSOLE_PIPE
++    end if
++    
++    return pip
++end function
++    
+\ No newline at end of file
+diff --git a/kernel/src/scheduler.bas b/kernel/src/scheduler.bas
+index b26c2e0..6299cd8 100644
+--- a/kernel/src/scheduler.bas
++++ b/kernel/src/scheduler.bas
+@@ -106,13 +106,7 @@ function ThreadScheduler.Switch(_stack as IRQ_Stack ptr,newThread as Thread ptr)
+ 		
+     KTSS_SET(CurrentRuningThread->SavedESP + sizeof(irq_stack),&h8,&h10,&h3202)
+     CurrentRuningThread->VMM_Context->Activate()
+-    if (CurrentRuningThread->Owner<>0) then
+-        CurrentRuningThread->Owner->VIRT_CONSOLE->Activate()
+-    else
+-        SysConsole.Activate()
+-    end if
+-    
+-    
++   
+ 	return nstack
+ end function
+ 
+diff --git a/kernel/src/syscalls/syscall30.bas b/kernel/src/syscalls/syscall30.bas
+index 863339c..fb925be 100644
+--- a/kernel/src/syscalls/syscall30.bas
++++ b/kernel/src/syscalls/syscall30.bas
+@@ -10,10 +10,23 @@ function SysCall30Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
+             if (args<>0) then
+                 if (strlen(args)=0) then args = 0
+             end if
+-            var p=Process.Create(cptr( EXECUTABLE_HEADER ptr,stack->EBX),stack->ECX,args)
++            var stdIn   = @CONSOLE_PIPE
++            var stdout  = @CONSOLE_PIPE
++            
++            if (CurrentThread->Owner<>0) then
++                stdIn   = CurrentThread->Owner->STD_IN
++                stdOut  = CurrentThread->Owner->STD_OUT
++            end if
++            
++            var p=Process.Create(cptr( EXECUTABLE_HEADER ptr,stack->EBX),stack->ECX,args,stdIn,stdOut)
+             ctx->Activate()
+             if (p<>0) then 
+                     p->Parent = CurrentThread->Owner
++                    if (stack->EDX = 1) then
++                        CurrentThread->STATE = WaitingForProcess
++                        p->WaitingThread = CurrentThread
++                        return Scheduler.Switch(stack, Scheduler.Schedule())
++                    end if
+                     stack->EAX = 1
+             '        return Scheduler.Switch(stack, Scheduler.Schedule())
+             else
+diff --git a/kernel/src/syscalls/syscall31.bas b/kernel/src/syscalls/syscall31.bas
+index d1bc0b7..bfb5fad 100644
+--- a/kernel/src/syscalls/syscall31.bas
++++ b/kernel/src/syscalls/syscall31.bas
+@@ -2,27 +2,131 @@ function SysCall31Handler(stack as IRQ_Stack ptr) as IRQ_Stack ptr
+     dim CurrentThread as Thread ptr = Scheduler.CurrentRuningThread
+     select case stack->EAX
+         case 0
+-            ConsolePutChar(cast(unsigned byte ,stack->EBX))
++            dim pip as STD_PIPE ptr = CurrentThread->Owner->GET_OUT(0)
++            if (pip<>0) then
++                pip->Write(stack->EBX)
++            end if
++            'ConsolePutChar(cast(unsigned byte ,stack->EBX))
+         case 1
+-            ConsoleWrite(cptr(unsigned byte ptr,stack->EBX))
++            dim pip as STD_PIPE ptr = CurrentThread->Owner->GET_OUT(0)
++            if (pip<>0) then
++                dim s as unsigned byte ptr = cptr(unsigned byte ptr,stack->EBX)
++                while s[0]<>0
++                    pip->Write(s[0])
++                    s+=1
++                wend
++            end if
++            'ConsoleWrite(cptr(unsigned byte ptr,stack->EBX))
+         case 2
+-             ConsoleWriteLine(cptr(unsigned byte ptr,stack->EBX))
++            dim pip as STD_PIPE ptr = CurrentThread->Owner->GET_OUT(0)
++            if (pip<>0) then
++                dim s as unsigned byte ptr = cptr(unsigned byte ptr,stack->EBX)
++                while s[0]<>0
++                    pip->Write(s[0])
++                    s+=1
++                wend
++                pip->Write(10)
++            end if
++             'ConsoleWriteLine(cptr(unsigned byte ptr,stack->EBX))
+         case 3
+-            ConsoleWriteNumber(stack->EBX,stack->ECX)
++            dim pip as STD_PIPE ptr = CurrentThread->Owner->GET_OUT(0)
++            if (pip<>0) then
++                dim s as unsigned byte ptr = intToStr(stack->EBX,stack->ECX)
++                while s[0]<>0
++                    pip->Write(s[0])
++                    s+=1
++                wend
++            end if
++            'ConsoleWriteNumber(stack->EBX,stack->ECX)
+         case 4
+-            ConsoleNewLine()
++            dim pip as STD_PIPE ptr = CurrentThread->Owner->GET_OUT(0)
++            if (pip<>0) then
++                pip->Write(10)
++            end if
++            'ConsoleNewLine()
+         case 5
+-            ConsolePrintOK()
++            'ConsolePrintOK()
+         case 6
+-            ConsoleBackSpace()
++            
++            dim pip as STD_PIPE ptr = CurrentThread->Owner->GET_OUT(0)
++            if (pip<>0) then
++                pip->Write(8)
++            end if
++            'ConsoleBackSpace()
+         case 7
+-            ConsoleSetForeground(stack->EBX)
++            'ConsoleSetForeground(stack->EBX)
+         case 8
+-            ConsoleSetBackground(stack->EBX)
++            'ConsoleSetBackground(stack->EBX)
+         case &hF
+-            ConsoleClear()
++            'ConsoleClear()
+         case &hFF
+-            CurrentThread->Owner->CreateConsole()
++            'CurrentThread->Owner->CreateConsole()
++        case &h100 'STD_CREATE
++            stack->EAX =cuint( VIRT_STDIO_CREATE())
++        case &h101 'SET IN
++            var pip = cptr(STD_PIPE ptr,stack->EBX)
++            if (pip = 0) then
++                if (CurrentThread->Owner->Parent<>0) then
++                    pip = CurrentThread->Owner->Parent->STD_IN
++                else
++                    pip = @CONSOLE_PIPE
++                end if
++            end if
++            
++            if (pip<>0) then
++                if (pip->MAGIC = STD_PIPE_MAGIC) then
++                    CurrentThread->Owner->STD_IN = pip
++                end if
++            end if
++            stack->EAX = cuint(pip)
++        case &h102 'SET OUT
++            var pip = cptr(STD_PIPE ptr,stack->EBX)
++            if (pip = 0) then
++                if (CurrentThread->Owner->Parent<>0) then
++                    pip = CurrentThread->Owner->Parent->STD_OUT
++                else
++                    pip = @CONSOLE_PIPE
++                end if
++            end if
++            
++            if (pip<>0) then
++                if (pip->MAGIC = STD_PIPE_MAGIC) then
++                    CurrentThread->Owner->STD_OUT = pip
++                end if
++            end if
++            stack->EAX = cuint(pip)
++            
++        case &h103 'STD IN
++            dim pip as STD_PIPE ptr = CurrentThread->Owner->GET_IN(  cptr(STD_PIPE ptr,stack->EBX))
++            
++            if (pip<>0) then
++                if (pip->END_OF_FILE=0) then
++                    stack->EAX =  pip->Read()
++                    stack->EBX = 0
++                else
++                    STACK->EAX = 0
++                    stack->EBX = 26 'end of file
++                end if
++            else
++                stack->EAX = 0
++                stack->EBX = 1'no stdin
++            end if
++            
++        case &h104 'std out
++            dim pip as STD_PIPE ptr = CurrentThread->Owner->GET_OUT(  cptr(STD_PIPE ptr,stack->EBX))
++            if (pip<>0) then
++                pip->Write(stack->ECX)
++            end if
++        
++        case &h105 'std out string
++            dim pip as STD_PIPE ptr = CurrentThread->Owner->GET_OUT(  cptr(STD_PIPE ptr,stack->EBX))
++            if (pip<>0) then
++                dim s as unsigned byte ptr = cptr(unsigned byte ptr,stack->ESI)
++                while s[0]<>0
++                    pip->Write(s[0])
++                    s+=1
++                wend
++            end if
+     end select
+     return stack
+ end function
+\ No newline at end of file
+diff --git a/keymaps/fr.asm b/keymaps/fr.asm
+index 07de88d..d3b506c 100644
+--- a/keymaps/fr.asm
++++ b/keymaps/fr.asm
+@@ -27,7 +27,7 @@ db 65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90
+ 
+ KEYMAP_ALT:
+ db    6,27
+-db    0,126,35,123,91,179,239,92,94,64,93,125          ;'1~#{[|`\^@]}
++db    124,126,35,123,91,179,239,92,94,64,93,125          ;'1~#{[|`\^@]}
+ db    8,9                                              ;'backspace,tab
+ db    65,90,128,82,84,89,85,73,79,80,249,156,13,126    ;'AZERTYUIOP¨£ENTER
+ db    81,83,68,70,71,72,74,75,76,77,37,252,50,230      ;'QSDFGHJKLM%³?µ
+@@ -38,7 +38,7 @@ db    101,102,103,104,105,106,107,108,109,110,111,112,113
+ db    55,56,57,45					; '789-
+ db    52,53,54,43					; '456+
+ db    49,50,51,48,46					;  '1230.'
+-db    65,66,60,68,255,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90
++db    65,66,92,68,255,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90
+ db    65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90
+ db    65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90
+ db    65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90
+@@ -57,7 +57,7 @@ db    101,102,103,104,105,106,107,108,109,110,111,112,113
+ db    55,56,57,45						; '789-
+ db    52,53,54,43						; '456+
+ db    49,50,51,48,46					;  '1230.'
+-db    65,66,60,68,255,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90
++db    65,66,62,68,255,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90
+ db    65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90
+ db    65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90
+ db    65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90
+\ No newline at end of file
+diff --git a/userland/apps/debug/main.bas b/userland/apps/debug/main.bas
+index eaa5d6c..b63cea6 100644
+--- a/userland/apps/debug/main.bas
++++ b/userland/apps/debug/main.bas
+@@ -52,7 +52,7 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
+ end sub
+ 
+ sub ConsoleThread()
+-    dim src as unsigned short ptr = cptr(unsigned short ptr,&hA0000000)
++    dim src as unsigned short ptr = cptr(unsigned short ptr,&hB8000)
+     dim Colors16(0 to 15) as unsigned integer
+     
+     Colors16(0) = &hFF000000
+diff --git a/userland/apps/fasm/main.bas b/userland/apps/fasm/main.bas
+index 6fddfb3..a87e4dc 100644
+--- a/userland/apps/fasm/main.bas
++++ b/userland/apps/fasm/main.bas
+@@ -24,20 +24,22 @@
+ #include once "fontmanager.bas"
+ #include once "gimage.bas"
+ 
++
++#include once "xconsole.bi"
++#include once "xconsole.bas"
+ dim shared mainWin as unsigned integer
+-dim shared drawableImage as GImage ptr
+ dim shared txtInputFile as unsigned integer
+ dim shared txtOutputFile as unsigned integer
+ dim shared txtArguments as unsigned integer
+ 
+ declare sub btnClick(btn as unsigned integer,parm as unsigned integer)
+-declare sub ConsoleThread()
+ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
+ 	SlabInit()
+     FontManager.Init()
+     
+ 	MainWin = GDIWindowCreate(645,550,@"FASM Front end")
+ 	GDISetVisible(MainWin,0)
++	
+     GDITextBlockCreate(MainWin,0,7,@"Input file : ",&hFF000000)
+ 	txtInputFile = GDITextBoxCreate(MainWin,140,0,190,30)
+     
+@@ -50,12 +52,10 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
+ 	GDIButtonCreate(MainWin,0,107,100,30,@"Assemble",@btnClick,0)
+ 	GDIButtonCreate(MainWin,205,107,100,30,@"Run",@btnClick,1)
+ 	
+-	drawableImage = cptr(GImage ptr,MAlloc(sizeof(GImage)))
+-	drawableImage->constructor(MainWin,0,140,645,405)
+-	drawableImage->Clear(&hFF000000)
+-    CreateThread(@ConsoleThread,3)
++	XConsoleCREATE(mainWin,0,140,645,405)
++	
++	
+ 	GDISetVisible(MainWin,1)
+-	ConsoleCreate()
+ 	ConsoleWrite(@"Console Ready")
+     ConsolePrintOK()
+     ConsoleNewLine()
+@@ -91,62 +91,3 @@ sub btnClick(btn as unsigned integer,parm as unsigned integer)
+     Free(tmpString)
+ 	EndCallBack()
+ end sub
+-
+-sub ConsoleThread()
+-    dim src as unsigned short ptr = cptr(unsigned short ptr,&hA0000000)
+-    dim Colors16(0 to 15) as unsigned integer
+-    
+-    Colors16(0) = &hFF000000
+-    Colors16(1) = &hFF000088
+-    Colors16(2) = &hFF008800
+-    Colors16(3) = &hFF008888
+-    Colors16(4) = &hFF880000
+-    Colors16(5) = &hFF880088
+-    Colors16(6) = &hFF888800
+-    Colors16(7) = &hFFdddddd
+-    Colors16(8) = &hFF888888
+-    Colors16(9) = &hFF0000FF
+-    Colors16(10) = &hFF00FF00
+-    Colors16(11) = &hFF00FFFF
+-    Colors16(12) = &hFFFF0000
+-    Colors16(13) = &hFFFF00FF
+-    Colors16(14) = &hFFFFFF00
+-    Colors16(15) = &hFFFFFFFF
+-    dim i as unsigned integer
+-    dim xx as unsigned integer
+-    dim yy as integer
+-	dim cx as unsigned integer
+-    dim cy as unsigned integer
+-    
+-    
+-	do
+-        
+-		i=0
+-		xx = 0
+-        yy = 5'((drawableImage->_height)-(25*16))+2
+-		for cy = 0 to 24
+-			xx = 5
+-			for cx = 0 to 79
+-				dim b as unsigned integer = src[i] and &hFF
+-				dim c as unsigned integer = (src[i] shr 8) and &hFF
+-				dim fg as unsigned integer = c and &hF
+-				dim bg as unsigned integer = (c shr 4) and &hF
+-				
+-				if (xx>=0 and yy>=0 and xx+7<drawableImage->_width and yy+15<drawableImage->_height) then
+-					
+-                    drawableImage->FillRectangle(xx,yy,xx+7,yy+15,colors16(bg))
+-					drawableImage->DrawChar(b,xx,yy,colors16(fg),FontManager.ML,1)
+-				end if
+-				i+=1
+-				xx+=8
+-			next
+-			yy+=16
+-		next
+-        drawableImage->Flush()
+-		waitn(100)
+-	loop
+-    
+-    
+-	do:loop
+-end sub
+-
+diff --git a/userland/apps/testx/main.bas b/userland/apps/testx/main.bas
+index 15b84d5..cc82500 100644
+--- a/userland/apps/testx/main.bas
++++ b/userland/apps/testx/main.bas
+@@ -15,8 +15,7 @@ dim shared fline(0 to 255) as unsigned byte
+ 
+ dim shared entries(0 to 50) as VFSDirectoryEntry
+ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr) 
+-	SlabInit()
+-    ConsoleWriteLine(@"Test from userland")
++	ConsoleWriteLine(@"Test from userland")
+     Do
+ 		ConsoleWrite(@".")
+ 		WAITN(1000)
+diff --git a/userland/include/console.bas b/userland/include/console.bas
+index e7216ab..460226c 100644
+--- a/userland/include/console.bas
++++ b/userland/include/console.bas
+@@ -1,86 +1,129 @@
+ 
+ sub ConsolePutChar(c as unsigned byte)
+-    asm
+-        mov eax,&h00
+-        mov ebx,[c]
+-        int &h31
+-    end asm
++    STDIO_WRITE_BYTE(0,c)
+ end sub
+     
+ sub ConsoleWrite(txt as unsigned byte ptr)
+-    asm
+-        mov eax,&h01
+-        mov ebx,[txt]
+-        int &h31
+-    end asm
++    STDIO_WRITE(0,txt)
+ end sub
+ 
+ sub ConsoleWriteLine(txt as unsigned byte ptr)
+-    asm
+-        mov eax,&h02
+-        mov ebx,[txt]
+-        int &h31
+-    end asm
++    STDIO_WRITE_LINE(0,txt)
+ end sub
+ 
+ sub ConsoleWriteNumber(n as unsigned integer,b as unsigned integer)
+-    asm
+-        mov eax,&h03
+-        mov ebx,[n]
+-        mov ecx,[b]
+-        int &h31
+-    end asm
++    STDIO_WRITE(0,intToStr(n,b))
+ end sub
+ 
+ sub ConsoleNewLine()
+-    asm
+-        mov eax,&h04
+-        int &h31
+-    end asm
++    STDIO_WRITE_BYTE(0,10)
+ end sub
+ 
++
++sub ConsoleBackSpace()
++    STDIO_WRITE_BYTE(0,8)
++end sub
++
++
+ sub ConsolePrintOK()
+-    asm
+-        mov eax,&h05
+-        int &h31
+-    end asm
++    'asm
++    '    mov eax,&h05
++    '    int &h31
++    'end asm
+ end sub
+ 
+-sub ConsoleBackSpace()
++sub ConsoleSetForeground(c as unsigned integer)
++    'asm
++    '    mov eax,&h07
++    '    mov ebx,[c]
++    '    int &h31
++    'end asm
++end sub
++
++sub ConsoleSetBackground(c as unsigned integer)
++    'asm
++    '    mov eax,&h08
++    '    mov ebx,[c]
++    '    int &h31
++    'end asm
++end sub
++
++
++sub ConsoleClear()
++    'asm
++    '    mov eax,&hF
++    '    int &h31
++    'end asm
++end sub
++
++function STDIO_CREATE() as unsigned integer
+     asm
+-        mov eax,&h06
+-        int &h31
++        mov eax,&h100
++        int 0x31
++        mov [function],eax
+     end asm
+-end sub
++end function
+ 
+-sub ConsoleSetForeground(c as unsigned integer)
++function STDIO_SET_IN(fd as unsigned integer) as unsigned integer
+     asm
+-        mov eax,&h07
+-        mov ebx,[c]
+-        int &h31
++        mov eax,&h101
++        mov ebx,[fd]
++        int 0x31
++        mov [function],eax
+     end asm
+-end sub
++end function
+ 
+-sub ConsoleSetBackground(c as unsigned integer)
++function STDIO_SET_OUT(fd as unsigned integer) as unsigned integer
+     asm
+-        mov eax,&h08
+-        mov ebx,[c]
+-        int &h31
++        mov eax,&h102
++        mov ebx,[fd]
++        int 0x31
++        mov [function],eax
+     end asm
+-end sub
++end function
+ 
++function STDIO_READ(fd as unsigned integer) as unsigned byte
++    dim  b as unsigned byte
++    asm
++        mov eax,&h103
++        mov ebx,[fd]
++        int 0x31
++        mov [b],al
++        mov [STDIO_ERR_NUM],ebx
++    end asm
++    
++    if (b=STD_KEY_CTRL) then 
++        STD_CTRL_ON = true
++    elseif (b=STD_KEY_CTRL+128) then
++        STD_CTRL_ON = false
++    end if
++    if (b=asc("C")) and STD_CTRL_ON then
++        ExitApp()
++    end if
++    return b
++end function
+ 
+-sub ConsoleClear()
++sub STDIO_WRITE_BYTE(fd as unsigned integer,b as unsigned byte)
+     asm
+-        mov eax,&hF
+-        int &h31
++        mov eax,&h104
++        mov ebx,[fd]
++        mov ecx,[b]
++        int 0x31
+     end asm
+ end sub
+ 
+ 
+-sub ConsoleCreate()
++sub STDIO_WRITE(fd as unsigned integer,b as unsigned byte ptr)
+     asm
+-        mov eax,&hFF
+-        int &h31
++        mov eax,&h105
++        mov ebx,[fd]
++        mov esi,[b]
++        int 0x31
+     end asm
++end sub
++
++
++sub STDIO_WRITE_LINE(fd as unsigned integer,b as unsigned byte ptr)
++    STDIO_WRITE(fd,b)
++    STDIO_WRITE_BYTE(fd,10)
+ end sub
+\ No newline at end of file
+diff --git a/userland/include/console.bi b/userland/include/console.bi
+index 63f6fe0..526d8ae 100644
+--- a/userland/include/console.bi
++++ b/userland/include/console.bi
+@@ -9,6 +9,16 @@ declare sub ConsoleBackSpace()
+ declare sub ConsoleSetForeground(c as unsigned integer)
+ declare sub ConsoleSetBackground(c as unsigned integer)
+ declare sub ConsoleClear()
+-declare sub ConsoleCreate()
+ 
++declare function STDIO_CREATE() as unsigned integer
++declare function STDIO_SET_IN(fd as unsigned integer) as unsigned integer
++declare function STDIO_SET_OUT(fd as unsigned integer) as unsigned integer
++declare function STDIO_READ(fd as unsigned integer) as unsigned byte
++declare sub STDIO_WRITE_BYTE(fd as unsigned integer,b as unsigned byte)
++declare sub STDIO_WRITE(fd as unsigned integer,b as unsigned byte ptr)
++declare sub STDIO_WRITE_LINE(fd as unsigned integer,b as unsigned byte ptr)
++
++dim shared STDIO_ERR_NUM as unsigned integer
++const STD_KEY_CTRL=29
++dim shared STD_CTRL_ON as boolean
+     
+\ No newline at end of file
+diff --git a/userland/include/file.bas b/userland/include/file.bas
+index a00d7a3..65583c5 100644
+--- a/userland/include/file.bas
++++ b/userland/include/file.bas
+@@ -4,10 +4,27 @@ function ExecApp(path as unsigned byte ptr,args as unsigned byte ptr) as unsigne
+ 	dim fsize as unsigned integer = 0
+ 	dim img as unsigned byte ptr = VFS_LOAD_FILE(path,@fsize)
+ 	if (img<>0 and fsize<>0) then
+-		dim retval as unsigned integer= CreateProcess(img,fsize,args)
++		dim retval as unsigned integer= CreateProcess(img,fsize,args,0)
+         Free(img)
+         return retval
+ 	else
++    '    ConsoleWrite(@"File not found : ")
++     '   ConsoleWriteLine(path)
++		return 0
++	end if
++end function
++
++
++function ExecAppAndWait(path as unsigned byte ptr,args as unsigned byte ptr) as unsigned integer
++	dim fsize as unsigned integer = 0
++	dim img as unsigned byte ptr = VFS_LOAD_FILE(path,@fsize)
++	if (img<>0 and fsize<>0) then
++		dim retval as unsigned integer= CreateProcess(img,fsize,args,1)
++        Free(img)
++        return retval
++	else
++     '   ConsoleWrite(@"File not found : ")
++     '   ConsoleWriteLine(path)
+ 		return 0
+ 	end if
+ end function
+diff --git a/userland/include/file.bi b/userland/include/file.bi
+index b01c43f..a9578b6 100644
+--- a/userland/include/file.bi
++++ b/userland/include/file.bi
+@@ -7,6 +7,7 @@ End Type
+ 
+ 
+ declare function ExecApp(path as unsigned byte ptr,args as unsigned byte ptr) as unsigned integer
++declare function ExecAppAndWait(path as unsigned byte ptr,args as unsigned byte ptr) as unsigned integer
+ declare function VFS_Load_File(fname as unsigned byte ptr,fsize as unsigned integer ptr) as unsigned byte ptr
+ declare function FileOpen(p as unsigned byte ptr) as unsigned integer
+ declare function FileCreate(p as unsigned byte ptr) as unsigned integer
+diff --git a/userland/include/system.bas b/userland/include/system.bas
+index 523f0e6..0acf0e4 100644
+--- a/userland/include/system.bas
++++ b/userland/include/system.bas
+@@ -1,10 +1,11 @@
+ 
+ 
+-function CreateProcess(img as any ptr,fsize as unsigned integer,args as unsigned byte ptr) as unsigned integer
++function CreateProcess(img as any ptr,fsize as unsigned integer,args as unsigned byte ptr,dowait as unsigned integer) as unsigned integer
+     asm
+         mov eax,&h01
+         mov ebx,[img]
+         mov ecx,[fsize]
++        mov edx,[dowait]
+         mov esi,[args]
+         int 0x30
+         mov [function],eax
+diff --git a/userland/include/system.bi b/userland/include/system.bi
+index bc824d0..23ff428 100644
+--- a/userland/include/system.bi
++++ b/userland/include/system.bi
+@@ -22,7 +22,7 @@ declare sub SysEnterCritical()
+ declare sub SysExitCritical()
+ declare function CreateThread(fn as any ptr,prio as unsigned integer) as unsigned integer
+ 
+-declare function CreateProcess(img as any ptr,fsize as unsigned integer,args as unsigned byte ptr) as unsigned integer
++declare function CreateProcess(img as any ptr,fsize as unsigned integer,args as unsigned byte ptr,dowait as unsigned integer) as unsigned integer
+ declare sub ThreadYield()
+ declare sub KillProcess(th as unsigned integer)
+ declare sub ThreadWakeUP(th as unsigned integer,p1 as unsigned integer,p2 as unsigned integer)
+diff --git a/userland/sys/desktop/drivers/keyboard.bas b/userland/sys/desktop/drivers/keyboard.bas
+index 0f0262a..e26163c 100644
+--- a/userland/sys/desktop/drivers/keyboard.bas
++++ b/userland/sys/desktop/drivers/keyboard.bas
+@@ -85,8 +85,10 @@ sub KBD_HANDLER(akey as unsigned byte)
+     else
+         select case akey
+             case KEY_CTRL:
++				KBD_PutChar(akey)
+                 KBD_CTRL=1
+             case KEY_CTRL+128:
++				KBD_PutChar(akey)
+                 KBD_CTRL=0
+             case KEY_ALT:
+                 KBD_ALT=1
+diff --git a/userland/sys/desktop/main.bas b/userland/sys/desktop/main.bas
+index e39ac24..afc43de 100644
+--- a/userland/sys/desktop/main.bas
++++ b/userland/sys/desktop/main.bas
+@@ -98,7 +98,6 @@ sub INIT_GUI()
+     
+     'create a separate thread for the gui loop
+     CreateThread(@GUI_THREAD_LOOP,1)
+-    
+     'the syscall handler is defined in the main thread
+ 	DefineIPCHandler(&h35,@int35Handler,1)    
+ 	ExecApp(@"SYS:/SYS/PIN.BIN",0)
+@@ -106,8 +105,6 @@ end sub
+ 
+ 
+ sub GUI_THREAD_LOOP(p as any ptr)
+-  
+-    
+     do
+         SignalWait(EV_SIGNAL)
+         ScreenLoop()
+diff --git a/userland/sys/pin/main.bas b/userland/sys/pin/main.bas
+index e54c4e5..3e9d7f6 100644
+--- a/userland/sys/pin/main.bas
++++ b/userland/sys/pin/main.bas
+@@ -106,7 +106,9 @@ sub MAIN(argc as unsigned integer,argv as unsigned byte ptr ptr)
+                 end if
+         end select
+         
+-        if i = 1 then
++        if i = 0 then
++              GDIButtonSetIcon(btn,@"SYS:/ICONS/TERM.BMP",0)
++        elseif i = 1 then
+               GDIButtonSetIcon(btn,@"SYS:/ICONS/FILEMAN.BMP",0)
+         elseif i = buttonCount-1 then
+               GDIButtonSetIcon(btn,@"SYS:/ICONS/APPSX.BMP",0)
+@@ -230,9 +232,12 @@ sub AppButtonClick(btn as unsigned integer,num as unsigned integer)
+ end sub
+ 
+ sub btnClick(btn as unsigned integer,parm as unsigned integer)
+-	if (parm=1) then
+-		ExecApp(@"SYS:/SYS/fileman.bin",0)
+-	end if
++    select case parm
++        case 0
++            ExecApp(@"SYS:/APPS/TERMINAL.APP/main.bin",0)
++        case 1
++            ExecApp(@"SYS:/SYS/fileman.bin",0)
++	end select
+ 	EndCallBack()
+ end sub
+ 

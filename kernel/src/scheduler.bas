@@ -106,13 +106,7 @@ function ThreadScheduler.Switch(_stack as IRQ_Stack ptr,newThread as Thread ptr)
 		
     KTSS_SET(CurrentRuningThread->SavedESP + sizeof(irq_stack),&h8,&h10,&h3202)
     CurrentRuningThread->VMM_Context->Activate()
-    if (CurrentRuningThread->Owner<>0) then
-        CurrentRuningThread->Owner->VIRT_CONSOLE->Activate()
-    else
-        SysConsole.Activate()
-    end if
-    
-    
+   
 	return nstack
 end function
 

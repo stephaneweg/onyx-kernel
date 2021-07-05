@@ -16,6 +16,7 @@
 #include once "exception.bi"
 #include once "vesa.bi"
 #include once "address_space.bi"
+#include once "std_pipe.bi"
 #include once "process.bi"
 #include once "thread.bi"
 #include once "scheduler.bi"
@@ -27,12 +28,13 @@
 
 
 #include once "ipc/signal.bi"
-#include once "ipc/semaphore.bi"
+#include once "ipc/mutex.bi"
 #include once "ipc/messaging.bi"
+
 SUB MAIN (mb_info as multiboot_info ptr)
     asm cli
     ConsoleInit()
-    ConsoleWriteLine(@"Test 1")
+    Mutexes = 0
     
     GDT_INIT()
     InterruptsManager_Init()
@@ -55,7 +57,7 @@ SUB MAIN (mb_info as multiboot_info ptr)
     Process.InitEngine()
     
     IPC_INIT()
-    
+    INIT_STD_PIPE()
     
     MODULES_INIT(mb_info)
     'find the best graphic mode
@@ -64,7 +66,7 @@ SUB MAIN (mb_info as multiboot_info ptr)
     vmm_init_local()
     ConsoleNewLine()
     
-    if (mode<>0) then        
+    if (mode<>0) then
         'switch to selected graphic mode
         VMM_EXIT()
         VesaSetMode(mode)
@@ -84,9 +86,8 @@ end sub
 sub KERNEL_ERROR(message as unsigned byte ptr,code as unsigned integer) 
     asm cli
     VMM_EXIT()
-    CurrentConsole = @SysConsole
+    CONSOLE_MEM = cptr(any ptr,&hB8000)
     VesaResetScreen()
-    SysConsole.VIRT = cptr(any ptr,&hB8000)
     
     ConsoleSetBackGround(4)
     ConsoleSetForeground(15)
@@ -119,6 +120,7 @@ end sub
 #include once "drivers/vesa.bas"
 #include once "process.bas"
 #include once "address_space.bas"
+#include once "std_pipe.bas"
 #include once "thread.bas"
 #include once "scheduler.bas"
 #include once "rng.bas"
@@ -126,5 +128,5 @@ end sub
 #include once "udev.bas"
 
 #include once "ipc/signal.bas"
-#include once "ipc/semaphore.bas"
+#include once "ipc/mutex.bas"
 #include once "ipc/messaging.bas"

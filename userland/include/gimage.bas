@@ -918,7 +918,7 @@ sub GImage.DrawTextMultiLine(s as unsigned byte ptr,x1 as integer,y1 as integer,
             for cpt=0 to tlen
                 asciicode=s[cpt]
                 for rowNum=0 to fontHeight-1
-                    bdata=fdata->Buffer[asciicode * fontHeight + rowNum+1]
+                    bdata=fdata->Buffer[asciicode * fontHeight + rowNum]
                     for colNum=0 to fontWidth -1
                         if ((bData shr colNum) and &h1)=&h1 then
                                 
@@ -977,7 +977,7 @@ sub GImage.DrawText(txt as unsigned byte ptr,x1 as integer,y1 as integer,c as in
         for cpt=0 to tlen
             asciicode=txt[cpt]
             for rowNum=0 to fontHeight-1
-                bdata=fdata->Buffer[asciicode * fontHeight + rowNum+1]
+                bdata=fdata->Buffer[asciicode * fontHeight + rowNum]
                 for colNum=0 to fontWidth -1
                     if ((bData shr colNum) and &h1)=&h1 then
                             
@@ -1014,7 +1014,7 @@ sub GImage.DrawChar(asciicode as unsigned byte,x1 as integer,y1 as integer,c as 
     
 
     for rowNum=0 to fontHeight-1
-        bdata=fdata->Buffer[asciicode * fontHeight + rowNum+1]
+        bdata=fdata->Buffer[asciicode * fontHeight + rowNum]
         for colNum=0 to fontWidth -1
             if ((bData shr colNum) and &h1)=&h1 then
                     

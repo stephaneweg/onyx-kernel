@@ -17,9 +17,8 @@ function PanicException(msg as unsigned byte ptr,stack as IRQ_Stack ptr) as IRQ_
     
     asm cli
     VMM_EXIT()
-    CurrentConsole = @SysConsole
     VesaResetScreen()
-    SysConsole.VIRT = cptr(any ptr,&hB8000)
+    CONSOLE_MEM = cptr(any ptr,&hB8000)
     stack=current_context->Resolve(stack)
     var th = cptr(Thread ptr,current_context->Resolve(SCheduler.CurrentRuningThread))
     ConsoleWriteLine(msg)
@@ -83,9 +82,8 @@ function ExceptionHandler(stack as IRQ_STACK ptr) as IRQ_Stack ptr
                     mov [acr2],ebx
                 end asm
                 VMM_EXIT()
-                CurrentConsole = @SysConsole
                 VesaResetScreen()
-                SysConsole.VIRT = cptr(any ptr,&hB8000)
+                CONSOLE_MEM = cptr(any ptr,&hB8000)
                 ConsoleSetBackGround(4)
                 ConsoleSetForeground(15)
                 ConsoleClear()
